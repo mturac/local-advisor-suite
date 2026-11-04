@@ -1,0 +1,73 @@
+---
+description: Local Advisor Suite operating rules — routing, scoped file access, evidence discipline, verification ladder, stop rules
+alwaysApply: true
+---
+<!-- local-advisor-suite:start -->
+## Local Advisor Suite: operating rules (Cursor)
+
+Skills are installed under `.cursor/skills/<name>/SKILL.md` and exposed as commands in `.cursor/commands/<name>.md` (invoke with `/<name>` in Agent chat). The workbench runtime is:
+
+```bash
+WB="python3 {{WORKBENCH}}"
+```
+
+State is written to `.local-workbench/` (keep it out of version control). After any change to this project, `$WB doctor --project-root .` verifies the installation is still healthy.
+
+### Route the request
+
+| The user wants | Use skill (command) | First command |
+|---|---|---|
+| Advice, design review, architecture or planning help | `local-advisor` (`/local-advisor`) | none (answer from the conversation) |
+| Choose between options, an ADR, a trade-off matrix | `decision-review` (`/decision-review`) | `$WB decision-score --spec-file decision.json` |
+| A bug, failing test or stack trace in a named file | `local-debug` (`/local-debug`) | `$WB debug-hypothesis --symptom ... --target-file ... --repro ...` |
+| One factual answer that needs 1-3 sources | `web-search` (`/web-search`) | the agent's web search tool |
+| Research with several sources and a synthesis | `deep-research` (`/deep-research`) | `$WB research-init --topic ... --sub-question ...` |
+| Compare many entities across the same fields, as a table | `wide-search` (`/wide-search`) | `$WB research-init --mode wide-matrix --entity ... --field ...` |
+| Check a draft's sources, numbers and claims | `evidence-audit` (`/evidence-audit`) | `$WB audit-report --report-file FILE` |
+| Prove that a change works before saying "done" | `delivery-verify` (`/delivery-verify`) | `$WB verify-delivery --check L2:... --command ...` |
+| Write a report, ADR, executive summary or data schema | `artifact-studio` (`/artifact-studio`) | `$WB artifact-new --type ... --title ... --output ...` |
+| End, switch tools, delegate or resume work | `session-handoff` (`/session-handoff`) | `$WB handoff-pack ...` / `$WB handoff-check` |
+| Turn a request into a testable spec | `spec-builder` (`/spec-builder`) | `$WB spec-new --goal ... --story ... --non-goal ...` |
+| A structured, severity-graded review | `code-review` (`/code-review`) | `$WB review-init --title ... --target ...` |
+| Save, find and reuse project knowledge | `knowledge-capture` (`/knowledge-capture`) | `$WB kb-add --question ... --answer ... --source-url ...` |
+
+### Do not scan by default
+
+1. Answer advisory questions from the conversation. Do not list directories, run recursive `find`/`rg`/`grep`, or open files the user did not name.
+2. Read a file only when the user names it or explicitly asks you to inspect the project. Use `$WB scope-read` (project root only, line range, no secrets).
+3. Never read `.env*`, keys, credential stores, `~/.ssh`, `~/.aws`, or anything outside the project root.
+4. If missing context blocks a good answer, ask one precise question instead of searching for it.
+
+### Stop rules
+
+- Debugging: stop after 2 falsified hypotheses; run `$WB debug-report` and ask for the missing information.
+- Research: stop at the query budget; record remaining gaps instead of continuing silently.
+- Specs: no task enters the plan unless it verifies at least one acceptance criterion (`spec-check` must PASS before implementation starts).
+- Reviews: the verdict is FAIL while any BLOCKING finding is open; never merge over it.
+- Any loop of the same failing action twice: stop, report what was tried and what is needed.
+
+### Evidence discipline
+
+- Use only Cursor's built-in search/fetch capabilities or documents the user supplied. Do not add search providers, API keys or MCP servers the user did not configure.
+- A search result is a lead. Cite a page only after opening it; quote it verbatim in the ledger.
+- Every researched fact in a deliverable carries an inline link named after the publisher or document. Never "source", "here" or a raw URL.
+- Run `$WB audit-report --report-file FILE` before delivering research. Deliver only on PASS.
+- Never fill a gap from memory. Write `n.a.` and record the gap.
+- Knowledge entries are sourced or explicitly marked `--assumed`; never present an assumption as a fact.
+
+### Verification ladder
+
+| Level | Meaning | Allowed wording |
+|---|---|---|
+| L0 | Nothing ran | "changed, not verified" |
+| L1 | Files exist | "written, not executed" |
+| L2 | Compiles, type-checks, lints | "compiles; tests not run" |
+| L3 | Tests or program ran, exit 0 | "tests pass" |
+| L4 | The user's acceptance criterion checked | "your case now works" |
+
+Run `$WB verify-delivery` and report the achieved level, the commands and what was not run. Never say "done", "fixed" or "tested" above the level you observed.
+
+### Handoff
+
+Before ending a session, switching between hosts (Claude Code, Codex, ZCode, Cursor, OpenCode), or delegating: `$WB handoff-pack ...` then `$WB handoff-check`. When resuming: `$WB handoff-check`, read `.local-workbench/HANDOFF.md`, start with the first unchecked next step.
+<!-- local-advisor-suite:end -->

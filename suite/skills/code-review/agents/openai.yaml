@@ -1,0 +1,5 @@
+interface:
+  display_name: "Code Review"
+  short_description: "Severity-graded findings with locations and a deterministic FAIL verdict"
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,14 @@
+{
+  "name": "local-advisor-suite",
+  "description": "Local advisor, decision review, scoped debugging, research, spec, review and verification skills.",
+  "owner": {
+    "name": "Local Advisor Workbench"
+  },
+  "plugins": [
+    {
+      "name": "local-advisor-suite",
+      "source": "./",
+      "description": "13 provider-neutral skills backed by an offline workbench.py runtime."
+    }
+  ]
+}

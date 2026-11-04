@@ -1,0 +1,22 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model RunLog {
+  id         Int      @id @default(autoincrement())
+  command    String
+  argsJson   String   @default("[]")
+  exitCode   Int
+  status     String?
+  durationMs Int
+  stdout     String   @default("")
+  stderr     String   @default("")
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+}

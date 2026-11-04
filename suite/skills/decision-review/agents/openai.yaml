@@ -1,0 +1,5 @@
+interface:
+  display_name: "Decision Review"
+  short_description: "Trade-off matrix, sensitivity, reversibility class, pre-mortem and ADR"
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,5 @@
+interface:
+  display_name: "Spec Builder"
+  short_description: "Turn requests into testable specs: GWT acceptance criteria and verifying tasks"
+policy:
+  allow_implicit_invocation: true

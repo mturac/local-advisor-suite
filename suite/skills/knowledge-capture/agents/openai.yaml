@@ -1,0 +1,5 @@
+interface:
+  display_name: "Knowledge Capture"
+  short_description: "Sourced or explicitly-assumed Q&A entries with offline search and export"
+policy:
+  allow_implicit_invocation: true

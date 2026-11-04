@@ -1,0 +1,5 @@
+interface:
+  display_name: "Local Debug"
+  short_description: "Scoped debugger: target file only, 2-hypothesis circuit breaker, root-cause report"
+policy:
+  allow_implicit_invocation: true

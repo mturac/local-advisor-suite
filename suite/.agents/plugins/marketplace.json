@@ -1,0 +1,20 @@
+{
+  "name": "local-advisor-suite",
+  "interface": {
+    "displayName": "Local Advisor Suite"
+  },
+  "plugins": [
+    {
+      "name": "local-advisor-suite",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

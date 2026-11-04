@@ -1,0 +1,5 @@
+interface:
+  display_name: "Web Search"
+  short_description: "Fast source-verified answers with the host's own search and fetch tools"
+policy:
+  allow_implicit_invocation: true

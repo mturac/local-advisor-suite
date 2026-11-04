@@ -1,0 +1,5 @@
+interface:
+  display_name: "Local Advisor"
+  short_description: "Senior technical advisor that works from the conversation, not by scanning files"
+policy:
+  allow_implicit_invocation: true

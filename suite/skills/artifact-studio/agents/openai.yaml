@@ -1,0 +1,5 @@
+interface:
+  display_name: "Artifact Studio"
+  short_description: "Templates for technical reports, ADRs, exec summaries, decks and schemas"
+policy:
+  allow_implicit_invocation: true

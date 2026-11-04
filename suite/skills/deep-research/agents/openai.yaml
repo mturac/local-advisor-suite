@@ -1,0 +1,5 @@
+interface:
+  display_name: "Deep Research"
+  short_description: "Multi-step research with evidence ledger, scoring, contradictions and gaps"
+policy:
+  allow_implicit_invocation: true

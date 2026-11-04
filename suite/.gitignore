@@ -1,0 +1,4 @@
+.local-workbench/
+__pycache__/
+*.pyc
+*.zip

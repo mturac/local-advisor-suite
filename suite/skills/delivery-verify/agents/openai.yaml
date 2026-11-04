@@ -1,0 +1,5 @@
+interface:
+  display_name: "Delivery Verify"
+  short_description: "Prove delivery with real commands on an L0-L4 verification ladder"
+policy:
+  allow_implicit_invocation: true

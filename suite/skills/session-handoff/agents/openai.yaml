@@ -1,0 +1,5 @@
+interface:
+  display_name: "Session Handoff"
+  short_description: "Pack and validate session state so the next agent resumes without loss"
+policy:
+  allow_implicit_invocation: true

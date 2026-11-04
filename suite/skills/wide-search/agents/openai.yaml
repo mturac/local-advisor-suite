@@ -1,0 +1,5 @@
+interface:
+  display_name: "Wide Search"
+  short_description: "Entity x field comparison tables where every cell links to a verified URL"
+policy:
+  allow_implicit_invocation: true

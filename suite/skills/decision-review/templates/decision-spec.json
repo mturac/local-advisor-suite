@@ -1,0 +1,26 @@
+{
+  "title": "Queue for background jobs",
+  "criteria": [
+    {"id": "ops-burden", "weight": 3, "min_score": 4, "note": "no dedicated platform team; min_score makes this a hard floor"},
+    {"id": "throughput", "weight": 2, "note": "peak 5k jobs/min is enough; no min_score"},
+    {"id": "durability", "weight": 3, "min_score": 5, "note": "jobs are billing-critical; disqualifies anything best-effort"},
+    {"id": "license", "weight": 1}
+  ],
+  "options": [
+    {
+      "name": "Postgres queue",
+      "scores": {"ops-burden": 7, "throughput": 5, "durability": 8, "license": 8},
+      "risks": ["polling adds up to 5s latency under low load"]
+    },
+    {
+      "name": "Redis streams",
+      "scores": {"ops-burden": 4, "throughput": 8, "durability": 6, "license": 7},
+      "risks": ["one more stateful system to run and back up", "team has no Redis ops experience"]
+    },
+    {
+      "name": "Managed cloud queue",
+      "scores": {"ops-burden": 8, "throughput": 7, "durability": 8, "license": 3},
+      "risks": ["vendor lock-in", "egress cost at current volume"]
+    }
+  ]
+}
