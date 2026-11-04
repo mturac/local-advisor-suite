@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { BookOpen, FileText, Folder, Loader2, RefreshCw, ScrollText } from "lucide-react"
+import { BookOpen, Check, FileText, Folder, Globe, Loader2, RefreshCw, ScrollText } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -83,16 +83,38 @@ export function SkillsBrowser() {
                 <div className="size-9 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
                   <BookOpen className="size-4.5 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <Badge variant="secondary" className="font-mono text-[10px]">
-                  <FileText className="size-3 mr-1" />
-                  {skill.fileCount} {t("skills.files")}
-                </Badge>
+                <div className="flex flex-col items-end gap-1">
+                  <Badge variant="secondary" className="font-mono text-[10px]">
+                    <FileText className="size-3 mr-1" />
+                    {skill.fileCount} {t("skills.files")}
+                  </Badge>
+                </div>
               </div>
               <div>
                 <h3 className="font-mono text-sm font-semibold">{skill.name}</h3>
                 <p className="text-xs text-muted-foreground line-clamp-3 mt-1">
                   {skill.description || "—"}
                 </p>
+              </div>
+              {/* readiness: skills are instruction packs for the AI agent —
+                  they are ready wherever the agent is; nothing is "offline" */}
+              <div
+                className="flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1"
+                title={t("skills.readyHint")}
+              >
+                <span className="relative flex size-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                  <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+                </span>
+                <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+                  {t("skills.ready")}
+                </span>
+                <span className="text-[11px] text-emerald-700/80 dark:text-emerald-300/80">
+                  · {skill.runtime === "llm-web" ? t("skills.webHint") : t("skills.readyHint")}
+                </span>
+                {skill.runtime === "llm-web" && (
+                  <Globe className="size-3 ml-auto text-emerald-600 dark:text-emerald-400 shrink-0" />
+                )}
               </div>
               <div className="flex flex-wrap items-center gap-1">
                 {skill.subdirs.map((dir) => (

@@ -45,7 +45,13 @@ export interface SkillInfo {
   subdirs: string[]
   examples: { name: string; content: string }[]
   content: string
+  /** How the skill runs: "llm" = purely via the AI agent's reasoning,
+   *  "llm-web" = via the AI agent + live web (Firecrawl). */
+  runtime: "llm" | "llm-web"
 }
+
+/** Skills whose toolkit includes live-web actions (Firecrawl search/scrape). */
+const WEB_SKILLS = new Set(["deep-research", "web-search", "wide-search"])
 
 const ROOT = process.cwd()
 export const SUITE_DIR = process.env.SUITE_DIR || path.join(ROOT, "suite")
@@ -215,7 +221,16 @@ export async function listSkills(): Promise<SkillInfo[]> {
         }
       }
       await walk(skillDir, 0)
-      skills.push({ slug: entry.name, name, description, fileCount, subdirs, examples, content })
+      skills.push({
+        slug: entry.name,
+        name,
+        description,
+        fileCount,
+        subdirs,
+        examples,
+        content,
+        runtime: WEB_SKILLS.has(entry.name) ? "llm-web" : "llm",
+      })
     } catch {
       // SKILL.md missing — skip
     }

@@ -14,20 +14,20 @@ const STRINGS: Record<string, { tr: string; en: string }> = {
   // ── header ──────────────────────────────────────────────────────────────
   "header.subtitle": { tr: "Konsol", en: "Console" },
   "header.meta": {
-    tr: "{commands} komut · çevrimdışı · tedarikçi yok",
-    en: "{commands} commands · offline · zero-vendor",
+    tr: "{commands} komut · yerelde çalışır · tedarikçi kilidi yok",
+    en: "{commands} commands · runs locally · zero vendor lock-in",
   },
 
   // ── hero ────────────────────────────────────────────────────────────────
   "hero.badge": {
-    tr: "v3.0.0 · 38 komut · 13 beceri · tamamen çevrimdışı",
-    en: "v3.0.0 · 38 commands · 13 skills · fully offline",
+    tr: "v3.0.0 · 38 komut · 13 beceri · hepsi AI agent'ınla hazır",
+    en: "v3.0.0 · 38 commands · 13 skills · all ready via your AI agent",
   },
   "hero.titleA": { tr: "Tarayıcıda dene.", en: "Try it right here." },
   "hero.titleB": { tr: "Kurulum yok, hesap yok.", en: "No setup. No account." },
   "hero.sub": {
-    tr: "Bu sayfa Local Advisor Suite'in 38 komutunu gerçekten çalıştırır — güvenli bir demo alanında. Bir hikâye seç, Çalıştır'a bas, gerçekte ne olduğunu izle.",
-    en: "This page actually runs the suite's 38 commands — inside a safe demo workspace. Pick a story, press Run, and watch what really happens.",
+    tr: "Bu sayfa Local Advisor Suite'in 38 komutunu gerçekten çalıştırır — güvenli bir demo alanında. Beceriler ise AI agent'ının beyniyle çalışır: agent kuruluysa hepsi hazır. Bir hikâye seç, Çalıştır'a bas, gerçekte ne olduğunu izle.",
+    en: "This page actually runs the suite's 38 commands — inside a safe demo workspace. The skills run through your AI agent's reasoning: if the agent is installed, every skill is ready. Pick a story, press Run, and watch what really happens.",
   },
   "hero.cta": { tr: "Hemen bir hikâye dene", en: "Try a story now" },
   "hero.step1.title": { tr: "1 · Soldan bir hikâye seç", en: "1 · Pick a story on the left" },
@@ -48,6 +48,7 @@ const STRINGS: Record<string, { tr: string; en: string }> = {
 
   // ── tabs ────────────────────────────────────────────────────────────────
   "tab.stories": { tr: "Hikâyeler", en: "Stories" },
+  "tab.web": { tr: "Web Araştırma", en: "Web Research" },
   "tab.runner": { tr: "Komut Dene", en: "Try Commands" },
   "tab.skills": { tr: "Beceriler", en: "Skills" },
   "tab.doctor": { tr: "Sağlık", en: "Health" },
@@ -136,13 +137,109 @@ const STRINGS: Record<string, { tr: string; en: string }> = {
 
   // ── skills ──────────────────────────────────────────────────────────────
   "skills.desc": {
-    tr: "Pakette {n} beceri var — her biri kendi klasöründe duran, references + templates + examples içeren bir SKILL.md.",
-    en: "{n} skills bundled in the suite — each a self-contained SKILL.md with references, templates and examples.",
+    tr: "Pakette {n} beceri var — her biri AI agent'ının okuyup uyguladığı bir talimat paketi: references + templates + examples içeren bir SKILL.md. Agent'ın (Claude Code, Cursor vb.) kurulu olduğu her yerde çalışmaya hazırdır — indirilecek, başlatılacak ayrı bir servis yoktur.",
+    en: "{n} skills bundled in the suite — each a self-contained SKILL.md with references, templates and examples. They are instruction packs your AI agent reads and follows, so they are ready wherever your agent (Claude Code, Cursor, …) is installed — nothing to install or start.",
   },
   "skills.refresh": { tr: "Yenile", en: "Refresh" },
   "skills.files": { tr: "dosya", en: "files" },
   "skills.example": { tr: "örnek", en: "example" },
   "skills.examples": { tr: "örnek", en: "examples" },
+  "skills.ready": { tr: "Hazır", en: "Ready" },
+  "skills.readyHint": {
+    tr: "AI agent'ınla çalışır — ek kurulum yok",
+    en: "runs via your AI agent — no extra setup",
+  },
+  "skills.webHint": {
+    tr: "agent'ın + canlı web (Firecrawl)",
+    en: "your agent + live web (Firecrawl)",
+  },
+
+  // ── firecrawl ──────────────────────────────────────────────────────────
+  "fc.title": { tr: "Web'i oku: Firecrawl motoru", en: "Read the web: the Firecrawl engine" },
+  "fc.intro": {
+    tr: "Firecrawl, AI agent'ının web'i okumasını sağlayan motordur: arar, sayfayı indirip temiz metne çevirir, site haritası çıkarır, veri toplar. Deep Research hikâyendeki tüm aramalar ve sayfa okumaları bu motorla yapılır. Burada motoru tek başına deneyebilirsin — neyin ne işe yaradığını gör.",
+    en: "Firecrawl is the engine that lets your AI agent read the web: it searches, downloads pages into clean text, maps sites and extracts data. Every search and page read in the Deep Research story runs on this engine. Try the engine on its own here — see what each feature does.",
+  },
+  "fc.point1": {
+    tr: "1 · Gerçek çağrılar: her buton canlı web'e gerçek bir istek atar, sahte sonuç dönmez.",
+    en: "1 · Real calls: every button fires a live request to the real web — no fake results.",
+  },
+  "fc.point2": {
+    tr: "2 · Anahtar tarayıcıya sızmaz: çağrılar sunucu tarafından yapılır, anahtar sadece .env'de durur.",
+    en: "2 · The key never reaches your browser: calls go through the server; the key stays in .env.",
+  },
+  "fc.point3": {
+    tr: "3 · Hikâyeyle aynı motor: Deep Research hikâyesindeki adımlar da buradaki search ve scrape'i kullanır.",
+    en: "3 · Same engine as the story: the Deep Research story steps use this very search and scrape.",
+  },
+  "fc.search.tag": { tr: "arama", en: "search" },
+  "fc.search.what": {
+    tr: "Web'de arama yapar: başlık + adres + kısa özet döner. Araştırmaya “kim ne yazmış?” diye başlamanın yolu.",
+    en: "Searches the live web and returns title + URL + snippet. The way research starts: “who wrote about this?”",
+  },
+  "fc.search.when": {
+    tr: "Bir konuda ilk keşif yaparken — henüz hangi sayfaları okuyacağını bilmiyorken.",
+    en: "When exploring a topic for the first time — before you know which pages to read.",
+  },
+  "fc.scrape.tag": { tr: "sayfa okuma", en: "scrape" },
+  "fc.scrape.what": {
+    tr: "Tek bir sayfayı indirir, menüleri/reklamları süpürür, temiz metne çevirir. Alıntı yapılacak cümle sayfada gerçekten var mı diye de kontrol eder.",
+    en: "Downloads one page, strips menus/ads, turns it into clean text — and verifies the sentence you want to quote really is on the page.",
+  },
+  "fc.scrape.when": {
+    tr: "Arama sonucundan bir sayfayı okumak ve alıntı yapmak istediğinde.",
+    en: "When you want to read one page from the search results and quote it.",
+  },
+  "fc.crawl.tag": { tr: "site tarama", en: "crawl" },
+  "fc.crawl.what": {
+    tr: "Bir sitenin birden çok sayfasını sırayla gezer ve her birinden temiz metin çıkarır.",
+    en: "Walks multiple pages of one site in sequence, extracting clean text from each.",
+  },
+  "fc.crawl.when": {
+    tr: "Tek sayfa yetmediğinde — örn. dokümantasyonun tamamını toplarken.",
+    en: "When one page is not enough — e.g. collecting a whole documentation site.",
+  },
+  "fc.map.tag": { tr: "site haritası", en: "map" },
+  "fc.map.what": {
+    tr: "Bir sitedeki bağlantıların listesini çıkarır — sayfaları okumadan önce “sitede neler var?” görünümü.",
+    en: "Lists the links inside a site — a “what's on this site?” view before reading anything.",
+  },
+  "fc.map.when": {
+    tr: "Hangi alt sayfaları okuyacağına karar verirken — içerik okumadan önce.",
+    en: "When deciding which subpages to read — before reading their content.",
+  },
+  "fc.extract.tag": { tr: "veri çıkarma", en: "extract" },
+  "fc.extract.what": {
+    tr: "Sayfayı okur ve istediğin bilgiyi senin cümlenle sorarak çıkarır (örn. “ilk 3 haber başlığını listele”).",
+    en: "Reads the page and pulls out exactly what you ask for in plain words (e.g. “list the top 3 headlines”).",
+  },
+  "fc.extract.when": {
+    tr: "Sayfadan belirli bir bilgi lazım olduğunda — tamamı değil, sadece o kısım.",
+    en: "When you need one specific fact from a page — not the whole page.",
+  },
+  "fc.slowBadge": { tr: "yavaş — çok sayfa gezer", en: "slow — visits many pages" },
+  "fc.llmBadge": { tr: "LLM kullanır", en: "uses an LLM" },
+  "fc.tryTitle": { tr: "Dene", en: "Try it" },
+  "fc.whenLabel": { tr: "Ne zaman:", en: "When to use:" },
+  "fc.tryHint": {
+    tr: "gerçek çağrı — internete gider",
+    en: "real call — hits the live internet",
+  },
+  "fc.fieldQuery": { tr: "Arama sorgusu", en: "Search query" },
+  "fc.fieldLimit": { tr: "Sonuç sayısı", en: "Result limit" },
+  "fc.fieldUrl": { tr: "Sayfa adresi (https://…)", en: "Page URL (https://…)" },
+  "fc.fieldPrompt": { tr: "Ne çıkarılsın? (sadece extract)", en: "What should be extracted? (extract only)" },
+  "fc.fieldPages": { tr: "Sayfa sayısı", en: "Page count" },
+  "fc.runAction": { tr: "{action} çalıştır", en: "Run {action}" },
+  "fc.running": { tr: "Çalışıyor…", en: "Running…" },
+  "fc.done": { tr: "Tamamlandı", en: "Done" },
+  "fc.failed": { tr: "Başarısız", en: "Failed" },
+  "fc.searchResults": { tr: "{n} gerçek sonuç", en: "{n} real results" },
+  "fc.mapResults": { tr: "{n} bağlantı bulundu", en: "{n} links found" },
+  "fc.footnote": {
+    tr: "Bu panel Firecrawl kredisini gerçekten harcar (ücretsiz kotasıyla sınırlı). Web araştırması gerektiren hikâye adımları ve Beceriler sekmesindeki web becerileri de aynı anahtarı kullanır.",
+    en: "This panel really spends Firecrawl credits (bounded by the free tier). The story steps that need web research and the web skills in the Skills tab use the same key.",
+  },
 
   // ── doctor ──────────────────────────────────────────────────────────────
   "doctor.title": { tr: "Kurulum sağlığı", en: "Installation health" },
@@ -220,6 +317,10 @@ const STRINGS: Record<string, { tr: string; en: string }> = {
   "footer.line": {
     tr: "6 araç · 13 beceri · 95 test · tıkladığın her şey gerçek",
     en: "6 hosts · 13 skills · 95 tests · everything you click is real",
+  },
+  "footer.readyNote": {
+    tr: "13 becerinin tamamı AI agent'ınla hazır: LLM'e bağlı beceriler agent kuruluysa çalışır; sadece web'e çıkanlar (Deep Research, web-search, wide-search) Firecrawl anahtarı ister.",
+    en: "All 13 skills are ready via your AI agent: LLM-based skills run wherever the agent is installed; only the web-facing ones (deep-research, web-search, wide-search) need the Firecrawl key.",
   },
 
   // ── misc ────────────────────────────────────────────────────────────────

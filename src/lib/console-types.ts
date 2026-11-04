@@ -51,6 +51,8 @@ export interface SkillInfo {
   subdirs: string[]
   examples: SkillExample[]
   content: string
+  /** "llm" = runs via the AI agent's reasoning · "llm-web" = agent + live web (Firecrawl). */
+  runtime: "llm" | "llm-web"
 }
 
 export interface LedgerFile {

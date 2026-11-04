@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Github, Loader2, Play, Terminal } from "lucide-react"
+import { Github, Globe, Loader2, Play, Terminal } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LangToggle } from "@/components/lang-toggle"
@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { useLang } from "@/lib/i18n"
 import type { Catalog } from "@/lib/console-types"
 import { DoctorPanel } from "@/components/console/doctor-panel"
+import { FirecrawlPanel } from "@/components/console/firecrawl-panel"
 import { HistoryPanel } from "@/components/console/history-panel"
 import { Runner } from "@/components/console/runner"
 import { SkillsBrowser } from "@/components/console/skills-browser"
@@ -235,6 +236,10 @@ export default function Home() {
               <Terminal className="size-3.5" />
               {t("tab.runner")}
             </TabsTrigger>
+            <TabsTrigger value="web" className="gap-1.5 text-xs sm:text-sm">
+              <Globe className="size-3.5" />
+              {t("tab.web")}
+            </TabsTrigger>
             <TabsTrigger value="skills" className="gap-1.5 text-xs sm:text-sm">
               {t("tab.skills")}
             </TabsTrigger>
@@ -261,6 +266,9 @@ export default function Home() {
               <Runner catalog={catalog} onRan={() => setHistoryKey((k) => k + 1)} />
             )}
           </TabsContent>
+          <TabsContent value="web">
+            <FirecrawlPanel />
+          </TabsContent>
           <TabsContent value="skills">
             <SkillsBrowser />
           </TabsContent>
@@ -281,6 +289,7 @@ export default function Home() {
           <span className="font-mono">
             Local Advisor Suite {version ? `v${version}` : ""} — {t("footer.line")}
           </span>
+          <span className="max-w-2xl text-right leading-relaxed">{t("footer.readyNote")}</span>
           <span>{t("footer.note")}</span>
         </div>
       </footer>
