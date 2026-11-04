@@ -38,12 +38,18 @@ export interface RunResponse extends RunResult {
   argv: string[]
 }
 
+export interface SkillExample {
+  name: string
+  content: string
+}
+
 export interface SkillInfo {
   slug: string
   name: string
   description: string
   fileCount: number
   subdirs: string[]
+  examples: SkillExample[]
   content: string
 }
 

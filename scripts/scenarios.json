@@ -1,0 +1,389 @@
+{
+  "groups": [
+    {
+      "title": "Suite health",
+      "scenarios": [
+        {
+          "label": "doctor",
+          "command": "doctor",
+          "argv": [],
+          "note": "Cross-host install health for all six hosts"
+        },
+        {
+          "label": "selfcheck",
+          "command": "selfcheck",
+          "argv": ["--path", "../suite"],
+          "note": "Structural self-test of the suite itself"
+        }
+      ]
+    },
+    {
+      "title": "Research",
+      "scenarios": [
+        {
+          "label": "research-status",
+          "command": "research-status",
+          "argv": [],
+          "note": "Ledger snapshot: sources, claims, query budget"
+        },
+        {
+          "label": "research-gaps",
+          "command": "research-gaps",
+          "argv": [],
+          "note": "Open knowledge gaps and why they exist"
+        },
+        {
+          "label": "research-score",
+          "command": "research-score",
+          "argv": [],
+          "note": "Source quality scoring (tier, freshness, domain)"
+        },
+        {
+          "label": "research-pack",
+          "command": "research-pack",
+          "argv": [],
+          "note": "Render evidence_pack.md for synthesis"
+        },
+        {
+          "label": "research-log-query",
+          "command": "research-log-query",
+          "argv": [
+            "--query", "claude code skills directory layout docs",
+            "--tool-used", "console-scenario"
+          ],
+          "note": "Log a unique query against the budget"
+        },
+        {
+          "label": "research-add-source",
+          "command": "research-add-source",
+          "argv": [
+            "--url", "https://code.visualstudio.com/docs/copilot/chat/agent-skills",
+            "--title", "VS Code agent skills documentation",
+            "--publisher", "Microsoft",
+            "--tier", "PRIMARY",
+            "--excerpt", "Agent Skills are folders with a SKILL.md file."
+          ],
+          "note": "Register a PRIMARY source with excerpt"
+        },
+        {
+          "label": "research-add-claim",
+          "command": "research-add-claim",
+          "argv": [
+            "--statement", "VS Code loads agent skills from a skills folder in the workspace",
+            "--source-id", "S1",
+            "--quote", "A skill is a folder with a SKILL.md file; name and description are required.",
+            "--entity", "VS Code",
+            "--field", "skills directory",
+            "--value", "workspace skills folder",
+            "--confidence", "MEDIUM",
+            "--allow-unverified-quote"
+          ],
+          "note": "Add a PROVISIONAL claim backed by source S1"
+        },
+        {
+          "label": "research-add-gap",
+          "command": "research-add-gap",
+          "argv": [
+            "--description", "No public benchmark compares skill discovery latency across hosts",
+            "--entity", "All hosts",
+            "--field", "performance",
+            "--query-tried", "agent skills discovery latency benchmark",
+            "--reason", "NO_PUBLIC_SOURCE"
+          ],
+          "note": "Record a gap with reason NO_PUBLIC_SOURCE"
+        },
+        {
+          "label": "research-resolve",
+          "command": "research-resolve",
+          "argv": [
+            "--entity", "Cursor",
+            "--field", "command surface",
+            "--winner-claim", "C3",
+            "--reason", "Primary Cursor docs describe .cursor/rules and generated commands."
+          ],
+          "note": "Resolve an entity/field to claim C3"
+        },
+        {
+          "label": "fetch-url",
+          "command": "fetch-url",
+          "argv": ["--url", "https://agentskills.io/specification", "--allow-network"],
+          "note": "Fetch and cache an https source (explicit opt-in)"
+        },
+        {
+          "label": "research-init",
+          "command": "research-init",
+          "argv": [
+            "--topic", "Cross-host portability of agent skill suites",
+            "--sub-question", "How should one SKILL.md serve every host?",
+            "--entity", "Claude Code",
+            "--entity", "Codex",
+            "--field", "skills directory",
+            "--max-queries", "8"
+          ],
+          "note": "Start a fresh research ledger (wipes sources, claims, gaps)",
+          "resets": true
+        }
+      ]
+    },
+    {
+      "title": "Spec",
+      "scenarios": [
+        {
+          "label": "spec-check",
+          "command": "spec-check",
+          "argv": [],
+          "note": "Spec health: criteria coverage and task links"
+        },
+        {
+          "label": "spec-criterion",
+          "command": "spec-criterion",
+          "argv": [
+            "--story-id", "US1",
+            "--given", "a seeded demo workspace",
+            "--when", "wide-table runs with no arguments",
+            "--then", "an entity by field matrix renders without errors"
+          ],
+          "note": "Add a Given/When/Then criterion to story US1"
+        },
+        {
+          "label": "spec-task",
+          "command": "spec-task",
+          "argv": [
+            "--task", "Add a scenario test for wide-table rendering",
+            "--verifies", "AC1"
+          ],
+          "note": "Add a task that verifies criterion AC1"
+        },
+        {
+          "label": "spec-new",
+          "command": "spec-new",
+          "argv": [
+            "--goal", "Restart the spec from scratch via the console example scenarios",
+            "--story", "As a developer I want example scenarios so I can explore commands fast",
+            "--non-goal", "Covering every argument combination",
+            "--force"
+          ],
+          "note": "Restart the spec ledger (wipes stories, criteria, tasks)",
+          "resets": true
+        }
+      ]
+    },
+    {
+      "title": "Review & evidence",
+      "scenarios": [
+        {
+          "label": "review-report",
+          "command": "review-report",
+          "argv": [],
+          "note": "Mechanical verdict: FAIL while any BLOCKING finding is open (seed has MAJOR/MINOR → PASS_WITH_FINDINGS)"
+        },
+        {
+          "label": "audit-report",
+          "command": "audit-report",
+          "argv": [],
+          "note": "Evidence-ledger integrity audit (claims vs quotes vs sources)"
+        },
+        {
+          "label": "verify-delivery",
+          "command": "verify-delivery",
+          "argv": ["--artifact", "artifacts/demo-report.md"],
+          "note": "Delivery gate: artifact present (L1) and spec tasks verified"
+        },
+        {
+          "label": "review-finding",
+          "command": "review-finding",
+          "argv": [
+            "--file", "demo-project/src/app.py",
+            "--line", "50",
+            "--severity", "MINOR",
+            "--category", "correctness",
+            "--description", "Module uses sys.argv in __main__ without importing sys",
+            "--suggestion", "Add import sys at the top of the module"
+          ],
+          "note": "Append a MINOR finding on the demo project"
+        },
+        {
+          "label": "review-init",
+          "command": "review-init",
+          "argv": [
+            "--title", "Second pass review",
+            "--target", "demo-project/src",
+            "--focus", "maintainability",
+            "--force"
+          ],
+          "note": "Restart the review ledger (wipes findings)",
+          "resets": true
+        }
+      ]
+    },
+    {
+      "title": "Knowledge",
+      "scenarios": [
+        {
+          "label": "kb-search",
+          "command": "kb-search",
+          "argv": ["--query", "skills"],
+          "note": "Deterministic offline keyword search"
+        },
+        {
+          "label": "kb-add",
+          "command": "kb-add",
+          "argv": [
+            "--question", "Which six hosts does install.py support?",
+            "--answer", "claude, codex, zcode, cursor, opencode and a generic AGENTS.md mode.",
+            "--tag", "install",
+            "--assumed"
+          ],
+          "note": "Capture a Q&A entry as an explicit assumption"
+        },
+        {
+          "label": "kb-export",
+          "command": "kb-export",
+          "argv": [],
+          "note": "Export the KB to KNOWLEDGE_BASE.md"
+        }
+      ]
+    },
+    {
+      "title": "Advice & decisions",
+      "scenarios": [
+        {
+          "label": "advise-intake",
+          "command": "advise-intake",
+          "argv": [
+            "--question", "Should v3.1 add a security-audit skill for offline prompt-injection scanning?",
+            "--context", "Planning the next release of the suite",
+            "--constraint", "Keep every check offline and deterministic",
+            "--non-goal", "Network scanning or external services",
+            "--mode", "planning"
+          ],
+          "note": "Structured intake before advising (overwrites previous intake)"
+        },
+        {
+          "label": "decision-score",
+          "command": "decision-score",
+          "argv": ["--spec-file", "decision-matrix.json"],
+          "note": "Weighted scoring of the seeded decision matrix"
+        },
+        {
+          "label": "wide-table",
+          "command": "wide-table",
+          "argv": [],
+          "note": "Entity x field evidence matrix from the ledger"
+        },
+        {
+          "label": "adr-new",
+          "command": "adr-new",
+          "argv": [
+            "--title", "Adopt grouped example scenarios in the console",
+            "--dir", "docs/adr",
+            "--owner", "console-team"
+          ],
+          "note": "Write a new numbered ADR to docs/adr/"
+        },
+        {
+          "label": "adr-check",
+          "command": "adr-check",
+          "argv": [
+            "--file", "docs/adr/0001-use-a-single-shared-demo-workspace-for-the-test-console.md"
+          ],
+          "note": "Hygiene check: catches unfilled placeholders in the seeded ADR",
+          "expectFail": true
+        }
+      ]
+    },
+    {
+      "title": "Debug",
+      "scenarios": [
+        {
+          "label": "debug-report",
+          "command": "debug-report",
+          "argv": [],
+          "note": "Hypothesis ledger and circuit-breaker state"
+        },
+        {
+          "label": "debug-hypothesis",
+          "command": "debug-hypothesis",
+          "argv": [
+            "--symptom", "kb-search returns no hits for a freshly added entry",
+            "--statement", "The search index is cached and not refreshed after kb-add",
+            "--prediction", "The new entry is found on the next kb-search run",
+            "--test-command", "python3 workbench.py kb-search --query freshly",
+            "--status", "PENDING",
+            "--target-file", "demo-project/src/app.py"
+          ],
+          "note": "Add a falsifiable hypothesis with a prediction"
+        }
+      ]
+    },
+    {
+      "title": "Artifacts",
+      "scenarios": [
+        {
+          "label": "artifact-list",
+          "command": "artifact-list",
+          "argv": [],
+          "note": "List artifact-studio templates"
+        },
+        {
+          "label": "artifact-new",
+          "command": "artifact-new",
+          "argv": [
+            "--type", "technical-report",
+            "--title", "Scenario coverage report",
+            "--output", "artifacts/scenario-coverage.md",
+            "--force"
+          ],
+          "note": "Scaffold a technical report artifact"
+        }
+      ]
+    },
+    {
+      "title": "Handoff",
+      "scenarios": [
+        {
+          "label": "handoff-check",
+          "command": "handoff-check",
+          "argv": [],
+          "note": "Validate the seeded handoff pack (freshness, sections)"
+        },
+        {
+          "label": "handoff-pack",
+          "command": "handoff-pack",
+          "argv": [
+            "--title", "Scenario walkthrough session",
+            "--session-status", "PARTIAL",
+            "--summary", "Explored the example scenarios across every command group",
+            "--completed", "Ran research, spec, review and knowledge scenarios",
+            "--next-step", "Try the amber reset scenarios, then re-seed the workspace"
+          ],
+          "note": "Write a PARTIAL session handoff pack"
+        }
+      ]
+    },
+    {
+      "title": "Scope",
+      "scenarios": [
+        {
+          "label": "scope-read",
+          "command": "scope-read",
+          "argv": [
+            "--project-root", "demo-project",
+            "--file", "src/app.py"
+          ],
+          "note": "Numbered, checksummed read of a demo file"
+        },
+        {
+          "label": "scope-scan",
+          "command": "scope-scan",
+          "argv": [
+            "--project-root", "demo-project",
+            "--pattern", "TODO|FIXME|BUG",
+            "--ignore-case"
+          ],
+          "note": "Scan the demo project for TODO/FIXME/BUG markers"
+        }
+      ]
+    }
+  ]
+}

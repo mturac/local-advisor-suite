@@ -43,6 +43,7 @@ export interface SkillInfo {
   description: string
   fileCount: number
   subdirs: string[]
+  examples: { name: string; content: string }[]
   content: string
 }
 
@@ -184,6 +185,7 @@ export async function listSkills(): Promise<SkillInfo[]> {
           ?.replace(/\s+/g, " ")
           .trim() || ""
       const subdirs: string[] = []
+      const examples: { name: string; content: string }[] = []
       let fileCount = 0
       const walk = async (dir: string, depth: number) => {
         const items = await fs.readdir(dir, { withFileTypes: true })
@@ -191,6 +193,21 @@ export async function listSkills(): Promise<SkillInfo[]> {
           const full = path.join(dir, item.name)
           if (item.isDirectory()) {
             if (depth === 0) subdirs.push(item.name)
+            if (depth === 0 && item.name === "examples") {
+              try {
+                const exFiles = await fs.readdir(full, { withFileTypes: true })
+                for (const ex of exFiles
+                  .filter((f) => f.isFile() && f.name.endsWith(".md"))
+                  .sort((a, b) => a.name.localeCompare(b.name))) {
+                  examples.push({
+                    name: ex.name.replace(/\.md$/, ""),
+                    content: await fs.readFile(path.join(full, ex.name), "utf-8"),
+                  })
+                }
+              } catch {
+                // unreadable examples dir — skip
+              }
+            }
             await walk(full, depth + 1)
           } else {
             fileCount++
@@ -198,7 +215,7 @@ export async function listSkills(): Promise<SkillInfo[]> {
         }
       }
       await walk(skillDir, 0)
-      skills.push({ slug: entry.name, name, description, fileCount, subdirs, content })
+      skills.push({ slug: entry.name, name, description, fileCount, subdirs, examples, content })
     } catch {
       // SKILL.md missing — skip
     }

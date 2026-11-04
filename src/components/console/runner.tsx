@@ -7,7 +7,9 @@ import {
   Plus,
   RotateCcw,
   Search,
+  Sparkles,
   Terminal,
+  TriangleAlert,
   X,
   Zap,
 } from "lucide-react"
@@ -33,21 +35,11 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import type { ArgSpec, Catalog, CommandSpec, RunResponse } from "@/lib/console-types"
+import { SCENARIO_COUNT, SCENARIO_GROUPS, type Scenario } from "@/lib/scenarios"
 import { ExitBadge, StatusBadge } from "./status-badge"
 import { JsonViewer } from "./json-viewer"
 
 type FormValues = Record<string, string | boolean | string[]>
-
-const PRESETS: { label: string; command: string; argv: string[] }[] = [
-  { label: "doctor", command: "doctor", argv: [] },
-  { label: "research-status", command: "research-status", argv: [] },
-  { label: "research-gaps", command: "research-gaps", argv: [] },
-  { label: "spec-check", command: "spec-check", argv: [] },
-  { label: "review-report", command: "review-report", argv: [] },
-  { label: "kb-search", command: "kb-search", argv: ["--query", "skills"] },
-  { label: "wide-table", command: "wide-table", argv: [] },
-  { label: "selfcheck", command: "selfcheck", argv: ["--path", "../suite"] },
-]
 
 function defaultValues(spec: CommandSpec): FormValues {
   const values: FormValues = {}
@@ -172,20 +164,35 @@ export function Runner({
     }
   }
 
-  function applyPreset(preset: (typeof PRESETS)[number]) {
-    const next = catalog?.commands.find((c) => c.name === preset.command)
+  /** Populate the form from a scenario the way argparse would parse its argv,
+   *  so switches (--force) and repeated flags (--entity x --entity y) land in
+   *  the right fields, then run it. */
+  function applyScenario(scenario: Scenario) {
+    const next = catalog?.commands.find((c) => c.name === scenario.command)
     if (!next) return
     const presetValues = defaultValues(next)
-    for (let i = 0; i < preset.argv.length; i += 2) {
-      const flag = preset.argv[i]
-      const value = preset.argv[i + 1]
+    let i = 0
+    while (i < scenario.argv.length) {
+      const flag = scenario.argv[i]
       const arg = next.args.find((a) => a.flags.includes(flag))
-      if (!arg || value === undefined) continue
-      if (arg.kind === "multi") presetValues[arg.dest] = [value]
-      else presetValues[arg.dest] = value
+      if (arg?.kind === "switch") {
+        presetValues[arg.dest] = true
+        i += 1
+      } else {
+        const value = scenario.argv[i + 1] ?? ""
+        if (arg) {
+          if (arg.kind === "multi") {
+            const list = (presetValues[arg.dest] as string[]) || []
+            presetValues[arg.dest] = [...list, value]
+          } else {
+            presetValues[arg.dest] = value
+          }
+        }
+        i += 2
+      }
     }
-    select(preset.command, presetValues)
-    void run(preset.command, preset.argv)
+    select(scenario.command, presetValues)
+    void run(scenario.command, scenario.argv)
   }
 
   return (
@@ -256,24 +263,63 @@ export function Runner({
       {/* Command form + output */}
       <div className="space-y-4 min-w-0">
         <Card>
-          <CardHeader className="pb-4">
+          <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2 flex-wrap">
               <Zap className="size-4 text-emerald-500" />
-              Quick scenarios
+              Example scenarios
+              <Badge
+                variant="outline"
+                className="font-mono text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+              >
+                all {SCENARIO_COUNT} commands
+              </Badge>
             </CardTitle>
-            <div className="flex flex-wrap gap-1.5">
-              {PRESETS.map((p) => (
-                <button
-                  key={p.label}
-                  onClick={() => applyPreset(p)}
-                  disabled={running}
-                  className="font-mono text-xs rounded-full border border-border bg-muted/50 px-3 py-1 hover:border-emerald-500/50 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors disabled:opacity-50"
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
+            <CardDescription className="text-xs">
+              One click fills the form with working arguments and runs the command
+              against the seeded demo workspace.
+            </CardDescription>
           </CardHeader>
+          <CardContent>
+            <ScrollArea className="max-h-[360px] pr-2">
+              <div className="space-y-2.5">
+                {SCENARIO_GROUPS.map((group) => (
+                  <div
+                    key={group.title}
+                    className="grid grid-cols-1 sm:grid-cols-[118px_1fr] gap-x-3 gap-y-1"
+                  >
+                    <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground pt-1.5 truncate">
+                      {group.title}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {group.scenarios.map((s) => (
+                        <button
+                          key={s.command}
+                          onClick={() => applyScenario(s)}
+                          disabled={running}
+                          title={`${s.note}\nworkbench ${s.command}${s.argv.length ? ` ${s.argv.join(" ")}` : ""}${s.resets ? "\n⚠ resets this ledger" : ""}`}
+                          className={cn(
+                            "inline-flex items-center gap-1 font-mono text-xs rounded-full border px-2.5 py-1 transition-colors disabled:opacity-50",
+                            s.resets
+                              ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:border-amber-500/70"
+                              : "border-border bg-muted/50 hover:border-emerald-500/50 hover:text-emerald-600 dark:hover:text-emerald-400"
+                          )}
+                        >
+                          {s.resets && <TriangleAlert className="size-3 shrink-0" />}
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+            <p className="mt-3 text-[11px] text-muted-foreground flex items-center gap-1.5">
+              <Sparkles className="size-3 shrink-0 text-emerald-500" />
+              Amber scenarios wipe their ledger before writing — restore the demo
+              data anytime with <span className="font-medium text-foreground">Reset workspace</span> in
+              the Workspace tab.
+            </p>
+          </CardContent>
         </Card>
 
         {spec ? (
@@ -346,7 +392,7 @@ export function Runner({
             <CardContent className="py-16 text-center text-muted-foreground">
               <Terminal className="size-10 mx-auto mb-3 opacity-40" />
               <p className="text-sm">
-                Pick a command from the left, or fire a quick scenario above.
+                Pick a command from the left, or fire an example scenario above.
               </p>
             </CardContent>
           </Card>

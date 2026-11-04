@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { BookOpen, FileText, Folder, Loader2, RefreshCw } from "lucide-react"
+import { BookOpen, FileText, Folder, Loader2, RefreshCw, ScrollText } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { SkillInfo } from "@/lib/console-types"
 import { Markdown } from "./markdown"
 
@@ -93,19 +94,24 @@ export function SkillsBrowser() {
                   {skill.description || "—"}
                 </p>
               </div>
-              {skill.subdirs.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {skill.subdirs.map((dir) => (
-                    <span
-                      key={dir}
-                      className="inline-flex items-center gap-1 text-[10px] font-mono text-muted-foreground border border-border rounded-full px-2 py-0.5"
-                    >
-                      <Folder className="size-2.5" />
-                      {dir}
-                    </span>
-                  ))}
-                </div>
-              )}
+              <div className="flex flex-wrap items-center gap-1">
+                {skill.subdirs.map((dir) => (
+                  <span
+                    key={dir}
+                    className="inline-flex items-center gap-1 text-[10px] font-mono text-muted-foreground border border-border rounded-full px-2 py-0.5"
+                  >
+                    <Folder className="size-2.5" />
+                    {dir}
+                  </span>
+                ))}
+                {skill.examples?.length > 0 && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 rounded-full px-2 py-0.5">
+                    <ScrollText className="size-2.5" />
+                    {skill.examples.length} example
+                    {skill.examples.length === 1 ? "" : "s"}
+                  </span>
+                )}
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -120,9 +126,38 @@ export function SkillsBrowser() {
             </DialogDescription>
           </DialogHeader>
           {active && (
-            <Markdown className="pt-2">
-              {active.content.replace(/^---\n[\s\S]*?\n---\n?/, "")}
-            </Markdown>
+            <Tabs defaultValue="overview" className="mt-2">
+              <TabsList className="h-9 w-full justify-start overflow-x-auto">
+                <TabsTrigger value="overview" className="text-xs gap-1.5">
+                  <BookOpen className="size-3.5" />
+                  SKILL.md
+                </TabsTrigger>
+                {active.examples.map((ex) => (
+                  <TabsTrigger
+                    key={ex.name}
+                    value={`example:${ex.name}`}
+                    className="text-xs gap-1.5"
+                  >
+                    <ScrollText className="size-3.5" />
+                    {ex.name}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              <TabsContent value="overview" className="mt-3">
+                <Markdown>
+                  {active.content.replace(/^---\n[\s\S]*?\n---\n?/, "")}
+                </Markdown>
+              </TabsContent>
+              {active.examples.map((ex) => (
+                <TabsContent
+                  key={ex.name}
+                  value={`example:${ex.name}`}
+                  className="mt-3"
+                >
+                  <Markdown>{ex.content}</Markdown>
+                </TabsContent>
+              ))}
+            </Tabs>
           )}
         </DialogContent>
       </Dialog>
