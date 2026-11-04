@@ -49,6 +49,10 @@ CATEGORIES = {
     "kb-add": "Knowledge",
     "kb-search": "Knowledge",
     "kb-export": "Knowledge",
+    "data-register": "Data",
+    "data-finding": "Data",
+    "data-gap": "Data",
+    "data-report": "Data",
 }
 
 

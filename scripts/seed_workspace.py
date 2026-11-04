@@ -286,6 +286,26 @@ def seed():
         "--answer", "install.py generates .cursor/commands/*.md files plus rules so slash commands map to workbench invocations.",
         "--source-id", sid2, "--tag", "cursor"))
 
+    # ---- data analysis ---------------------------------------------------
+    step("data-register", lambda: wb(
+        "data-register",
+        "--path", "demo-project/README.md",
+        "--question", "How many lines and words does the demo README have?"))
+    step("data-finding #1", lambda: wb(
+        "data-finding",
+        "--statement", "The demo README has 8 lines",
+        "--method", "wc -l demo-project/README.md",
+        "--result", "8 lines"))
+    step("data-finding #2", lambda: wb(
+        "data-finding",
+        "--statement", "The demo README has 52 words",
+        "--method", "wc -w demo-project/README.md",
+        "--result", "52 words"))
+    step("data-gap", lambda: wb(
+        "data-gap",
+        "--description", "A per-section word split is not computable from the README",
+        "--reason", "AMBIGUOUS_DEFINITION: section boundaries are not machine-marked"))
+
     # ---- advisory, decision, debug, adr, artifact, handoff ---------------
     step("advise-intake", lambda: wb(
         "advise-intake",

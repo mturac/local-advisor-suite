@@ -10,11 +10,13 @@ deliverable files really exist on disk afterwards.
 Usage: python3 scripts/test_walkthroughs.py
 """
 import json
+import re
 import shutil
 import subprocess
 import sys
 import time
 from pathlib import Path
+from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parent.parent
 TEST_ROOT = ROOT / ".ws-wt-root"
@@ -37,6 +39,23 @@ def pick_path(obj, path):
         else:
             return None
     return cur
+
+
+TEMPLATE_RE = re.compile(r"\{\{([A-Za-z0-9_]+)\.([A-Za-z0-9_.]+)\}\}")
+
+
+def resolve_templates(argv, results_by_id):
+    """Interpolate {{stepId.field}} against earlier step results, console-style."""
+    out = []
+    for a in argv:
+        def sub(m):
+            src = results_by_id.get(m.group(1)) or {}
+            val = pick_path(src, m.group(2))
+            if val is None:
+                raise KeyError(f"template {m.group(0)} does not resolve")
+            return str(val)
+        out.append(TEMPLATE_RE.sub(sub, a))
+    return out
 
 
 def main() -> int:
@@ -65,13 +84,43 @@ def main() -> int:
     total_steps = 0
     failures = []
     deliverables = []
+    results_by_id = {}
 
     for flow in flows:
         print(f"\n=== Flow: {flow['title']} ({len(flow['steps'])} steps) ===")
         for i, step in enumerate(flow["steps"], 1):
+            if step.get("kind") == "firecrawl" and step.get("action") == "scrape":
+                # The console scrapes the live page; later steps register it via
+                # research-add-source using {{stepId.url}} / {{stepId.title}} /
+                # {{stepId.excerpt}}. Offline we synthesize that result from the
+                # step's own params: the verbatim quote becomes the excerpt, so
+                # the real add-source and add-claim steps still verify.
+                params = step.get("params", {})
+                url = params.get("url", "")
+                quote = params.get("quote", "")
+                host = urlparse(url).netloc.replace("www.", "") or "source"
+                slug = [p for p in urlparse(url).path.split("/") if p]
+                title = f"{host} - {slug[-1]}" if slug else host
+                results_by_id[step["id"]] = {
+                    "url": url, "title": title, "excerpt": quote, "quoteFound": True,
+                }
+                print(f"  [SKIP] {i:2d}. {step['title']:<38} (scrape synthesized offline)")
+                continue
+            if "command" not in step:
+                # Narrative explain steps and live firecrawl search steps have no
+                # workbench command; only the console renders them.
+                kind = step.get("kind", "non-command")
+                print(f"  [SKIP] {i:2d}. {step['title']:<38} ({kind})")
+                continue
             total_steps += 1
+            try:
+                step_argv = resolve_templates(step["argv"], results_by_id)
+            except KeyError as exc:
+                failures.append(f"{flow['id']} step {i} ({step['command']}): {exc}")
+                print(f"  [FAIL] {i:2d}. {step['title']:<38} ({exc})")
+                continue
             argv = [sys.executable, str(workbench), "--state-dir", str(state),
-                    step["command"], *step["argv"]]
+                    step["command"], *step_argv]
             t1 = time.time()
             proc = subprocess.run(argv, cwd=str(ws), capture_output=True,
                                   text=True, timeout=120)
@@ -86,8 +135,12 @@ def main() -> int:
                 except json.JSONDecodeError:
                     status = "PARSE_ERROR"
 
-            expect_status = step.get("expectStatus")
-            ok_exit = proc.returncode == 0
+            if result is not None and step.get("id"):
+                results_by_id[step["id"]] = result
+            expect_status = step.get("expectStatus") or step.get("expect_status")
+            expect_exit = step.get("expectExit", step.get("expect_exit"))
+            ok_exit = (proc.returncode == expect_exit) if expect_exit is not None \
+                else proc.returncode == 0
             ok_status = expect_status is None or status == expect_status
             picked = pick_path(result, step["pick"]) if (result and step.get("pick")) else None
             ok_pick = not step.get("pick") or picked is not None

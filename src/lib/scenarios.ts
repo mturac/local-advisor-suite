@@ -85,6 +85,16 @@ export const SCENARIO_GROUPS: ScenarioGroup[] = [
     ],
   },
   {
+    title: "Data analysis",
+    titleTr: "Veri analizi",
+    scenarios: [
+      { label: "data-register", command: "data-register", argv: ["--path", "demo-project/README.md", "--question", "How many lines and words does the demo README have?"], note: "Pin the dataset first: path, size and SHA-256 go on the record", noteTr: "Önce veri setini sabitle: yol, boyut ve SHA-256 kayda geçer" },
+      { label: "data-finding", command: "data-finding", argv: ["--statement", "The README mentions 7 names in backticks", "--method", "grep -o '`[^`]*`' demo-project/README.md | wc -l", "--result", "7 names"], note: "Log a number together with the exact command that produced it", noteTr: "Sayıyı üreten tam komutla birlikte kayda geçir" },
+      { label: "data-gap", command: "data-gap", argv: ["--description", "A per-author word split is not computable from the README", "--reason", "NO_DATA: the file has no author column"], note: "Declare what the file cannot answer instead of guessing", noteTr: "Dosyanın cevaplayamadığını tahmin etmek yerine beyan et" },
+      { label: "data-report", command: "data-report", argv: ["--answer", "The demo README has 8 lines and 52 words; a per-section split is not computable."], note: "Render ANALYSIS.md; numbers in the answer are linted against the findings", noteTr: "ANALYSIS.md üretir; cevaptaki sayılar bulgularla karşılanmak zorunda" },
+    ],
+  },
+  {
     title: "Advice & decisions",
     titleTr: "Tavsiye ve kararlar",
     scenarios: [
@@ -129,4 +139,4 @@ export const SCENARIO_GROUPS: ScenarioGroup[] = [
   },
 ]
 
-export const SCENARIO_COUNT = 39
+export const SCENARIO_COUNT = 43
