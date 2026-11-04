@@ -50,15 +50,25 @@ See `suite/README.md` for the full suite documentation, and `suite/CHANGELOG.md`
 
 | Tab | What you can do |
 | --- | --- |
-| **Runner** | Search all 38 commands by category, fill auto-generated argument forms (repeatable flags, switches, choice dropdowns), add raw extra args, run and inspect JSON output with status/exit/duration |
+| **Walkthroughs** | Guided end-to-end stories — pick a flow (research, ship, debug, decide), hit *Run all steps* and watch the whole task complete against the real CLI, with each step explained, its command shown and its result summarized. Ends with a real artifact (evidence pack, handoff, root-cause report, ADR) |
+| **Runner** | Sandbox for single commands: search all 38 commands by category, fill auto-generated argument forms (repeatable flags, switches, choice dropdowns), add raw extra args, run and inspect JSON output — plus one-click examples with pre-filled arguments for every command |
 | **Skills** | Browse the 13 bundled skills, read each `SKILL.md` rendered as markdown, and open the bundled `examples/*.md` walkthroughs in per-skill tabs |
 | **Doctor** | One-click `doctor` (host detection, per-check health table) and `selfcheck` (vendor-neutrality scan over the whole suite) |
 | **Workspace** | Inspect the seeded ledgers (research, spec, review, kb, debug, advisory), generated artifacts, and reset everything |
 | **History** | Every run persisted in SQLite — expand any row to replay its JSON output |
 
-**Example scenarios** cover all 38 commands — one click fills the form with working arguments and runs the command against the seeded workspace. They are grouped (Suite health, Research, Spec, Review & evidence, Knowledge, Advice & decisions, Debug, Artifacts, Handoff, Scope); amber chips (e.g. `research-init`, `spec-new`, `review-init`) wipe their ledger first, and the demo data can be restored anytime with *Reset workspace*.
+Four walkthrough flows ship today, each a complete story on the seeded demo workspace:
 
-Every scenario argv is validated end-to-end by `scripts/test_scenarios.py` (fresh seeded workspace, expected statuses and exit codes), and the UI chips are generated from the same `scripts/scenarios.json` via `scripts/gen_scenarios_ts.py` — UI and tests can never drift apart.
+| Flow | Steps | Ends with |
+| --- | --- | --- |
+| **Answer a question with evidence** | 13 | cited `evidence pack` + passing integrity audit |
+| **Ship a change safely** | 10 | L2-verified delivery, reviewed verdict, session handoff |
+| **Chase a bug to its root cause** | 7 | root-cause report for a real bug in the bundled demo project |
+| **Make a call you won't regret** | 3 | numbered, table-filled ADR |
+
+Every step sequence is validated end to end by `scripts/test_walkthroughs.py` (fresh seeded workspace, expected exit codes and statuses, deliverable files checked on disk — 33/33 passing), and the UI data is generated from the same `scripts/walkthroughs.json` via `scripts/gen_walkthroughs_ts.py`.
+
+For single commands, the Runner's **one-command examples** cover all 38 commands with pre-filled working arguments; amber chips (e.g. `research-init`, `spec-new`, `review-init`) wipe their ledger first, and the demo data can be restored anytime with *Reset workspace*.
 
 ## Repository layout
 
@@ -75,11 +85,14 @@ Every scenario argv is validated end-to-end by `scripts/test_scenarios.py` (fres
 │   ├── components/console/   # Runner, SkillsBrowser, DoctorPanel, WorkspacePanel, HistoryPanel
 │   └── lib/suite.ts          # spawn/isolation layer between web and CLI
 ├── scripts/
-│   ├── introspect_catalog.py # argparse → JSON command catalog
-│   ├── seed_workspace.py     # demo workspace seeder (also used by "Reset")
-│   ├── scenarios.json        # single source of truth for the 38 example scenarios
-│   ├── test_scenarios.py     # validates every scenario against a fresh seed
-│   └── gen_scenarios_ts.py   # scenarios.json → src/lib/scenarios.ts
+│   ├── introspect_catalog.py  # argparse → JSON command catalog
+│   ├── seed_workspace.py      # demo workspace seeder (also used by "Reset")
+│   ├── walkthroughs.json      # guided end-to-end flows (single source of truth)
+│   ├── test_walkthroughs.py   # validates every flow against a fresh seed
+│   ├── gen_walkthroughs_ts.py # walkthroughs.json → src/lib/walkthroughs.ts
+│   ├── scenarios.json         # one-command examples for all 38 commands
+│   ├── test_scenarios.py      # validates every scenario against a fresh seed
+│   └── gen_scenarios_ts.py    # scenarios.json → src/lib/scenarios.ts
 ├── prisma/schema.prisma      # RunLog model (run history)
 └── .env.example
 ```

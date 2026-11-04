@@ -1,0 +1,463 @@
+{
+  "flows": [
+    {
+      "id": "research",
+      "icon": "flask",
+      "title": "Answer a question with evidence",
+      "subtitle": "From a bare question to a cited evidence pack: log searches, register sources, file claims, catch a contradiction, resolve it, and audit the result.",
+      "outcome": "evidence pack + passing integrity audit",
+      "steps": [
+        {
+          "title": "Open the research ledger",
+          "explain": "Every research session starts by declaring the topic, the sub-question, the entities being compared and the fields we care about. This also resets any previous research ledger, so the run is reproducible.",
+          "command": "research-init",
+          "argv": [
+            "--topic", "Which local database engine handles concurrent analytics better: DuckDB or SQLite?",
+            "--sub-question", "How does each engine handle concurrent readers and writers?",
+            "--entity", "DuckDB",
+            "--entity", "SQLite",
+            "--field", "concurrency model",
+            "--max-queries", "8"
+          ],
+          "pick": "topic",
+          "pickLabel": "Topic"
+        },
+        {
+          "title": "Log the first search",
+          "explain": "Queries are logged against a budget before they are run, so the session cannot silently turn into endless scrolling. Each distinct query counts once.",
+          "command": "research-log-query",
+          "argv": [
+            "--query", "duckdb sqlite concurrent readers writers",
+            "--tool-used", "console walkthrough"
+          ],
+          "pick": "queries_remaining",
+          "pickLabel": "Queries left"
+        },
+        {
+          "title": "Register a primary source (DuckDB docs)",
+          "explain": "A claim is only as good as its source, so sources are registered first with a verbatim excerpt. Later claims must quote this excerpt word for word to count as verified.",
+          "command": "research-add-source",
+          "argv": [
+            "--url", "https://duckdb.org/docs/sql/constraints",
+            "--title", "DuckDB SQL constraints and transaction semantics",
+            "--publisher", "DuckDB",
+            "--tier", "PRIMARY",
+            "--excerpt", "DuckDB serializes writes per table but allows concurrent readers during transactions."
+          ],
+          "pick": "source_id",
+          "pickLabel": "Source"
+        },
+        {
+          "title": "Register a second primary source (SQLite WAL)",
+          "explain": "The second side of the comparison gets its own primary source. Two independent primaries make the eventual matrix credible.",
+          "command": "research-add-source",
+          "argv": [
+            "--url", "https://www.sqlite.org/wal.html",
+            "--title", "SQLite Write-Ahead Logging",
+            "--publisher", "SQLite",
+            "--tier", "PRIMARY",
+            "--excerpt", "WAL mode allows readers and one writer to proceed concurrently without blocking."
+          ],
+          "pick": "source_id",
+          "pickLabel": "Source"
+        },
+        {
+          "title": "File the first claim (verified)",
+          "explain": "A claim states one fact for one entity and field, backed by an exact quote. Because the quote appears verbatim in the stored excerpt, this claim lands as VERIFIED with HIGH confidence.",
+          "command": "research-add-claim",
+          "argv": [
+            "--claim-id", "C1",
+            "--statement", "DuckDB serializes writes per table while allowing concurrent readers",
+            "--source-id", "S1",
+            "--quote", "DuckDB serializes writes per table but allows concurrent readers during transactions.",
+            "--entity", "DuckDB",
+            "--field", "concurrency model",
+            "--value", "serialized writes + concurrent readers",
+            "--confidence", "HIGH"
+          ],
+          "pick": "claim_id",
+          "pickLabel": "Claim"
+        },
+        {
+          "title": "File the second claim (verified)",
+          "explain": "Same discipline for SQLite. Note the quote again matches the excerpt exactly — that is what keeps the confidence HIGH.",
+          "command": "research-add-claim",
+          "argv": [
+            "--claim-id", "C2",
+            "--statement", "SQLite in WAL mode allows one writer and many concurrent readers",
+            "--source-id", "S2",
+            "--quote", "WAL mode allows readers and one writer to proceed concurrently without blocking.",
+            "--entity", "SQLite",
+            "--field", "concurrency model",
+            "--value", "WAL: one writer + N readers",
+            "--confidence", "HIGH"
+          ],
+          "pick": "claim_id",
+          "pickLabel": "Claim"
+        },
+        {
+          "title": "File a contradictory claim",
+          "explain": "A blog post disagrees with the official DuckDB docs. It gets recorded too — but with LOW confidence and an unverified quote, because honesty about weak evidence is the point.",
+          "command": "research-add-claim",
+          "argv": [
+            "--claim-id", "C3",
+            "--statement", "A secondary blog claims DuckDB supports fully concurrent multi-writer transactions",
+            "--source-id", "S1",
+            "--quote", "DuckDB supports multiple concurrent writers without table locks",
+            "--entity", "DuckDB",
+            "--field", "concurrency model",
+            "--value", "multi-writer, no locks",
+            "--confidence", "LOW",
+            "--allow-unverified-quote"
+          ],
+          "pick": "claim_id",
+          "pickLabel": "Claim"
+        },
+        {
+          "title": "Resolve the contradiction",
+          "explain": "Two claims now disagree about DuckDB. research-resolve declares the winner with a reason and marks the loser superseded, so no report can quietly cite the dead claim later.",
+          "command": "research-resolve",
+          "argv": [
+            "--entity", "DuckDB",
+            "--field", "concurrency model",
+            "--winner-claim", "C1",
+            "--reason", "Primary DuckDB documentation overrides the secondary blog claim for the current release"
+          ],
+          "pick": "winner_claim",
+          "pickLabel": "Winner"
+        },
+        {
+          "title": "Record what could not be found",
+          "explain": "Nobody published crash-recovery benchmarks for these two engines. A gap records exactly that, with the query that was tried and why it failed — so 'unknown' is a documented fact, not a shrug.",
+          "command": "research-add-gap",
+          "argv": [
+            "--description", "No public source compares crash recovery times between DuckDB and SQLite",
+            "--entity", "DuckDB",
+            "--field", "durability",
+            "--query-tried", "duckdb sqlite crash recovery benchmark",
+            "--reason", "NO_PUBLIC_SOURCE"
+          ],
+          "pick": "gap_id",
+          "pickLabel": "Gap"
+        },
+        {
+          "title": "Score the sources",
+          "explain": "Before trusting the ledger, each source gets a quality score based on tier, publisher and freshness. Low scorers would be flagged here.",
+          "command": "research-score",
+          "argv": [],
+          "pick": "sources.0.quality_score",
+          "pickLabel": "Top source score"
+        },
+        {
+          "title": "Render the comparison matrix",
+          "explain": "The wide-table command turns the ledger into an entity-by-field matrix. Every cell shows its evidence state, so empty or contested cells are visible at a glance.",
+          "command": "wide-table",
+          "argv": [
+            "--entity", "DuckDB",
+            "--entity", "SQLite",
+            "--field", "concurrency model"
+          ],
+          "pick": "counts.verified",
+          "pickLabel": "Verified cells"
+        },
+        {
+          "title": "Write the evidence pack",
+          "explain": "The session ends with a deliverable: a Markdown pack containing every usable claim with its citation and quote, every gap, and the resolution ruling — ready to hand to a writer or an agent.",
+          "command": "research-pack",
+          "argv": ["--output", "artifacts/duckdb-vs-sqlite-evidence.md"],
+          "pick": "evidence_pack",
+          "pickLabel": "Pack",
+          "deliverable": true
+        },
+        {
+          "title": "Audit the ledger",
+          "explain": "Finally the suite audits itself: dangling source references, high-confidence claims without verified quotes, and weak citations all fail here. A clean PASS is what makes the pack trustworthy.",
+          "command": "audit-report",
+          "argv": [],
+          "expectStatus": "PASS",
+          "pick": "blocking_count",
+          "pickLabel": "Blocking issues"
+        }
+      ]
+    },
+    {
+      "id": "ship",
+      "icon": "rocket",
+      "title": "Ship a change safely",
+      "subtitle": "Specify the goal, make it testable, build the deliverable, verify it mechanically, put it through review, and hand the session over — the spec-driven delivery loop end to end.",
+      "outcome": "verified delivery + reviewed + session handoff",
+      "steps": [
+        {
+          "title": "Write the spec",
+          "explain": "A change starts as a goal with user stories and explicit non-goals — not as code. The spec ledger is also the contract every later gate checks against.",
+          "command": "spec-new",
+          "argv": [
+            "--goal", "Ship a CSV export on the billing dashboard so finance can close the month without engineering help",
+            "--title", "Billing CSV export",
+            "--story", "As a finance user I want a CSV export so I can file invoices myself",
+            "--non-goal", "PDF rendering and scheduled emails",
+            "--force"
+          ],
+          "pick": "title",
+          "pickLabel": "Spec"
+        },
+        {
+          "title": "Make it testable",
+          "explain": "Each story gets acceptance criteria in Given / When / Then form. If a criterion cannot be written, the story is not ready to be built.",
+          "command": "spec-criterion",
+          "argv": [
+            "--story-id", "US1",
+            "--given", "the billing dashboard showing one month of invoices",
+            "--when", "the user clicks Export CSV",
+            "--then", "a file downloads containing every invoice row for that month"
+          ],
+          "pick": "criterion.id",
+          "pickLabel": "Criterion"
+        },
+        {
+          "title": "Add the implementing task",
+          "explain": "Tasks link back to the criterion they verify, so 'done' is a graph, not a feeling. Uncovered criteria get flagged by spec-check.",
+          "command": "spec-task",
+          "argv": [
+            "--task", "Wire the export button to the CSV endpoint and add a regression test",
+            "--verifies", "AC1"
+          ],
+          "pick": "task.id",
+          "pickLabel": "Task"
+        },
+        {
+          "title": "Build the deliverable",
+          "explain": "The work itself produces an artifact — here a delivery report instantiated from the artifact-studio template. An empty artifacts folder cannot pass verification.",
+          "command": "artifact-new",
+          "argv": [
+            "--type", "technical-report",
+            "--title", "Billing CSV export delivery report",
+            "--output", "artifacts/billing-export-report.md",
+            "--force"
+          ],
+          "pick": "artifact",
+          "pickLabel": "Artifact"
+        },
+        {
+          "title": "Check spec coverage",
+          "explain": "spec-check re-reads the ledger mechanically: every story has criteria, every criterion has a task, no dependency cycles, non-goals recorded.",
+          "command": "spec-check",
+          "argv": [],
+          "expectStatus": "PASS",
+          "pick": "coverage.tasks",
+          "pickLabel": "Tasks covering criteria"
+        },
+        {
+          "title": "Verify the delivery",
+          "explain": "verify-delivery demands observable evidence: the artifact must exist (L1) and a real shell check must pass (L2). Claiming a level you did not reach fails the gate.",
+          "command": "verify-delivery",
+          "argv": [
+            "--artifact", "artifacts/billing-export-report.md",
+            "--check", "L2:test -s artifacts/billing-export-report.md",
+            "--require", "L2"
+          ],
+          "expectStatus": "PASS",
+          "pick": "verification_level",
+          "pickLabel": "Level"
+        },
+        {
+          "title": "Open a review",
+          "explain": "Mechanical verification says the artifact exists — it says nothing about quality. A review declares its target and focus, then records findings against them.",
+          "command": "review-init",
+          "argv": [
+            "--title", "Billing CSV export PR #301",
+            "--target", "src/billing/export.ts",
+            "--focus", "correctness",
+            "--force"
+          ],
+          "pick": "target",
+          "pickLabel": "Target"
+        },
+        {
+          "title": "Record a real finding",
+          "explain": "Reviewers log findings with a file, a line and a severity — not vibes. A MAJOR is correct code that will bite soon; a BLOCKING would fail the verdict outright.",
+          "command": "review-finding",
+          "argv": [
+            "--file", "src/billing/export.ts",
+            "--line", "42",
+            "--severity", "MAJOR",
+            "--category", "correctness",
+            "--description", "CSV fields are joined without quoting, so commas in company names break every row",
+            "--suggestion", "Escape and quote fields per RFC 4180"
+          ],
+          "pick": "finding.id",
+          "pickLabel": "Finding"
+        },
+        {
+          "title": "Render the verdict",
+          "explain": "The verdict is computed, not negotiated: BLOCKING findings force FAIL, MAJOR or MINOR yield PASS_WITH_FINDINGS. The report also records what was not reviewed.",
+          "command": "review-report",
+          "argv": [],
+          "pick": "verdict",
+          "pickLabel": "Verdict"
+        },
+        {
+          "title": "Hand the session over",
+          "explain": "Done or not, the session ends with a handoff pack: what was completed, what the next person must do, and the open finding — so nothing lives only in someone's head.",
+          "command": "handoff-pack",
+          "argv": [
+            "--title", "Billing CSV export session",
+            "--session-status", "DONE",
+            "--summary", "Specified, built, verified and reviewed the billing CSV export end to end",
+            "--completed", "Spec: 1 story, 1 acceptance criterion, 1 covering task",
+            "--completed", "Delivery verified at L2 with a non-empty artifact",
+            "--next-step", "Fix the MAJOR CSV quoting finding before merging"
+          ],
+          "pick": "session_status",
+          "pickLabel": "Session status",
+          "deliverable": true
+        }
+      ]
+    },
+    {
+      "id": "debug",
+      "icon": "bug",
+      "title": "Chase a bug to its root cause",
+      "subtitle": "A real bug in the bundled demo project: record the case, read only the suspect file, falsify one hypothesis, confirm the next one, and write the report.",
+      "outcome": "root-cause report with the fix",
+      "steps": [
+        {
+          "title": "Record the case",
+          "explain": "Debugging starts with discipline, not guesses: the symptom, the suspect file and a repro command are written down before anything is touched.",
+          "command": "debug-hypothesis",
+          "argv": [
+            "--symptom", "Running the demo app with a non-numeric limit prints an empty list instead of an error",
+            "--target-file", "src/app.py",
+            "--repro", "python3 src/app.py abc"
+          ],
+          "pick": "symptom",
+          "pickLabel": "Symptom"
+        },
+        {
+          "title": "Read the suspect file (scoped)",
+          "explain": "scope-read with --debug-scope only allows files registered as debug targets — no wandering through the whole repo. The read returns numbered lines and a checksum as evidence.",
+          "command": "scope-read",
+          "argv": [
+            "--project-root", "demo-project",
+            "--file", "src/app.py",
+            "--debug-scope"
+          ],
+          "pick": "total_lines",
+          "pickLabel": "Lines read"
+        },
+        {
+          "title": "Log hypothesis H1",
+          "explain": "A hypothesis is only valid if it predicts something checkable. H1 suspects the argument never reaches the program at all.",
+          "command": "debug-hypothesis",
+          "argv": [
+            "--id", "H1",
+            "--statement", "The command line argument never reaches the program",
+            "--prediction", "The program behaves identically with and without an argument",
+            "--test-command", "python3 src/app.py abc",
+            "--status", "PENDING"
+          ],
+          "pick": "active_hypothesis.id",
+          "pickLabel": "Hypothesis"
+        },
+        {
+          "title": "Falsify H1",
+          "explain": "The prediction fails: with 'abc' the program prints [] while with '3' it prints squares — so the argument clearly arrives. H1 is dead, and the ledger remembers why.",
+          "command": "debug-hypothesis",
+          "argv": [
+            "--id", "H1",
+            "--status", "FALSIFIED",
+            "--evidence", "Running with 'abc' prints [] while running with 3 prints squares — the argument clearly arrives"
+          ],
+          "pick": "failed_attempts",
+          "pickLabel": "Falsified so far"
+        },
+        {
+          "title": "Log hypothesis H2",
+          "explain": "Next suspect: the input parser itself. H2 predicts that calling int() on the bad value raises an error that something upstream swallows.",
+          "command": "debug-hypothesis",
+          "argv": [
+            "--id", "H2",
+            "--statement", "parse_int swallows the ValueError and returns 0, so range(0) yields an empty list",
+            "--prediction", "Calling int('abc') directly raises ValueError",
+            "--test-command", "python3 -c \"int('abc')\"",
+            "--status", "PENDING"
+          ],
+          "pick": "active_hypothesis.id",
+          "pickLabel": "Hypothesis"
+        },
+        {
+          "title": "Confirm H2",
+          "explain": "The test raises exactly as predicted, and the scoped read shows the except-branch returning 0. H2 is confirmed — root cause found. (Two falsified hypotheses in a row would trip a circuit breaker and force escalation instead of more guessing.)",
+          "command": "debug-hypothesis",
+          "argv": [
+            "--id", "H2",
+            "--status", "CONFIRMED",
+            "--evidence", "int('abc') raises ValueError; app.py catches it and silently returns 0"
+          ],
+          "pick": "active_hypothesis.status",
+          "pickLabel": "Status"
+        },
+        {
+          "title": "Write the report",
+          "explain": "The session closes with a root-cause report: what the fix was, what was deliberately not checked, and the confirmed hypothesis chain that justifies it.",
+          "command": "debug-report",
+          "argv": [
+            "--fix", "parse_int now re-raises ValueError instead of returning 0",
+            "--open-risk", "Not exercised with negative or very large limits"
+          ],
+          "pick": "root_cause_confirmed",
+          "pickLabel": "Root cause confirmed",
+          "deliverable": true
+        }
+      ]
+    },
+    {
+      "id": "decide",
+      "icon": "scale",
+      "title": "Make a call you won't regret",
+      "subtitle": "Frame an architecture question, score the options on a weighted matrix, and turn the outcome into a numbered ADR — the decision-review loop in three moves.",
+      "outcome": "a numbered, table-filled ADR",
+      "steps": [
+        {
+          "title": "Frame the question",
+          "explain": "Good decisions start with an honest intake: the question, the context, the hard constraints and — crucially — what is explicitly out of scope.",
+          "command": "advise-intake",
+          "argv": [
+            "--question", "Should the test console run commands against a shared demo workspace or isolated sandboxes per run?",
+            "--context", "The web console executes real workbench commands and must keep ledger state inspectable",
+            "--constraint", "Keep the Workspace tab able to show live ledgers",
+            "--non-goal", "Multi-user isolation and auth",
+            "--mode", "architecture"
+          ],
+          "pick": "intake.mode",
+          "pickLabel": "Mode"
+        },
+        {
+          "title": "Score the options",
+          "explain": "The seeded decision matrix weighs inspectability, effort and reversibility for three options. decision-score does the weighted math, ranks them, and writes the result JSON for the next step.",
+          "command": "decision-score",
+          "argv": [
+            "--spec-file", "decision-matrix.json",
+            "--output", "decision-result.json"
+          ],
+          "pick": "recommended_option",
+          "pickLabel": "Recommended"
+        },
+        {
+          "title": "Write the ADR",
+          "explain": "The ruling becomes an Architecture Decision Record: numbered, dated, owned, with the scored option table and a sensitivity analysis filled in from the result JSON. It even lists the sections a human still owes (context, consequences) — an ADR is a decision, not an essay.",
+          "command": "adr-new",
+          "argv": [
+            "--title", "Run the test console against a shared demo workspace",
+            "--decision-result", "decision-result.json",
+            "--dir", "docs/adr",
+            "--owner", "console-team"
+          ],
+          "pick": "adr",
+          "pickLabel": "ADR",
+          "deliverable": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Github, Loader2, Terminal } from "lucide-react"
+import { Github, Loader2, Play, Terminal } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -10,6 +10,7 @@ import { DoctorPanel } from "@/components/console/doctor-panel"
 import { HistoryPanel } from "@/components/console/history-panel"
 import { Runner } from "@/components/console/runner"
 import { SkillsBrowser } from "@/components/console/skills-browser"
+import { Walkthroughs } from "@/components/console/walkthroughs"
 import { WorkspacePanel } from "@/components/console/workspace-panel"
 
 const REPO_URL = "https://github.com/turacistanbul/local-advisor-suite"
@@ -80,8 +81,12 @@ export default function Home() {
       </header>
 
       <main className="flex-1 mx-auto w-full max-w-7xl px-4 md:px-6 py-5">
-        <Tabs defaultValue="runner" className="w-full">
+        <Tabs defaultValue="walkthroughs" className="w-full">
           <TabsList className="mb-4 h-10 w-full justify-start overflow-x-auto rounded-lg bg-muted/60 p-1">
+            <TabsTrigger value="walkthroughs" className="gap-1.5 text-xs sm:text-sm">
+              <Play className="size-3.5" />
+              Walkthroughs
+            </TabsTrigger>
             <TabsTrigger value="runner" className="gap-1.5 text-xs sm:text-sm">
               <Terminal className="size-3.5" />
               Runner
@@ -100,6 +105,9 @@ export default function Home() {
             </TabsTrigger>
           </TabsList>
 
+          <TabsContent value="walkthroughs">
+            <Walkthroughs onRan={() => setHistoryKey((k) => k + 1)} />
+          </TabsContent>
           <TabsContent value="runner">
             {catalogError ? (
               <div className="rounded-lg border border-rose-500/30 bg-rose-500/5 p-4 text-sm text-rose-600 dark:text-rose-400">

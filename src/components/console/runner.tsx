@@ -266,7 +266,7 @@ export function Runner({
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2 flex-wrap">
               <Zap className="size-4 text-emerald-500" />
-              Example scenarios
+              One-command examples
               <Badge
                 variant="outline"
                 className="font-mono text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
@@ -275,8 +275,10 @@ export function Runner({
               </Badge>
             </CardTitle>
             <CardDescription className="text-xs">
-              One click fills the form with working arguments and runs the command
-              against the seeded demo workspace.
+              Sandbox mode: every command with pre-filled working arguments, one
+              click each. New here? Run a full story in the{" "}
+              <span className="font-medium text-foreground">Walkthroughs</span> tab
+              first.
             </CardDescription>
           </CardHeader>
           <CardContent>
