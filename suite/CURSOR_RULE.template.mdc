@@ -42,6 +42,7 @@ you cannot run the command:
 | End, switch tools, delegate or resume work | `session-handoff` (`/session-handoff`) | `$WB handoff-pack ...` / `$WB handoff-check` |
 | Turn a request into a testable spec | `spec-builder` (`/spec-builder`) | `$WB spec-new --goal ... --story ... --non-goal ...` |
 | A structured, severity-graded review | `code-review` (`/code-review`) | `$WB review-init --title ... --target ...` |
+| Analyze a data file the user provides, with traceable numbers | `data-analysis` (`/data-analysis`) | `$WB data-register --path FILE --question ...` |
 | Save, find and reuse project knowledge | `knowledge-capture` (`/knowledge-capture`) | `$WB kb-add --question ... --answer ... --source-url ...` |
 
 ### Do not scan by default

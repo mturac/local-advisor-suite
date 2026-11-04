@@ -1,5 +1,39 @@
 # Changelog
 
+## 3.2.0 (2026-11-04)
+
+v3.1.0 command set and JSON contract preserved; everything below is additive.
+
+### Added: data-analysis skill (14th skill)
+
+- New skill **`data-analysis`** — grounded analysis of a data file the user
+  names (CSV, TSV, JSON, logs). Prompts like "analyze this CSV" or "bu veri
+  dosyasını analiz et" previously fell through the `load-skills` routing
+  table to the advisory fallback; this closes the gap with the same ledger
+  discipline the other skills enforce, applied to numbers instead of quotes.
+- New commands **`data-register` / `data-finding` / `data-gap` /
+  `data-report`** and a new `data_ledger.json` state file:
+  - `data-register --path FILE --question "..."` pins the dataset (path, byte
+    size, SHA-256), binding every later number to an exact dataset version;
+    one dataset per ledger, switching requires `--force` and resets findings.
+  - `data-finding --statement ... --method ... --result ...` logs a number
+    with the re-runnable command, query or formula that produced it; a method
+    under 10 characters is rejected, and a drifted file (hash mismatch) is
+    refused with `DATASET_DRIFT` until re-registered.
+  - `data-gap --description ... --reason ...` declares what the file cannot
+    answer (NO_DATA, AMBIGUOUS_DEFINITION, ...) instead of guessing it.
+  - `data-report --answer "..."` renders `ANALYSIS.md`; numbers in the answer
+    that no finding supports are rejected (`UNLEDGERED_NUMBERS`) unless
+    `--allow-unverified-numbers` publishes them visibly marked UNVERIFIED.
+- Skill assets: `SKILL.md`, `references/dataset-intake.md` (profile before
+  interpreting), `references/computation-ledger.md` (no number without a
+  method), `references/pitfalls.md` (missing data, units, aggregation traps),
+  `templates/analysis-report.md`, and `examples/sales-trend.md` from a real
+  run.
+- `load-skills` routes EN/TR triggers (analyze, dataset, csv, spreadsheet,
+  how many rows, analiz, veri seti, kaç satır, excel, ...); all three host
+  rule templates (AGENTS / CLAUDE / CURSOR_RULE) gained the routing row.
+
 ## 3.1.0 (2026-11-04)
 
 v3.0.0 command set and JSON contract preserved; everything below is additive.

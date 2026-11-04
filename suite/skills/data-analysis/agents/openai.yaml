@@ -1,0 +1,5 @@
+interface:
+  display_name: "Data Analysis"
+  short_description: "Grounded analysis of a user-provided data file with a computation ledger"
+policy:
+  allow_implicit_invocation: true

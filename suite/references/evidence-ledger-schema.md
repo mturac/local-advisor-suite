@@ -164,3 +164,32 @@ Severities: `BLOCKING` / `MAJOR` / `MINOR` / `INFO`. Categories: `correctness`, 
 ```
 
 Every entry is sourced (`source_url` or `source_id` validated against the research ledger) or explicitly `assumed` (LOW confidence). `kb-search` scores deterministic token overlap (tags x3, question x2, answer x1); `kb-export` renders grouped Markdown with visible ASSUMPTION markers.
+
+## 7. Data Analysis Ledger (`data_ledger.json`, v3.2)
+
+```json
+{
+  "question": "What is the monthly sales trend in this file?",
+  "dataset": {
+    "path": "sales.csv",
+    "bytes": 72,
+    "sha256": "a5289da978c9db43d66ceff99ace993fa6c61cd74ade4674f64d655d2f4b302b",
+    "registered_at": "2026-11-04T14:34:35+00:00"
+  },
+  "findings": [
+    {
+      "id": "F1",
+      "statement": "The file has 5 data rows, one per month from 2026-01 to 2026-05",
+      "method": "tail -n +2 sales.csv | wc -l",
+      "result": "5 rows",
+      "created_at": "..."
+    }
+  ],
+  "gaps": [
+    {"id": "G1", "description": "Per-region breakdown is not computable from this file",
+     "reason": "NO_DATA: the file has no region column", "created_at": "..."}
+  ]
+}
+```
+
+Lifecycle: `data-register` (pins the dataset by path + size + SHA-256; one dataset per ledger; switching requires `--force` and resets findings) -> `data-finding` (statement + re-runnable method + result; refuses when the file drifted from its hash) -> `data-gap` (what could not be computed, and why) -> `data-report` (renders ANALYSIS.md; numbers in the answer that no finding supports are rejected with `UNLEDGERED_NUMBERS` unless `--allow-unverified-numbers` publishes them visibly marked UNVERIFIED).

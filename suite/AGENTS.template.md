@@ -29,6 +29,7 @@ you cannot run the command:
 | Advice, design review, "what should I do", architecture or planning help | `local-advisor` | none (answer from the conversation) |
 | Choose between options, an ADR, a trade-off matrix, a pre-mortem | `decision-review` | `$WB decision-score --spec-file decision.json` |
 | A bug, failing test or stack trace in a named file | `local-debug` | `$WB debug-hypothesis --symptom ... --target-file ... --repro ...` |
+| Analyze a data file the user provides, with traceable numbers | `data-analysis` | `$WB data-register --path FILE --question ...` |
 | One factual answer that needs 1-3 sources (version, price, limit, date) | `web-search` | host search tool |
 | Research with several sources and a synthesis | `deep-research` | `$WB research-init --topic ... --sub-question ...` |
 | Compare many entities across the same fields, as a table | `wide-search` | `$WB research-init --mode wide-matrix --entity ... --field ...` |

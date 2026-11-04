@@ -1,6 +1,6 @@
-# local-advisor-suite 3.0.0
+# local-advisor-suite 3.2.0
 
-A provider-neutral advisory, research, debugging, specification, review, verification and knowledge suite — **13 skills** that run identically in **Claude Code, Codex, ZCode, Cursor, OpenCode, and any AGENTS.md-compatible agent**.
+A provider-neutral advisory, research, debugging, specification, review, verification, knowledge and data-analysis suite — **14 skills** that run identically in **Claude Code, Codex, ZCode, Cursor, OpenCode, and any AGENTS.md-compatible agent**.
 
 The suite depends on no search vendor, no API key, and no MCP server. When web access is needed, it uses only the search and fetch tools your host already provides. All ledger, scoring, audit and verification work is done by a single standard-library Python file (`workbench.py`) that runs offline and deterministically.
 
@@ -25,6 +25,7 @@ Built on the user's own `workbench.py` and `tools/generate_shared.py`. The v2.1 
 | `local-advisor` | Architecture, design, plan and trade-off advice (no file scanning) | `advise-intake` (optional) |
 | `decision-review` | Option comparison, ADRs, reversibility (R0-R3), pre-mortem | `decision-score`, `adr-new`, `adr-check` |
 | `local-debug` | A bug in a file you name; at most 2 hypotheses | `debug-hypothesis`, `scope-read --debug-scope`, `debug-report` |
+| `data-analysis` | A data file you name; every number traceable to a logged command | `data-register`, `data-finding`, `data-gap`, `data-report` |
 | `web-search` | Quick verified answers with 1-3 sources | host search/fetch tools + optional ledger |
 | `deep-research` | Multi-step research: decomposition, ledger, scoring, contradictions, gaps, synthesis | `research-*`, `audit-report` |
 | `wide-search` | Entity x field tables; every cell bound to a verified URL | `research-init --mode wide-matrix`, `wide-table --strict` |
@@ -37,6 +38,8 @@ Built on the user's own `workbench.py` and `tools/generate_shared.py`. The v2.1 
 | `knowledge-capture` | Sourced or explicitly-assumed Q&A knowledge base | `kb-add`, `kb-search`, `kb-export` |
 
 Every skill carries `SKILL.md`, `references/`, `templates/`, `examples/`, `agents/openai.yaml` and `scripts/workbench.py`. All files are English and written in the imperative mood. Example command outputs were taken from real runs and are re-validated by the test suite.
+
+The 14th skill arrived in v3.2.0: prompts like "analyze this CSV" or "bu veri dosyasını analiz et" previously fell through the routing table to the advisory fallback; `data-analysis` closes that gap with the same discipline the other ledgers enforce — a number is only speakable when the command that produced it is on the record.
 
 ## Installation
 
@@ -119,6 +122,12 @@ $WB debug-hypothesis --symptom "test_total: 10.05 != 10.06" --target-file billin
 $WB debug-hypothesis --id H1 --status PENDING --statement "..." --prediction "..." --test-command "..."
 $WB debug-report
 
+# Data analysis: register the file, log findings with methods, then report
+$WB data-register --path sales.csv --question "What is the monthly sales trend in this file?"
+$WB data-finding --statement "The file has 5 data rows" --method 'tail -n +2 sales.csv | wc -l' --result "5 rows"
+$WB data-gap --description "Per-region breakdown is not computable" --reason "NO_DATA: no region column"
+$WB data-report --answer "Sales rose from 120 to 170 across 5 months; the region split cannot be computed."
+
 # Research and audit
 $WB research-init --topic "..." --sub-question "..." --max-queries 12 --time-sensitive
 $WB research-add-source --url URL --title "..." --tier PRIMARY --published-date 2026-10-01 --content-file page.txt
@@ -154,13 +163,13 @@ Every command returns JSON. Exit codes: `0` = OK/PASS (doctor's WARN is also `0`
 
 ```
 local-advisor-suite/
-├── workbench.py               # the single runtime (38 subcommands, v3.0)
+├── workbench.py               # the single runtime (43 subcommands, v3.2)
 ├── install.py                 # project/global install for 6 hosts, manifest, uninstall
 ├── AGENTS.template.md         # rules block for Codex/ZCode/OpenCode/generic ({{WORKBENCH}})
 ├── CLAUDE.template.md         # rules block for Claude Code
 ├── CURSOR_RULE.template.mdc   # always-on Cursor rule
 ├── CURSOR_COMMAND.template.md # per-skill Cursor command generator input
-├── skills/<13 skills>/        # SKILL.md, references/, templates/, examples/, agents/, scripts/
+├── skills/<14 skills>/        # SKILL.md, references/, templates/, examples/, agents/, scripts/
 ├── references/ templates/     # shared layer (generate_shared.py writes it)
 ├── .claude-plugin/ .codex-plugin/ .agents/plugins/   # plugin and marketplace manifests
 ├── tools/generate_shared.py   # generates shared files, skill copies; enforces frontmatter limits

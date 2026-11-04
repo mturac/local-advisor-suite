@@ -25,7 +25,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS_DIR = ROOT / "skills"
-VERSION = "3.1.0"
+VERSION = "3.2.0"
 
 
 def write_file(path: Path, content: str) -> None:
@@ -50,7 +50,7 @@ def generate_shared_files() -> None:
             {
                 "name": "local-advisor-suite",
                 "version": VERSION,
-                "description": "Portable Local Advisor, Deep Research, Scoped Debugging, Spec Building, Code Review, Knowledge Capture and Evidence Audit skills for Claude Code, Codex, ZCode, Cursor and OpenCode. Zero external vendor dependencies.",
+                "description": "Portable Local Advisor, Deep Research, Scoped Debugging, Spec Building, Code Review, Knowledge Capture, Data Analysis and Evidence Audit skills for Claude Code, Codex, ZCode, Cursor and OpenCode. Zero external vendor dependencies.",
                 "author": {"name": "Local Advisor Workbench"},
                 "license": "MIT",
                 "skills": "./skills/",
@@ -87,7 +87,7 @@ def generate_shared_files() -> None:
                     {
                         "name": "local-advisor-suite",
                         "source": "./",
-                        "description": "13 provider-neutral skills backed by an offline workbench.py runtime.",
+                        "description": "14 provider-neutral skills backed by an offline workbench.py runtime.",
                     }
                 ],
             },
@@ -145,7 +145,7 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 This directory holds cross-skill reference specifications used across the Local Advisor & Deep Research Suite:
 
 1. `architecture-and-boundaries.md` — The zero-vendor architecture, conversation-first advisory rule, scoped filesystem guardrails, and cost/budget discipline.
-2. `evidence-ledger-schema.md` — Formal JSON schema and lifecycle rules for every ledger in `.local-workbench/` (research, debug, delivery, spec, review, knowledge base).
+2. `evidence-ledger-schema.md` — Formal JSON schema and lifecycle rules for every ledger in `.local-workbench/` (research, debug, delivery, spec, review, knowledge base, data analysis).
 3. `host-compatibility.md` — Exact discovery paths, frontmatter rules, and invocation syntax for OpenAI Codex CLI/IDE, Anthropic Claude Code, ZCode, Cursor, OpenCode, and generic AGENTS.md readers.
 4. `citation-and-reporting-standard.md` — Rules for GitHub-Flavored Markdown reports, inline `[Source Name](URL)` citations, wide-table `n.a.` handling, and contradiction resolution.
 """,
@@ -186,6 +186,13 @@ This directory holds cross-skill reference specifications used across the Local 
 - Review verdicts are mechanical: `review-report` is FAIL while any BLOCKING finding is open, and every review declares what was **not** inspected.
 - Delivery claims are level-bound: `verify-delivery` records the L0-L4 level actually observed, and wording never exceeds that level.
 - Knowledge entries are sourced or explicitly marked `--assumed`; assumptions export visibly as unverified and are never quoted as fact.
+
+## 7. Number-Grounded Data Analysis (v3.2)
+- Analysis work starts by registering the exact file (`data-register`): path, byte size and SHA-256 are pinned in `data_ledger.json`, binding every later number to a dataset version.
+- Every number presented to the user is logged as a finding (`data-finding`) that carries the re-runnable command, query or formula which produced it; a number without a method is rejected.
+- What the file cannot answer is declared as a gap (`data-gap` with a reason), never guessed or interpolated.
+- `data-report` lints the answer against the findings (`UNLEDGERED_NUMBERS`) and refuses to render numbers no finding supports; the `--allow-unverified-numbers` escape hatch publishes them visibly marked UNVERIFIED.
+- Findings computed on content that no longer matches the registered hash are refused (`DATASET_DRIFT`) until the dataset is re-registered and the affected findings redone.
 """,
     )
 
@@ -357,6 +364,35 @@ Severities: `BLOCKING` / `MAJOR` / `MINOR` / `INFO`. Categories: `correctness`, 
 ```
 
 Every entry is sourced (`source_url` or `source_id` validated against the research ledger) or explicitly `assumed` (LOW confidence). `kb-search` scores deterministic token overlap (tags x3, question x2, answer x1); `kb-export` renders grouped Markdown with visible ASSUMPTION markers.
+
+## 7. Data Analysis Ledger (`data_ledger.json`, v3.2)
+
+```json
+{
+  "question": "What is the monthly sales trend in this file?",
+  "dataset": {
+    "path": "sales.csv",
+    "bytes": 72,
+    "sha256": "a5289da978c9db43d66ceff99ace993fa6c61cd74ade4674f64d655d2f4b302b",
+    "registered_at": "2026-11-04T14:34:35+00:00"
+  },
+  "findings": [
+    {
+      "id": "F1",
+      "statement": "The file has 5 data rows, one per month from 2026-01 to 2026-05",
+      "method": "tail -n +2 sales.csv | wc -l",
+      "result": "5 rows",
+      "created_at": "..."
+    }
+  ],
+  "gaps": [
+    {"id": "G1", "description": "Per-region breakdown is not computable from this file",
+     "reason": "NO_DATA: the file has no region column", "created_at": "..."}
+  ]
+}
+```
+
+Lifecycle: `data-register` (pins the dataset by path + size + SHA-256; one dataset per ledger; switching requires `--force` and resets findings) -> `data-finding` (statement + re-runnable method + result; refuses when the file drifted from its hash) -> `data-gap` (what could not be computed, and why) -> `data-report` (renders ANALYSIS.md; numbers in the answer that no finding supports are rejected with `UNLEDGERED_NUMBERS` unless `--allow-unverified-numbers` publishes them visibly marked UNVERIFIED).
 """,
     )
 
@@ -626,6 +662,7 @@ SKILL_INTERFACES = {
     "spec-builder": ("Spec Builder", "Turn requests into testable specs: GWT acceptance criteria and verifying tasks"),
     "code-review": ("Code Review", "Severity-graded findings with locations and a deterministic FAIL verdict"),
     "knowledge-capture": ("Knowledge Capture", "Sourced or explicitly-assumed Q&A entries with offline search and export"),
+    "data-analysis": ("Data Analysis", "Grounded analysis of a user-provided data file with a computation ledger"),
 }
 
 FRONTMATTER_DESC_RE = re.compile(r"^description:\s*(.+)$", re.M)

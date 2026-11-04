@@ -38,6 +38,7 @@ you cannot run the command:
 | End, switch tools, delegate or resume work | `session-handoff` | `$WB handoff-pack ...` / `$WB handoff-check` |
 | Turn a request into a testable spec with acceptance criteria | `spec-builder` | `$WB spec-new --goal ... --story ... --non-goal ...` |
 | A structured, severity-graded review of named files or a diff | `code-review` | `$WB review-init --title ... --target ...` |
+| Analyze a data file the user provides, with traceable numbers | `data-analysis` | `$WB data-register --path FILE --question ...` |
 | Save, find and reuse reusable project knowledge as sourced Q&A | `knowledge-capture` | `$WB kb-add --question ... --answer ... --source-url ...` |
 
 ### Do not scan by default

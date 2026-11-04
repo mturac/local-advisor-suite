@@ -46,7 +46,7 @@ class WorkbenchTestCase(unittest.TestCase):
         self.assertEqual(code, 0, f"expected OK for {args}: {data}")
         return data
 
-    def fail(self, *args, **kw):
+    def nonzero(self, *args, **kw):
         data, code = run_wb(self.state, *args, **kw)
         self.assertNotEqual(code, 0, f"expected failure for {args}: {data}")
         return data
@@ -58,8 +58,8 @@ class WorkbenchTestCase(unittest.TestCase):
 
 
 class TestVersionAndContract(WorkbenchTestCase):
-    def test_version_is_3_0_0(self):
-        self.assertEqual(workbench.VERSION, "3.0.0")
+    def test_version_is_3_2_0(self):
+        self.assertEqual(workbench.VERSION, "3.2.0")
 
     def test_v21_subcommands_still_exist(self):
         """Every v2.1 subcommand must keep working with the same name (backward compatibility)."""
@@ -317,14 +317,14 @@ class TestAudit(WorkbenchTestCase):
 
     def test_unregistered_url_and_generic_anchor_flagged(self):
         p = self.report("Latency is 42 ms ([source](https://a.example/docs)) and see [this](https://never-opened.example/x).")
-        data = self.fail("audit-report", "--report-file", str(p))
+        data = self.nonzero("audit-report", "--report-file", str(p))
         types = {i["type"] for i in data["issues"]}
         self.assertIn("GENERIC_OR_RAW_ANCHOR", types)
         self.assertIn("UNREGISTERED_REPORT_URL", types)
 
     def test_unsupported_number_flagged(self):
         p = self.report("Latency is 99 ms ([Docs](https://a.example/docs)).")
-        data = self.fail("audit-report", "--report-file", str(p))
+        data = self.nonzero("audit-report", "--report-file", str(p))
         types = {i["type"] for i in data["issues"]}
         self.assertIn("UNSUPPORTED_NUMBER", types)
 
@@ -363,13 +363,13 @@ class TestVerifyDelivery(WorkbenchTestCase):
         self.assertIn("L4", data["levels_not_checked"])
 
     def test_failing_check_fails(self):
-        data = self.fail("verify-delivery",
+        data = self.nonzero("verify-delivery",
                          "--check", "L3:python3 -c 'import sys; sys.exit(7)'",
                          project_cwd=str(self.proj))
         self.assertEqual(data["status"], "FAIL")
 
     def test_timeout_recorded(self):
-        data = self.fail("verify-delivery", "--check", "L3:python3 -c 'import time; time.sleep(5)'",
+        data = self.nonzero("verify-delivery", "--check", "L3:python3 -c 'import time; time.sleep(5)'",
                          "--timeout", "1", project_cwd=str(self.proj))
         cmd = data["commands"][0]
         self.assertTrue(cmd["timed_out"])
@@ -391,7 +391,7 @@ class TestHandoff(WorkbenchTestCase):
 
     def test_partial_without_steps_fails_check(self):
         self.ok("handoff-pack", "--title", "T", "--session-status", "PARTIAL", "--summary", "s")
-        data = self.fail("handoff-check")
+        data = self.nonzero("handoff-check")
         self.assertTrue(any("next steps" in p for p in data["problems"]))
 
 
@@ -430,7 +430,7 @@ class TestWideTable(WorkbenchTestCase):
         self.assertGreater(data["counts"]["missing"], 0)  # A/f2 and B/f1
         self.assertGreaterEqual(data["counts"]["verified"], 1)
         self.assertGreaterEqual(data["counts"]["na"], 1)
-        strict = self.fail("wide-table", "--strict")
+        strict = self.nonzero("wide-table", "--strict")
         self.assertEqual(strict["status"], "FAIL")
 
 
@@ -495,12 +495,12 @@ class TestSpecBuilder(WorkbenchTestCase):
         ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
         ledger["tasks"][0]["depends_on"] = ["T2"]  # create T1 <-> T2 cycle
         ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
-        data = self.fail("spec-check")
+        data = self.nonzero("spec-check")
         self.assertTrue(any("cycle" in p for p in data["problems"]))
 
     def test_check_fails_on_missing_criteria(self):
         self.ok("spec-new", "--goal", "A goal that is definitely long enough", "--story", "empty story")
-        data = self.fail("spec-check")
+        data = self.nonzero("spec-check")
         self.assertTrue(any("no acceptance criteria" in p for p in data["problems"]))
 
 
@@ -517,7 +517,7 @@ class TestCodeReview(WorkbenchTestCase):
                        "--severity", "BLOCKING", "--category", "correctness",
                        "--description", "Wrong totals on multi-line invoices")
         self.assertEqual(dup["error_code"], "DUPLICATE_FINDING")
-        data = self.fail("review-report", "--not-reviewed", "the migration")
+        data = self.nonzero("review-report", "--not-reviewed", "the migration")
         self.assertEqual(data["verdict"], "FAIL")
         self.assertEqual(data["counts"]["BLOCKING"], 1)
         self.assertTrue(Path(data["report"]).exists())
@@ -637,6 +637,112 @@ class TestSelfcheck(WorkbenchTestCase):
         self.assertEqual(data["status"], "PASS")
 
 
+class TestDataAnalysis(WorkbenchTestCase):
+    """The data ledger: register -> findings with methods -> gaps -> grounded report."""
+
+    def setUp(self):
+        super().setUp()
+        self.csv = Path(self.tmp.name) / "sales.csv"
+        self.csv.write_text("month,sales\n2026-01,120\n2026-02,135\n2026-03,150\n", encoding="utf-8")
+
+    def test_full_lifecycle_register_finding_gap_report(self):
+        data = self.ok("data-register", "--path", str(self.csv),
+                       "--question", "What is the monthly sales trend in this file?")
+        self.assertEqual(data["dataset"]["bytes"], self.csv.stat().st_size)
+        self.assertEqual(len(data["dataset"]["sha256"]), 64)
+        self.assertFalse(data["content_drift"])
+        f = self.ok("data-finding",
+                    "--statement", "The file has 3 data rows",
+                    "--method", "tail -n +2 sales.csv | wc -l",
+                    "--result", "3 rows")
+        self.assertEqual(f["finding"]["id"], "F1")
+        f2 = self.ok("data-finding",
+                     "--statement", "Monthly sales start at 120 and end at 150",
+                     "--method", "cut -d, -f2 sales.csv | tail -n +2 | sed -n '1p;$p'",
+                     "--result", "120 and 150")
+        self.assertEqual(f2["finding"]["id"], "F2")
+        g = self.ok("data-gap",
+                    "--description", "Per-region breakdown is not computable from this file",
+                    "--reason", "NO_DATA: no region column")
+        self.assertEqual(g["gap"]["id"], "G1")
+        r = self.ok("data-report",
+                    "--answer", "Sales rose from 120 to 150 across 3 rows of months.")
+        self.assertEqual(r["status"], "OK")
+        self.assertFalse(r["contains_unverified_numbers"])
+        self.assertFalse(r["dataset_drift"])
+        report = Path(r["report"])
+        self.assertTrue(report.is_file())
+        text = report.read_text(encoding="utf-8")
+        self.assertIn("wc -l", text)  # the method is printed, pipes escaped
+        self.assertIn("NO_DATA: no region column", text)
+        self.assertIn("## Declared gaps", text)
+
+    def test_report_rejects_numbers_no_finding_supports(self):
+        self.ok("data-register", "--path", str(self.csv),
+                "--question", "What is the monthly sales trend in this file?")
+        self.ok("data-finding", "--statement", "The file has 3 data rows",
+                "--method", "tail -n +2 sales.csv | wc -l", "--result", "3 rows")
+        data = self.err("data-report", "--answer", "Sales went from 120 to 999, trust me.")
+        self.assertEqual(data["error_code"], "UNLEDGERED_NUMBERS")
+        self.assertIn("999", data["details"]["unledgered"])
+        escaped = self.ok("data-report", "--allow-unverified-numbers",
+                          "--answer", "Sales went from 120 to 999, trust me.")
+        self.assertEqual(escaped["status"], "WARN")
+        self.assertTrue(escaped["contains_unverified_numbers"])
+        self.assertIn("UNVERIFIED", Path(escaped["report"]).read_text(encoding="utf-8"))
+
+    def test_finding_requires_a_real_method(self):
+        self.ok("data-register", "--path", str(self.csv),
+                "--question", "What is the monthly sales trend in this file?")
+        data = self.err("data-finding", "--statement", "Total is 405",
+                        "--method", "guessed", "--result", "405")
+        self.assertEqual(data["error_code"], "METHOD_TOO_SHORT")
+
+    def test_drift_is_refused_until_reregistered(self):
+        self.ok("data-register", "--path", str(self.csv),
+                "--question", "What is the monthly sales trend in this file?")
+        self.ok("data-finding", "--statement", "The file has 3 data rows",
+                "--method", "tail -n +2 sales.csv | wc -l", "--result", "3 rows")
+        with self.csv.open("a", encoding="utf-8") as fh:
+            fh.write("2026-04,170\n")
+        data = self.err("data-finding", "--statement", "Now 4 data rows exist",
+                        "--method", "tail -n +2 sales.csv | wc -l", "--result", "4 rows")
+        self.assertEqual(data["error_code"], "DATASET_DRIFT")
+        refreshed = self.ok("data-register", "--path", str(self.csv))
+        self.assertTrue(refreshed["content_drift"])
+        self.assertTrue(refreshed["warning"])
+        after = self.ok("data-finding", "--statement", "Now 4 data rows exist",
+                        "--method", "tail -n +2 sales.csv | wc -l", "--result", "4 rows")
+        self.assertEqual(after["finding"]["id"], "F2")
+
+    def test_switching_dataset_requires_force_and_resets(self):
+        self.ok("data-register", "--path", str(self.csv),
+                "--question", "What is the monthly sales trend in this file?")
+        self.ok("data-finding", "--statement", "The file has 3 data rows",
+                "--method", "tail -n +2 sales.csv | wc -l", "--result", "3 rows")
+        other = Path(self.tmp.name) / "other.csv"
+        other.write_text("x\n1\n", encoding="utf-8")
+        data = self.err("data-register", "--path", str(other))
+        self.assertEqual(data["error_code"], "DATASET_MISMATCH")
+        switched = self.ok("data-register", "--path", str(other), "--force")
+        self.assertTrue(switched["findings_reset"])
+        self.assertEqual(switched["findings_count"], 0)
+
+    def test_commands_before_register_fail_cleanly(self):
+        data = self.err("data-finding", "--statement", "Anything at all here",
+                        "--method", "some real command here", "--result", "42")
+        self.assertEqual(data["error_code"], "NO_DATASET")
+        data = self.err("data-report", "--answer", "No dataset was registered at all here.")
+        self.assertEqual(data["error_code"], "NO_DATASET")
+
+    def test_register_validates_question_and_file(self):
+        data = self.err("data-register", "--path", str(self.csv), "--question", "trend?")
+        self.assertEqual(data["error_code"], "QUESTION_TOO_SHORT")
+        data = self.err("data-register", "--path", str(Path(self.tmp.name) / "nope.csv"),
+                        "--question", "What is the monthly sales trend in this file?")
+        self.assertEqual(data["error_code"], "FILE_NOT_FOUND")
+
+
 class TestLoadSkills(WorkbenchTestCase):
     """Prompt → skill routing + the context brief (deterministic, TR and EN)."""
 
@@ -661,6 +767,23 @@ class TestLoadSkills(WorkbenchTestCase):
                        "--prompt", "Research whether WebAssembly threads are production ready, multiple sources")
         top = data["routed"][0]
         self.assertEqual(top["brief"]["skill"], "deep-research")
+
+    def test_routes_turkish_data_prompt_to_data_analysis(self):
+        data = self.ok("load-skills",
+                       "--prompt", "bu csv dosyasını analiz et, aylık satış trendi ne")
+        top = data["routed"][0]
+        self.assertEqual(top["brief"]["skill"], "data-analysis")
+        self.assertGreaterEqual(top["score"], 2)
+        self.assertEqual(data["confidences"]["data-analysis"], "HIGH")
+        self.assertIn("computation-ledger.md", " ".join(top["brief"]["read_in_order"]))
+        self.assertIn("data-register", top["brief"]["first_command"])
+
+    def test_routes_english_dataset_prompt_to_data_analysis(self):
+        data = self.ok("load-skills",
+                       "--prompt", "Analyze this dataset and tell me how many rows the spreadsheet has")
+        top = data["routed"][0]
+        self.assertEqual(top["brief"]["skill"], "data-analysis")
+        self.assertGreaterEqual(top["score"], 2)
 
     def test_no_match_falls_back_to_local_advisor_with_reason(self):
         data = self.ok("load-skills", "--prompt", "bana bu konuda genel bir şey söyler misin acaba")
@@ -688,7 +811,7 @@ class TestLoadSkills(WorkbenchTestCase):
     def test_list_dumps_every_route_with_triggers(self):
         data = self.ok("load-skills", "--list")
         routes = data["routes"]
-        self.assertEqual(len(routes), 13)
+        self.assertEqual(len(routes), 14)
         by_skill = {r["skill"]: r for r in routes}
         self.assertTrue(by_skill["local-advisor"]["fallback"])
         self.assertFalse(by_skill["deep-research"]["fallback"])

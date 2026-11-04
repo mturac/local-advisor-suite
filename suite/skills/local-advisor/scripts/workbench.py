@@ -43,6 +43,12 @@ Capabilities:
    - knowledge base: kb-add / kb-search / kb-export
      (sourced or explicitly-assumed Q&A entries, offline deterministic
       keyword search, markdown export)
+7. v3.2 additions (additive only):
+   - data analysis ledger: data-register / data-finding / data-gap /
+     data-report (dataset pinned by SHA-256, every number logged as a
+     finding carrying the re-runnable command or formula that produced
+     it, gaps declared instead of guessed, answer numbers linted
+     against the findings before the report renders)
 
 Network policy: the only command that can open a socket is `fetch-url`, and only
 with --allow-network. Every other command is offline and deterministic.
@@ -68,7 +74,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 
-VERSION = "3.1.0"
+VERSION = "3.2.0"
 DEFAULT_STATE_DIR = ".local-workbench"
 MAX_FILE_BYTES = 512 * 1024  # 512 KB cap for scoped local file reads
 MAX_SCAN_FILES = 200
@@ -111,6 +117,15 @@ def utc_now_iso() -> str:
 
 def sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8", errors="replace")).hexdigest()
+
+
+def sha256_file(path: Path) -> str:
+    """Hash a file in 1 MiB chunks (used to pin dataset identity)."""
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 def canonicalize_url(raw_url: str) -> str:
@@ -1980,6 +1995,8 @@ def cmd_selfcheck(args: argparse.Namespace) -> Dict[str, Any]:
 SPEC_LEDGER_NAME = "spec_ledger.json"
 REVIEW_LEDGER_NAME = "review_ledger.json"
 KB_LEDGER_NAME = "kb_ledger.json"
+DATA_LEDGER_NAME = "data_ledger.json"
+MAX_DATASET_BYTES = 64 * 1024 * 1024  # 64 MB cap for dataset hashing
 
 REVIEW_SEVERITIES = ("BLOCKING", "MAJOR", "MINOR", "INFO")
 REVIEW_CATEGORIES = ("correctness", "security", "performance", "maintainability", "tests", "style")
@@ -2465,6 +2482,205 @@ def cmd_kb_export(args: argparse.Namespace) -> Dict[str, Any]:
     return {"status": "OK", "knowledge_base": str(out), "entries": len(entries)}
 
 
+# ---------------------------------------------------------------- data analysis
+# Grounded analysis of a user-provided data file. The ledger pins the dataset
+# identity (path, size, SHA-256); every number in the final report must come
+# from a logged finding that carries the exact command or formula which
+# produced it. A number without a method is a guess, and guesses become gaps.
+
+
+def _load_data_ledger(state_dir: Path) -> Tuple[Path, Dict[str, Any]]:
+    """Load the data analysis ledger; create an empty one on first register."""
+    ensure_state_dir(state_dir)
+    path = state_dir / DATA_LEDGER_NAME
+    if not path.exists():
+        ledger = {"dataset": None, "question": "", "findings": [], "gaps": [],
+                  "created_at": utc_now_iso(), "updated_at": utc_now_iso()}
+        save_json(path, ledger)
+        return path, ledger
+    ledger = load_json(path, {})
+    ledger.setdefault("dataset", None)
+    ledger.setdefault("question", "")
+    ledger.setdefault("findings", [])
+    ledger.setdefault("gaps", [])
+    return path, ledger
+
+
+def _dataset_drifted(ledger: Dict[str, Any]) -> bool:
+    """True when the registered file is gone or no longer matches its hash."""
+    ds = ledger.get("dataset") or {}
+    p = Path(ds.get("path", ""))
+    try:
+        return (not p.is_file()) or sha256_file(p) != ds.get("sha256")
+    except OSError:
+        return True
+
+
+def cmd_data_register(args: argparse.Namespace) -> Dict[str, Any]:
+    path, ledger = _load_data_ledger(Path(args.state_dir))
+    question = (args.question or "").strip() or ledger.get("question", "").strip()
+    if len(question) < 15:
+        raise WorkbenchError("QUESTION_TOO_SHORT",
+                             "State the analytical question in at least 15 characters.")
+    file_path = Path(args.path).expanduser()
+    if not file_path.is_file():
+        raise WorkbenchError("FILE_NOT_FOUND", f"{args.path} is not a file.")
+    size = file_path.stat().st_size
+    if size > MAX_DATASET_BYTES:
+        raise WorkbenchError("FILE_TOO_LARGE",
+                             f"{file_path.name} is {size} bytes; the cap is {MAX_DATASET_BYTES}. "
+                             "Register a representative sample instead and say so in the report.")
+    digest = sha256_file(file_path)
+    same_path = bool(ledger["dataset"]) and ledger["dataset"].get("path") == str(file_path)
+    if ledger["dataset"] and not same_path and not args.force:
+        raise WorkbenchError("DATASET_MISMATCH",
+                             f"This ledger already tracks {ledger['dataset'].get('path')}. "
+                             "Registering a different dataset resets findings and gaps; pass --force.",
+                             {"registered_path": ledger["dataset"].get("path")})
+    reset = bool(ledger["dataset"]) and not same_path
+    if reset:
+        ledger["findings"] = []
+        ledger["gaps"] = []
+    drift = same_path and ledger["dataset"].get("sha256") != digest
+    ledger["dataset"] = {
+        "path": str(file_path),
+        "bytes": size,
+        "sha256": digest,
+        "registered_at": utc_now_iso(),
+    }
+    ledger["question"] = question
+    ledger["updated_at"] = utc_now_iso()
+    save_json(path, ledger)
+    return {
+        "status": "OK",
+        "dataset": ledger["dataset"],
+        "question": question,
+        "findings_reset": reset,
+        "content_drift": drift,
+        "findings_count": len(ledger["findings"]),
+        "warning": ("Dataset content changed since the last registration; earlier findings may no "
+                    "longer hold — re-run their methods or drop them." if drift else ""),
+    }
+
+
+def cmd_data_finding(args: argparse.Namespace) -> Dict[str, Any]:
+    path, ledger = _load_data_ledger(Path(args.state_dir))
+    if not ledger["dataset"]:
+        raise WorkbenchError("NO_DATASET", "Register the dataset first: data-register --path FILE --question ...")
+    statement = args.statement.strip()
+    method = args.method.strip()
+    result = args.result.strip()
+    if len(statement) < 10:
+        raise WorkbenchError("STATEMENT_TOO_SHORT", "State the finding in at least 10 characters.")
+    if len(method) < 10:
+        raise WorkbenchError("METHOD_TOO_SHORT",
+                             "Every finding needs its method: the exact command, query or formula that "
+                             "produced the number (min 10 characters).")
+    if not result:
+        raise WorkbenchError("EMPTY_RESULT", "Record the observed result — the value you measured.")
+    if _dataset_drifted(ledger):
+        raise WorkbenchError("DATASET_DRIFT",
+                             "The dataset no longer matches its registered SHA-256. Re-run data-register "
+                             "(same path refreshes the hash) and redo the affected findings.")
+    fid = f"F{len(ledger['findings']) + 1}"
+    finding = {
+        "id": fid,
+        "statement": statement,
+        "method": method,
+        "result": result,
+        "created_at": utc_now_iso(),
+    }
+    ledger["findings"].append(finding)
+    ledger["updated_at"] = utc_now_iso()
+    save_json(path, ledger)
+    return {"status": "OK", "finding": finding, "findings_count": len(ledger["findings"])}
+
+
+def cmd_data_gap(args: argparse.Namespace) -> Dict[str, Any]:
+    path, ledger = _load_data_ledger(Path(args.state_dir))
+    if not ledger["dataset"]:
+        raise WorkbenchError("NO_DATASET", "Register the dataset first: data-register --path FILE --question ...")
+    description = args.description.strip()
+    if len(description) < 15:
+        raise WorkbenchError("GAP_TOO_SHORT", "Describe what could not be computed and why (min 15 characters).")
+    gid = f"G{len(ledger['gaps']) + 1}"
+    gap = {"id": gid, "description": description, "reason": (args.reason or "").strip(),
+           "created_at": utc_now_iso()}
+    ledger["gaps"].append(gap)
+    ledger["updated_at"] = utc_now_iso()
+    save_json(path, ledger)
+    return {"status": "OK", "gap": gap, "gaps_count": len(ledger["gaps"])}
+
+
+def _md_cell(text: str) -> str:
+    return text.replace("|", "\\|").replace("\n", " ")
+
+
+def cmd_data_report(args: argparse.Namespace) -> Dict[str, Any]:
+    path, ledger = _load_data_ledger(Path(args.state_dir))
+    if not ledger["dataset"]:
+        raise WorkbenchError("NO_DATASET", "Register the dataset first: data-register --path FILE --question ...")
+    if not ledger["findings"]:
+        raise WorkbenchError("NO_FINDINGS",
+                             "An analysis report needs at least one logged finding: "
+                             "data-finding --statement ... --method ... --result ...")
+    answer = (args.answer or "").strip()
+    if len(answer) < 20:
+        raise WorkbenchError("ANSWER_TOO_SHORT",
+                             "Answer the registered question in at least 20 characters, or the report "
+                             "has no synthesis.")
+    ledger_numbers: set = set()
+    for f in ledger["findings"]:
+        ledger_numbers.update(_numbers(f["statement"]))
+        ledger_numbers.update(_numbers(f["result"]))
+    unledgered = sorted(set(_numbers(answer)) - ledger_numbers)
+    if unledgered and not args.allow_unverified_numbers:
+        raise WorkbenchError("UNLEDGERED_NUMBERS",
+                             f"Numbers in the answer that no finding supports: {', '.join(unledgered)}. "
+                             "Log the finding that produces each number, or pass --allow-unverified-numbers "
+                             "to publish them marked UNVERIFIED.",
+                             {"unledgered": unledgered})
+    drift = _dataset_drifted(ledger)
+    ds = ledger["dataset"]
+    lines: List[str] = [
+        "# Data Analysis Report",
+        "",
+        f"**Question**: {ledger['question']}",
+        f"**Dataset**: `{ds['path']}` ({ds['bytes']} bytes, SHA-256 `{ds['sha256'][:16]}...`)",
+        f"**Findings**: {len(ledger['findings'])} | **Gaps**: {len(ledger['gaps'])}",
+    ]
+    if drift:
+        lines += ["", "> **WARNING**: the dataset file no longer matches its registered hash; "
+                  "the numbers below were computed on the earlier content."]
+    if unledgered:
+        lines += ["", f"> **WARNING**: {len(unledgered)} number(s) in the answer are not backed by a "
+                  "logged finding and are marked UNVERIFIED."]
+    lines += ["", "## Answer", "", answer, "", "## Findings", "",
+              "| ID | Finding | Method (re-runnable) | Result |",
+              "|---|---|---|---|"]
+    for f in ledger["findings"]:
+        lines.append(f"| {f['id']} | {_md_cell(f['statement'])} | `{_md_cell(f['method'])}` | {_md_cell(f['result'])} |")
+    if ledger["gaps"]:
+        lines += ["", "## Declared gaps", "", "| ID | What could not be computed | Reason |", "|---|---|---|"]
+        for g in ledger["gaps"]:
+            lines.append(f"| {g['id']} | {_md_cell(g['description'])} | {_md_cell(g['reason'] or '-')} |")
+    lines.append("")
+    out = Path(args.output) if args.output else path.parent / "ANALYSIS.md"
+    if out.exists() and not args.force:
+        raise WorkbenchError("FILE_EXISTS", f"{out} exists (use --force).")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text("\n".join(lines), encoding="utf-8")
+    return {
+        "status": "WARN" if (drift or unledgered) else "OK",
+        "report": str(out),
+        "findings_count": len(ledger["findings"]),
+        "gaps_count": len(ledger["gaps"]),
+        "dataset_drift": drift,
+        "contains_unverified_numbers": bool(unledgered),
+        "unverified_numbers": unledgered,
+    }
+
+
 # ---------------------------------------------------------- load-skills
 # Deterministic prompt → skill routing. Given the user's request text this
 # decides which skills to load and emits the brief the agent should follow:
@@ -2625,6 +2841,19 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
         "stop_rule": "entries are sourced or explicitly marked assumed — never present an assumption as fact",
         "also_consider": [],
     },
+    "data-analysis": {
+        "wants": "Analyze a data file the user provides (CSV, TSV, JSON, logs) with traceable numbers",
+        "wants_tr": "Kullanıcının verdiği veri dosyasını (CSV, TSV, JSON, log) izlenebilir sayılarla analiz",
+        "triggers": ["analyze", "analysis", "dataset", "csv", "tsv", "json file", "spreadsheet",
+                     "data file", "how many rows", "trend in", "analiz", "veri seti", "verileri",
+                     "kaç satır", "excel"],
+        "read": ["SKILL.md", "references/dataset-intake.md", "references/computation-ledger.md",
+                 "references/pitfalls.md"],
+        "template": "templates/analysis-report.md",
+        "first_command": "data-register --path FILE --question ...",
+        "stop_rule": "never present a number that is not a logged finding — compute it or declare a gap",
+        "also_consider": ["wide-search", "evidence-audit"],
+    },
 }
 
 _WORD_START = r"(?<![a-z0-9çğıöşüâîû])"
@@ -2741,7 +2970,9 @@ def cmd_load_skills(args: argparse.Namespace) -> Dict[str, Any]:
                       "answer from the conversation and ask one precise question if context is missing",
         }
         briefs = [_brief_for("local-advisor")]
-        routed = [{"score": 0, "hits": [], "brief": briefs[0]}]
+        # No trigger matched, so no score is claimed: the fallback entry
+        # carries only the brief (routed[0].get("score") is None).
+        routed = [{"hits": [], "brief": briefs[0]}]
         confidences = {"local-advisor": "LOW"}
 
     brief_text = _render_brief_text(prompt, briefs, confidences)
@@ -3240,6 +3471,31 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("kb-export", help="Render the knowledge base as Markdown")
     p.add_argument("--output", help="Default: <state-dir>/KNOWLEDGE_BASE.md")
     p.set_defaults(func=cmd_kb_export)
+
+    p = sub.add_parser("data-register", help="Register the dataset to analyze (path, size, SHA-256)")
+    p.add_argument("--path", required=True, help="Path to the data file (CSV, TSV, JSON, log, ...)")
+    p.add_argument("--question", help="The analytical question (kept if omitted on re-register)")
+    p.add_argument("--force", action="store_true", help="Allow switching datasets (resets findings and gaps)")
+    p.set_defaults(func=cmd_data_register)
+
+    p = sub.add_parser("data-finding", help="Log a finding with the exact command or formula behind it")
+    p.add_argument("--statement", required=True, help="What was observed (min 10 characters)")
+    p.add_argument("--method", required=True, help="The re-runnable command, query or formula (min 10 characters)")
+    p.add_argument("--result", required=True, help="The measured value(s)")
+    p.set_defaults(func=cmd_data_finding)
+
+    p = sub.add_parser("data-gap", help="Declare something that could not be computed, and why")
+    p.add_argument("--description", required=True, help="What could not be computed (min 15 characters)")
+    p.add_argument("--reason", help="Why (NO_DATA, AMBIGUOUS_DEFINITION, OUT_OF_SCOPE, ...)")
+    p.set_defaults(func=cmd_data_gap)
+
+    p = sub.add_parser("data-report", help="Render the analysis report from the ledger")
+    p.add_argument("--answer", required=True, help="Synthesis answering the registered question (min 20 characters)")
+    p.add_argument("--output", help="Default: <state-dir>/ANALYSIS.md")
+    p.add_argument("--allow-unverified-numbers", action="store_true",
+                   help="Publish numbers not backed by a finding, marked UNVERIFIED")
+    p.add_argument("--force", action="store_true", help="Overwrite an existing report file")
+    p.set_defaults(func=cmd_data_report)
 
     p = sub.add_parser("load-skills",
                        help="Route a prompt to the skills it needs and emit their loading brief")

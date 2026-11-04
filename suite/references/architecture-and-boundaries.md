@@ -31,3 +31,10 @@
 - Review verdicts are mechanical: `review-report` is FAIL while any BLOCKING finding is open, and every review declares what was **not** inspected.
 - Delivery claims are level-bound: `verify-delivery` records the L0-L4 level actually observed, and wording never exceeds that level.
 - Knowledge entries are sourced or explicitly marked `--assumed`; assumptions export visibly as unverified and are never quoted as fact.
+
+## 7. Number-Grounded Data Analysis (v3.2)
+- Analysis work starts by registering the exact file (`data-register`): path, byte size and SHA-256 are pinned in `data_ledger.json`, binding every later number to a dataset version.
+- Every number presented to the user is logged as a finding (`data-finding`) that carries the re-runnable command, query or formula which produced it; a number without a method is rejected.
+- What the file cannot answer is declared as a gap (`data-gap` with a reason), never guessed or interpolated.
+- `data-report` lints the answer against the findings (`UNLEDGERED_NUMBERS`) and refuses to render numbers no finding supports; the `--allow-unverified-numbers` escape hatch publishes them visibly marked UNVERIFIED.
+- Findings computed on content that no longer matches the registered hash are refused (`DATASET_DRIFT`) until the dataset is re-registered and the affected findings redone.
