@@ -14,10 +14,12 @@ import {
 } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useLang } from "@/lib/i18n"
 import type { SkillInfo } from "@/lib/console-types"
 import { Markdown } from "./markdown"
 
 export function SkillsBrowser() {
+  const { t } = useLang()
   const [skills, setSkills] = useState<SkillInfo[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [active, setActive] = useState<SkillInfo | null>(null)
@@ -60,15 +62,13 @@ export function SkillsBrowser() {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-sm text-muted-foreground">
-          {skills.length} skills bundled in the suite — each is a self-contained
-          <span className="font-mono text-xs"> SKILL.md </span>
-          with references, templates and examples.
+      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+        <p className="text-sm text-muted-foreground max-w-2xl">
+          {t("skills.desc", { n: skills.length })}
         </p>
         <Button variant="outline" size="sm" onClick={() => void load()} className="gap-2">
           <RefreshCw className="size-3.5" />
-          Refresh
+          {t("skills.refresh")}
         </Button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -85,7 +85,7 @@ export function SkillsBrowser() {
                 </div>
                 <Badge variant="secondary" className="font-mono text-[10px]">
                   <FileText className="size-3 mr-1" />
-                  {skill.fileCount} files
+                  {skill.fileCount} {t("skills.files")}
                 </Badge>
               </div>
               <div>
@@ -107,8 +107,8 @@ export function SkillsBrowser() {
                 {skill.examples?.length > 0 && (
                   <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 rounded-full px-2 py-0.5">
                     <ScrollText className="size-2.5" />
-                    {skill.examples.length} example
-                    {skill.examples.length === 1 ? "" : "s"}
+                    {skill.examples.length}{" "}
+                    {skill.examples.length === 1 ? t("skills.example") : t("skills.examples")}
                   </span>
                 )}
               </div>

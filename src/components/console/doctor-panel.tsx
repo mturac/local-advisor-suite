@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import type { RunResponse } from "@/lib/console-types"
+import { useLang } from "@/lib/i18n"
 import { StatusBadge } from "./status-badge"
 import { JsonViewer } from "./json-viewer"
 
@@ -33,6 +34,7 @@ interface DoctorJson {
 }
 
 export function DoctorPanel({ onRan }: { onRan?: () => void }) {
+  const { t } = useLang()
   const [result, setResult] = useState<RunResponse | null>(null)
   const [selfcheck, setSelfcheck] = useState<RunResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -67,7 +69,7 @@ export function DoctorPanel({ onRan }: { onRan?: () => void }) {
         <CardHeader className="pb-4">
           <CardTitle className="text-base flex items-center gap-2">
             <Stethoscope className="size-4 text-emerald-500" />
-            Installation health
+            {t("doctor.title")}
             {doctor && <StatusBadge status={doctor.status} className="ml-1" />}
             <Button
               variant="outline"
@@ -88,19 +90,16 @@ export function DoctorPanel({ onRan }: { onRan?: () => void }) {
               ) : (
                 <Activity className="size-3.5" />
               )}
-              Re-run doctor
+              {t("doctor.rerun")}
             </Button>
           </CardTitle>
-          <CardDescription>
-            Runs <code className="font-mono text-xs">workbench.py doctor</code> inside the
-            demo workspace (6 hosts installed by the seeder).
-          </CardDescription>
+          <CardDescription>{t("doctor.desc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {loading && !doctor && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground py-6 justify-center">
               <Loader2 className="size-4 animate-spin" />
-              Running doctor…
+              {t("doctor.running")}
             </div>
           )}
           {doctor && (
@@ -108,22 +107,22 @@ export function DoctorPanel({ onRan }: { onRan?: () => void }) {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <Stat
                   icon={<HeartPulse className="size-4" />}
-                  label="Overall"
+                  label={t("doctor.overall")}
                   value={doctor.status}
                 />
                 <Stat
                   icon={<ShieldCheck className="size-4" />}
-                  label="Runtime"
+                  label={t("doctor.runtime")}
                   value={doctor.runtime_version}
                 />
                 <Stat
                   icon={<Activity className="size-4" />}
-                  label="Skills installed"
+                  label={t("doctor.skillsInstalled")}
                   value={String(doctor.skills_installed)}
                 />
                 <Stat
                   icon={<Activity className="size-4" />}
-                  label="Hosts detected"
+                  label={t("doctor.hostsDetected")}
                   value={String(doctor.hosts_detected.length)}
                 />
               </div>
@@ -142,9 +141,9 @@ export function DoctorPanel({ onRan }: { onRan?: () => void }) {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-48">Check</TableHead>
-                      <TableHead className="w-24">Status</TableHead>
-                      <TableHead>Detail</TableHead>
+                      <TableHead className="w-48">{t("doctor.check")}</TableHead>
+                      <TableHead className="w-24">{t("doctor.status")}</TableHead>
+                      <TableHead>{t("doctor.detail")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -168,9 +167,7 @@ export function DoctorPanel({ onRan }: { onRan?: () => void }) {
             </>
           )}
           {!loading && !doctor && (
-            <p className="text-sm text-muted-foreground py-4">
-              Doctor did not return JSON — run it from the Runner tab to inspect raw output.
-            </p>
+            <p className="text-sm text-muted-foreground py-4">{t("doctor.noJson")}</p>
           )}
         </CardContent>
       </Card>
@@ -179,7 +176,7 @@ export function DoctorPanel({ onRan }: { onRan?: () => void }) {
         <CardHeader className="pb-4">
           <CardTitle className="text-base flex items-center gap-2">
             <ShieldCheck className="size-4 text-emerald-500" />
-            Vendor-neutrality selfcheck
+            {t("doctor.selfcheckTitle")}
             {selfcheck && (
               <StatusBadge
                 status={
@@ -211,13 +208,10 @@ export function DoctorPanel({ onRan }: { onRan?: () => void }) {
               ) : (
                 <ShieldCheck className="size-3.5" />
               )}
-              Run selfcheck on suite
+              {t("doctor.runSelfcheck")}
             </Button>
           </CardTitle>
-          <CardDescription>
-            Scans the whole suite for banned research-vendor references — the same gate
-            that ships in the 95-test suite.
-          </CardDescription>
+          <CardDescription>{t("doctor.selfcheckDesc")}</CardDescription>
         </CardHeader>
         {selfcheck && (
           <CardContent>

@@ -30,6 +30,8 @@ def main() -> None:
         "  command: string",
         "  argv: string[]",
         "  note: string",
+        "  /** Turkish note; falls back to `note` when absent. */",
+        "  noteTr?: string",
         "  /** Resets (wipes) its ledger before writing — shown amber in the UI. */",
         "  resets?: boolean",
         "  /** Exits non-zero on the seeded workspace by design (mechanical gate). */",
@@ -38,6 +40,7 @@ def main() -> None:
         "",
         "export interface ScenarioGroup {",
         "  title: string",
+        "  titleTr?: string",
         "  scenarios: Scenario[]",
         "}",
         "",
@@ -46,6 +49,8 @@ def main() -> None:
     for group in data["groups"]:
         lines.append("  {")
         lines.append(f"    title: {ts_str(group['title'])},")
+        if group.get("title_tr"):
+            lines.append(f"    titleTr: {ts_str(group['title_tr'])},")
         lines.append("    scenarios: [")
         for s in group["scenarios"]:
             fields = [
@@ -53,7 +58,9 @@ def main() -> None:
                 f"command: {ts_str(s['command'])}",
                 f"argv: {json.dumps(s['argv'], ensure_ascii=False)}",
                 f"note: {ts_str(s['note'])}",
+                f"noteTr: {ts_str(s['note_tr'])}" if s.get("note_tr") else None,
             ]
+            fields = [f for f in fields if f]
             if s.get("resets"):
                 fields.append("resets: true")
             if s.get("expectFail"):

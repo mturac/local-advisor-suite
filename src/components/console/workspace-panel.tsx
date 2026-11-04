@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import type { LedgerFile, WorkspaceState } from "@/lib/console-types"
+import { useLang } from "@/lib/i18n"
 import { JsonViewer } from "./json-viewer"
 
 function formatSize(bytes: number) {
@@ -43,6 +44,7 @@ function countItems(ledger: LedgerFile): string {
 }
 
 export function WorkspacePanel() {
+  const { t } = useLang()
   const [state, setState] = useState<WorkspaceState | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [resetting, setResetting] = useState(false)
@@ -102,7 +104,7 @@ export function WorkspacePanel() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2 justify-between">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-sm text-muted-foreground mr-1">Hosts in workspace:</span>
+          <span className="text-sm text-muted-foreground mr-1">{t("ws.hosts")}</span>
           {state.hosts.map((host) => (
             <Badge
               key={host}
@@ -119,7 +121,7 @@ export function WorkspacePanel() {
           ) : (
             <RotateCcw className="size-3.5" />
           )}
-          {resetting ? "Reseeding (~10 s)…" : "Reset workspace"}
+          {resetting ? t("ws.reseeding") : t("ws.reset")}
         </Button>
       </div>
 
@@ -128,7 +130,7 @@ export function WorkspacePanel() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Database className="size-4 text-emerald-500" />
-              State ledgers
+              {t("ws.ledgers")}
             </CardTitle>
             <CardDescription className="font-mono text-[11px] truncate">
               {state.stateDir}
@@ -152,7 +154,7 @@ export function WorkspacePanel() {
             ))}
             {state.ledgers.length === 0 && (
               <p className="text-sm text-muted-foreground py-4 text-center">
-                No ledgers yet — reset the workspace to seed demo data.
+                {t("ws.noLedgers")}
               </p>
             )}
           </CardContent>
@@ -162,11 +164,9 @@ export function WorkspacePanel() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <FileOutput className="size-4 text-emerald-500" />
-              Generated artifacts
+              {t("ws.artifacts")}
             </CardTitle>
-            <CardDescription>
-              ADRs, reports and handoff packs written by workbench commands.
-            </CardDescription>
+            <CardDescription>{t("ws.artifactsDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-1.5">
             {state.outputs.map((file) => (
@@ -182,13 +182,15 @@ export function WorkspacePanel() {
             ))}
             {state.outputs.length === 0 && (
               <p className="text-sm text-muted-foreground py-4 text-center">
-                No artifacts yet — try <span className="font-mono text-xs">adr-new</span> or{" "}
-                <span className="font-mono text-xs">research-pack</span>.
+                {t("ws.noArtifacts", {
+                  c1: "adr-new",
+                  c2: "research-pack",
+                })}
               </p>
             )}
             <div className="pt-2 text-[11px] text-muted-foreground flex items-center gap-1.5">
               <FolderOpen className="size-3.5" />
-              Also in workspace: demo-project/, decision-matrix.json, AGENTS.md
+              {t("ws.also")}
             </div>
           </CardContent>
         </Card>
@@ -198,7 +200,7 @@ export function WorkspacePanel() {
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-mono">{active?.name}</DialogTitle>
-            <DialogDescription>State ledger JSON</DialogDescription>
+            <DialogDescription>{t("ws.ledgerJson")}</DialogDescription>
           </DialogHeader>
           <div className="rounded-lg border border-border bg-muted/30 p-3 overflow-x-auto">
             <JsonViewer data={active?.json ?? `(unparseable, ${formatSize(active?.size ?? 0)})`} />

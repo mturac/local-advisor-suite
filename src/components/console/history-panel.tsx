@@ -20,17 +20,24 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import type { RunLogEntry } from "@/lib/console-types"
+import { useLang } from "@/lib/i18n"
 import { ExitBadge, StatusBadge } from "./status-badge"
 import { JsonViewer } from "./json-viewer"
 
-function timeAgo(iso: string) {
+function timeAgo(iso: string, lang: "tr" | "en") {
   const seconds = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000))
+  if (lang === "tr") {
+    if (seconds < 60) return `${seconds} sn önce`
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} dk önce`
+    return `${Math.floor(seconds / 3600)} sa önce`
+  }
   if (seconds < 60) return `${seconds}s ago`
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
   return `${Math.floor(seconds / 3600)}h ago`
 }
 
 export function HistoryPanel({ refreshKey }: { refreshKey: number }) {
+  const { t, lang } = useLang()
   const [logs, setLogs] = useState<RunLogEntry[] | null>(null)
   const [expanded, setExpanded] = useState<number | null>(null)
 
@@ -58,7 +65,7 @@ export function HistoryPanel({ refreshKey }: { refreshKey: number }) {
       <CardHeader className="pb-4">
         <CardTitle className="text-base flex items-center gap-2">
           <History className="size-4 text-emerald-500" />
-          Run history
+          {t("hist.title")}
           <Button
             variant="outline"
             size="sm"
@@ -66,30 +73,28 @@ export function HistoryPanel({ refreshKey }: { refreshKey: number }) {
             onClick={() => void load()}
           >
             <RefreshCw className="size-3.5" />
-            Refresh
+            {t("skills.refresh")}
           </Button>
         </CardTitle>
-        <CardDescription>
-          Every command executed through the console, newest first (persisted in SQLite).
-        </CardDescription>
+        <CardDescription>{t("hist.desc")}</CardDescription>
       </CardHeader>
       <CardContent>
-        {!logs && <p className="text-sm text-muted-foreground py-6 text-center">Loading…</p>}
+        {!logs && (
+          <p className="text-sm text-muted-foreground py-6 text-center">{t("hist.loading")}</p>
+        )}
         {logs && logs.length === 0 && (
-          <p className="text-sm text-muted-foreground py-6 text-center">
-            No runs yet — go fire a command from the Runner tab.
-          </p>
+          <p className="text-sm text-muted-foreground py-6 text-center">{t("hist.noRuns")}</p>
         )}
         {logs && logs.length > 0 && (
           <div className="rounded-lg border border-border overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-20">When</TableHead>
-                  <TableHead className="w-48">Command</TableHead>
-                  <TableHead className="w-20">Status</TableHead>
-                  <TableHead className="w-16">Exit</TableHead>
-                  <TableHead className="w-20">Duration</TableHead>
+                  <TableHead className="w-20">{t("hist.when")}</TableHead>
+                  <TableHead className="w-48">{t("hist.command")}</TableHead>
+                  <TableHead className="w-20">{t("hist.status")}</TableHead>
+                  <TableHead className="w-16">{t("hist.exit")}</TableHead>
+                  <TableHead className="w-20">{t("hist.duration")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -100,7 +105,7 @@ export function HistoryPanel({ refreshKey }: { refreshKey: number }) {
                       onClick={() => setExpanded(expanded === log.id ? null : log.id)}
                     >
                       <TableCell className="text-xs text-muted-foreground">
-                        {timeAgo(log.createdAt)}
+                        {timeAgo(log.createdAt, lang)}
                       </TableCell>
                       <TableCell className="font-mono text-xs">
                         {log.command}

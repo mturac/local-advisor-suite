@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
+import { pickLocalized, useLang } from "@/lib/i18n"
 import type { ArgSpec, Catalog, CommandSpec, RunResponse } from "@/lib/console-types"
 import { SCENARIO_COUNT, SCENARIO_GROUPS, type Scenario } from "@/lib/scenarios"
 import { ExitBadge, StatusBadge } from "./status-badge"
@@ -100,6 +101,7 @@ export function Runner({
   catalog: Catalog | null
   onRan?: () => void
 }) {
+  const { lang, t } = useLang()
   const [query, setQuery] = useState("")
   const [selected, setSelected] = useState<string | null>(null)
   const [values, setValues] = useState<FormValues>({})
@@ -198,11 +200,11 @@ export function Runner({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 items-start">
       {/* Command catalog */}
-      <Card className="lg:sticky lg:top-20">
+      <Card className="lg:sticky lg:top-[72px]">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <Terminal className="size-4 text-emerald-500" />
-            Commands
+            {t("runner.commands")}
             {catalog && (
               <Badge variant="secondary" className="font-mono text-xs ml-auto">
                 {catalog.commands.length}
@@ -214,7 +216,7 @@ export function Runner({
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search commands…"
+              placeholder={t("runner.search")}
               className="pl-8 h-9"
             />
           </div>
@@ -224,7 +226,10 @@ export function Runner({
             <div className="space-y-4">
               {grouped.map(([category, commands]) => (
                 <div key={category}>
-                  <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1.5 px-1">
+                  <div
+                    lang="en"
+                    className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1.5 px-1"
+                  >
                     {category}
                   </div>
                   <div className="space-y-0.5">
@@ -252,7 +257,7 @@ export function Runner({
               ))}
               {grouped.length === 0 && (
                 <p className="text-sm text-muted-foreground px-1 py-8 text-center">
-                  No commands match “{query}”.
+                  {t("runner.noMatch", { q: query })}
                 </p>
               )}
             </div>
@@ -266,19 +271,16 @@ export function Runner({
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2 flex-wrap">
               <Zap className="size-4 text-emerald-500" />
-              One-command examples
+              {t("runner.examplesTitle")}
               <Badge
                 variant="outline"
                 className="font-mono text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
               >
-                all {SCENARIO_COUNT} commands
+                {SCENARIO_COUNT}
               </Badge>
             </CardTitle>
-            <CardDescription className="text-xs">
-              Sandbox mode: every command with pre-filled working arguments, one
-              click each. New here? Run a full story in the{" "}
-              <span className="font-medium text-foreground">Walkthroughs</span> tab
-              first.
+            <CardDescription className="text-xs leading-relaxed">
+              {t("runner.examplesDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -289,8 +291,11 @@ export function Runner({
                     key={group.title}
                     className="grid grid-cols-1 sm:grid-cols-[118px_1fr] gap-x-3 gap-y-1"
                   >
-                    <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground pt-1.5 truncate">
-                      {group.title}
+                    <div
+                      lang={lang}
+                      className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground pt-1.5 truncate"
+                    >
+                      {pickLocalized(lang, group.title, group.titleTr)}
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {group.scenarios.map((s) => (
@@ -298,7 +303,7 @@ export function Runner({
                           key={s.command}
                           onClick={() => applyScenario(s)}
                           disabled={running}
-                          title={`${s.note}\nworkbench ${s.command}${s.argv.length ? ` ${s.argv.join(" ")}` : ""}${s.resets ? "\n⚠ resets this ledger" : ""}`}
+                          title={`${pickLocalized(lang, s.note, s.noteTr)}\nworkbench ${s.command}${s.argv.length ? ` ${s.argv.join(" ")}` : ""}${s.resets ? `\n⚠ resets this ledger` : ""}`}
                           className={cn(
                             "inline-flex items-center gap-1 font-mono text-xs rounded-full border px-2.5 py-1 transition-colors disabled:opacity-50",
                             s.resets
@@ -315,11 +320,9 @@ export function Runner({
                 ))}
               </div>
             </ScrollArea>
-            <p className="mt-3 text-[11px] text-muted-foreground flex items-center gap-1.5">
-              <Sparkles className="size-3 shrink-0 text-emerald-500" />
-              Amber scenarios wipe their ledger before writing — restore the demo
-              data anytime with <span className="font-medium text-foreground">Reset workspace</span> in
-              the Workspace tab.
+            <p className="mt-3 text-[11px] text-muted-foreground flex items-start gap-1.5 leading-relaxed">
+              <Sparkles className="size-3 shrink-0 text-emerald-500 mt-0.5" />
+              {t("runner.amberNote")}
             </p>
           </CardContent>
         </Card>
@@ -337,9 +340,7 @@ export function Runner({
             </CardHeader>
             <CardContent className="space-y-4">
               {spec.args.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  This command takes no arguments. Just run it.
-                </p>
+                <p className="text-sm text-muted-foreground">{t("runner.noArgs")}</p>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {spec.args.map((arg) => (
@@ -355,7 +356,7 @@ export function Runner({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="extra-args" className="text-xs text-muted-foreground">
-                  Extra args (advanced)
+                  {t("runner.extraArgs")}
                 </Label>
                 <Input
                   id="extra-args"
@@ -372,7 +373,7 @@ export function Runner({
                   ) : (
                     <Play className="size-4" />
                   )}
-                  Run {spec.name}
+                  {t("wt.run")} {spec.name}
                 </Button>
                 <Button
                   variant="outline"
@@ -381,7 +382,7 @@ export function Runner({
                   className="gap-2"
                 >
                   <RotateCcw className="size-4" />
-                  Reset args
+                  {t("runner.resetArgs")}
                 </Button>
                 <code className="ml-auto font-mono text-[11px] text-muted-foreground truncate max-w-full">
                   workbench {buildArgv(spec, values, extra).join(" ") || spec.name}
@@ -393,9 +394,7 @@ export function Runner({
           <Card>
             <CardContent className="py-16 text-center text-muted-foreground">
               <Terminal className="size-10 mx-auto mb-3 opacity-40" />
-              <p className="text-sm">
-                Pick a command from the left, or fire an example scenario above.
-              </p>
+              <p className="text-sm">{t("runner.pickCommand")}</p>
             </CardContent>
           </Card>
         )}
@@ -404,7 +403,7 @@ export function Runner({
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2 flex-wrap">
-                Output
+                {t("runner.output")}
                 <StatusBadge
                   status={
                     result.json &&
@@ -416,18 +415,18 @@ export function Runner({
                 />
                 <ExitBadge code={result.exitCode} />
                 <Badge variant="secondary" className="font-mono text-xs">
-                  {result.durationMs} ms
+                  {result.durationMs} {t("common.ms")}
                 </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {result.json ? (
-                <div className="rounded-lg border border-border bg-muted/30 p-3 overflow-x-auto max-h-[480px] overflow-y-auto">
+                <div className="rounded-lg border border-border bg-muted/30 p-3 overflow-x-auto max-h-[480px] overflow-y-auto scroll-polite">
                   <JsonViewer data={result.json} />
                 </div>
               ) : (
-                <pre className="font-mono text-xs whitespace-pre-wrap break-all rounded-lg border border-border bg-muted/30 p-3 max-h-[480px] overflow-y-auto">
-                  {result.stdout || "(no stdout)"}
+                <pre className="font-mono text-xs whitespace-pre-wrap break-all rounded-lg border border-border bg-muted/30 p-3 max-h-[480px] overflow-y-auto scroll-polite">
+                  {result.stdout || t("runner.noStdout")}
                 </pre>
               )}
               {result.stderr.trim() !== "" && (
@@ -441,9 +440,7 @@ export function Runner({
                 </details>
               )}
               {result.timedOut && (
-                <p className="text-xs text-rose-600 dark:text-rose-400">
-                  Command timed out and was killed.
-                </p>
+                <p className="text-xs text-rose-600 dark:text-rose-400">{t("runner.timedOut")}</p>
               )}
             </CardContent>
           </Card>
@@ -462,12 +459,13 @@ function ArgField({
   value: string | boolean | string[] | undefined
   onChange: (v: string | boolean | string[]) => void
 }) {
+  const { t } = useLang()
   const flag = arg.flags[0] ?? arg.dest
   const label = (
     <Label className="font-mono text-xs flex items-center gap-1.5">
       {flag}
       {arg.required && (
-        <span className="text-rose-500" title="required">
+        <span className="text-rose-500" title={t("runner.required")}>
           *
         </span>
       )}
@@ -530,7 +528,7 @@ function ArgField({
           onClick={() => onChange([...items, ""])}
         >
           <Plus className="size-3.5" />
-          Add value
+          {t("runner.addValue")}
         </Button>
         {arg.help && <p className="text-[11px] text-muted-foreground">{arg.help}</p>}
       </div>

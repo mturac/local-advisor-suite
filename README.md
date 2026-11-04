@@ -2,18 +2,20 @@
 
 **v3.0.0** · cross-host agent skill suite + a web console to drive every command from your browser.
 
+> **Türkçe:** Bu depo iki şey içerir: **Local Advisor Suite** (çevrimdışı çalışan, 38 komutluk, 6 araca kurulabilen bir beceri paketi) ve onu **tarayıcıdan denemeni sağlayan web konsolu**. Kurulum yok, hesap yok: bir hikâye seç, *Çalıştır*'a bas, gerçek komutların gerçek çıktılarını gör. Arayüz **Türkçe ve İngilizce** — sağ üstteki TR/EN düğmesiyle değiştir.
+
 This repository contains two things:
 
 | Path | What it is |
 | --- | --- |
 | `suite/` | **Local Advisor Suite v3.0.0** — the offline, vendor-neutral workbench: 38 commands, 13 skills, 95 tests, installer for 6 hosts (Claude Code, Codex, ZCode, Cursor, OpenCode, generic AGENTS.md) |
-| root | **Web Console** — a Next.js 16 app that runs every workbench command against a seeded demo workspace, no setup required |
+| root | **Web Console** — a bilingual (🇹🇷 TR / 🇬🇧 EN) Next.js 16 app that runs every workbench command against a seeded demo workspace, no setup required |
 
 ![Console](public/console.png)
 
 ## Why a console?
 
-The suite is a CLI (`suite/workbench.py`) designed to be driven by coding agents. The console gives humans the same seat: pick a command, fill its real arguments, run it, and inspect the structured JSON it emits — plus a doctor dashboard, a skills browser, live workspace ledgers and a persisted run history.
+The suite is a CLI (`suite/workbench.py`) designed to be driven by coding agents. The console gives humans the same seat: pick a story, press Run, and watch the real command execute — with a plain-language explanation, the exact command line, a "you'll see" preview of the expected result, and the structured JSON it actually emitted. / Konsol, aynı koltuğu insanlara verir: hikâyeyi seç, Çalıştır'a bas — sade dilde açıklamayı, tam komut satırını, "şu görünecek" önizlemesini ve gerçek çıktıyı gör.
 
 Everything the console runs is **the real Python CLI**, spawned server-side with:
 
@@ -22,7 +24,7 @@ Everything the console runs is **the real Python CLI**, spawned server-side with
 - a hard **45 s timeout** and captured stdout/stderr,
 - a **seeded workspace** (`.workspace/`, gitignored) with a 6-host install, research/spec/review/knowledge/debug ledgers, an ADR, an artifact and a handoff pack — resettable with one click.
 
-## Quick start (console)
+## Quick start (console) / Hızlı başlangıç
 
 ```bash
 bun install                 # or: npm install
@@ -31,9 +33,9 @@ bun run db:push             # create the run-history database
 bun run dev                 # http://localhost:3000
 ```
 
-Requirements: Node.js / Bun, Python 3.9+ on PATH. The first page load introspects the CLI and caches the command catalog.
+Requirements: Node.js / Bun, Python 3.9+ on PATH. The first page load introspects the CLI and caches the command catalog. The UI opens in Turkish by default (or your browser language) — switch any time with the **TR/EN** toggle in the header.
 
-On first run the workspace is empty — open the **Workspace** tab and hit **Reset workspace** (seeds demo state, ~10 s), or run any command; read-only ones work against whatever state exists.
+On first run the workspace is empty — open the **Files / Dosyalar** tab and hit **Reset workspace** (seeds demo state, ~10 s), or run any command; read-only ones work against whatever state exists.
 
 ## Quick start (suite)
 
@@ -48,27 +50,27 @@ See `suite/README.md` for the full suite documentation, and `suite/CHANGELOG.md`
 
 ## Console tour
 
-| Tab | What you can do |
-| --- | --- |
-| **Walkthroughs** | Guided end-to-end stories — pick a flow (research, ship, debug, decide), hit *Run all steps* and watch the whole task complete against the real CLI, with each step explained, its command shown and its result summarized. Ends with a real artifact (evidence pack, handoff, root-cause report, ADR) |
-| **Runner** | Sandbox for single commands: search all 38 commands by category, fill auto-generated argument forms (repeatable flags, switches, choice dropdowns), add raw extra args, run and inspect JSON output — plus one-click examples with pre-filled arguments for every command |
-| **Skills** | Browse the 13 bundled skills, read each `SKILL.md` rendered as markdown, and open the bundled `examples/*.md` walkthroughs in per-skill tabs |
-| **Doctor** | One-click `doctor` (host detection, per-check health table) and `selfcheck` (vendor-neutrality scan over the whole suite) |
-| **Workspace** | Inspect the seeded ledgers (research, spec, review, kb, debug, advisory), generated artifacts, and reset everything |
-| **History** | Every run persisted in SQLite — expand any row to replay its JSON output |
-
-Four walkthrough flows ship today, each a complete story on the seeded demo workspace:
-
-| Flow | Steps | Ends with |
+| Tab | Ne yapar (TR) | What you can do (EN) |
 | --- | --- | --- |
-| **Answer a question with evidence** | 13 | cited `evidence pack` + passing integrity audit |
-| **Ship a change safely** | 10 | L2-verified delivery, reviewed verdict, session handoff |
-| **Chase a bug to its root cause** | 7 | root-cause report for a real bug in the bundled demo project |
-| **Make a call you won't regret** | 3 | numbered, table-filled ADR |
+| **Hikâyeler / Stories** | Baştan sona anlatılan senaryolar: soldan hikâyeyi seç, *Tümünü çalıştır*'a bas; her adımın ne yaptığını, komutunu ve "şu görünecek" kutusunu gör, sonunda gerçek bir dosyayla bitir | Guided end-to-end stories — each step explained in plain language with its exact command, a "you'll see" preview, and its real result; ends with a real artifact (evidence pack, handoff, root-cause report, ADR) |
+| **Komut Dene / Try Commands** | 38 komutun tamamı hazır argümanlarla, tek tıkla; istersen kendi argümanlarınla çalıştır | Sandbox for single commands: one-click examples for all 38 commands, auto-generated argument forms, raw JSON output |
+| **Beceriler / Skills** | 13 beceriyi gez, SKILL.md'leri oku | Browse the 13 bundled skills, read each `SKILL.md` and its bundled examples |
+| **Sağlık / Health** | Tek tıkla `doctor` ve `selfcheck` | One-click `doctor` (per-check health table) and `selfcheck` (vendor-neutrality scan) |
+| **Dosyalar / Files** | Canlı defterleri ve üretilen dosyaları incele, tek tıkla sıfırla | Inspect live ledgers and generated artifacts, reset everything |
+| **Geçmiş / History** | Her çalıştırma SQLite'ta saklanır | Every run persisted in SQLite, expandable |
 
-Every step sequence is validated end to end by `scripts/test_walkthroughs.py` (fresh seeded workspace, expected exit codes and statuses, deliverable files checked on disk — 33/33 passing), and the UI data is generated from the same `scripts/walkthroughs.json` via `scripts/gen_walkthroughs_ts.py`.
+Four walkthrough stories ship today (all bilingual, all validated end to end):
 
-For single commands, the Runner's **one-command examples** cover all 38 commands with pre-filled working arguments; amber chips (e.g. `research-init`, `spec-new`, `review-init`) wipe their ledger first, and the demo data can be restored anytime with *Reset workspace*.
+| Hikâye / Story | Steps | Ends with |
+| --- | --- | --- |
+| **Bir soruyu kanıtlarla cevapla / Answer a question with evidence** | 13 | cited `evidence pack` + passing integrity audit |
+| **Bir değişikliği güvenle teslim et / Ship a change safely** | 10 | L2-verified delivery, reviewed verdict, session handoff |
+| **Bir hatayı kök nedenine kadar kovala / Chase a bug to its root cause** | 7 | root-cause report for a real bug in the bundled demo project |
+| **Pişman olmayacağın bir karar ver / Make a call you won't regret** | 3 | numbered, table-filled ADR |
+
+Every step sequence is validated end to end by `scripts/test_walkthroughs.py` (fresh seeded workspace, expected exit codes and statuses, deliverable files checked on disk — 33/33 passing), and the UI data (including the Turkish/English text for every step) is generated from the same `scripts/walkthroughs.json` via `scripts/gen_walkthroughs_ts.py`.
+
+For single commands, the **one-click examples** cover all 38 commands with pre-filled working arguments; amber chips (e.g. `research-init`, `spec-new`, `review-init`) wipe their ledger first, and the demo data can be restored anytime with *Reset workspace*.
 
 ## Repository layout
 

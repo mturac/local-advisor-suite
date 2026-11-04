@@ -4,12 +4,20 @@
       "id": "research",
       "icon": "flask",
       "title": "Answer a question with evidence",
-      "subtitle": "From a bare question to a cited evidence pack: log searches, register sources, file claims, catch a contradiction, resolve it, and audit the result.",
-      "outcome": "evidence pack + passing integrity audit",
+      "title_tr": "Bir soruyu kanıtlarla cevapla",
+      "subtitle": "A real question gets researched honestly: save the sources, quote them exactly, catch a contradiction, resolve it, and finish with a cited report.",
+      "subtitle_tr": "Gerçek bir soruyu araştırıyoruz: DuckDB mi, SQLite mi? Kaynakları kaydet, alıntıları birebir yap, çelişkiyi yakala, çöz ve kanıtlı bir raporla bitir.",
+      "outcome": "a cited evidence report",
+      "outcome_tr": "kanıtlı araştırma raporu",
+      "time_min": 2,
       "steps": [
         {
-          "title": "Open the research ledger",
-          "explain": "Every research session starts by declaring the topic, the sub-question, the entities being compared and the fields we care about. This also resets any previous research ledger, so the run is reproducible.",
+          "title": "Open a research notebook",
+          "title_tr": "Araştırma defteri aç",
+          "explain": "Every research starts by writing down the question. This command opens a fresh notebook — everything else in this story gets written into it.",
+          "explain_tr": "Her araştırma, soruyu yazmakla başlar. Bu komut temiz bir defter açar — bu hikâyedeki her şey bu deftere yazılacak.",
+          "see": "status: OK — the topic is saved, the notebook is empty and ready",
+          "see_tr": "status: OK — konu kaydedildi, defter boş ve hazır",
           "command": "research-init",
           "argv": [
             "--topic", "Which local database engine handles concurrent analytics better: DuckDB or SQLite?",
@@ -20,22 +28,32 @@
             "--max-queries", "8"
           ],
           "pick": "topic",
-          "pickLabel": "Topic"
+          "pickLabel": "Topic",
+          "pickLabel_tr": "Konu"
         },
         {
-          "title": "Log the first search",
-          "explain": "Queries are logged against a budget before they are run, so the session cannot silently turn into endless scrolling. Each distinct query counts once.",
+          "title": "Log a search",
+          "title_tr": "Bir arama kaydet",
+          "explain": "Each search you make is written down before you make it. That way you always know how much you have searched — no endless scrolling.",
+          "explain_tr": "Yaptığın her arama, yapmadan önce deftere yazılır. Böylece ne kadar aradığını hep bilirsin — sonsuz kaydırma yok.",
+          "see": "queries_remaining: 7 (you had a budget of 8)",
+          "see_tr": "queries_remaining: 7 (toplam 8 hakkın vardı)",
           "command": "research-log-query",
           "argv": [
             "--query", "duckdb sqlite concurrent readers writers",
             "--tool-used", "console walkthrough"
           ],
           "pick": "queries_remaining",
-          "pickLabel": "Queries left"
+          "pickLabel": "Searches left",
+          "pickLabel_tr": "Kalan arama"
         },
         {
-          "title": "Register a primary source (DuckDB docs)",
-          "explain": "A claim is only as good as its source, so sources are registered first with a verbatim excerpt. Later claims must quote this excerpt word for word to count as verified.",
+          "title": "Save source #1 (DuckDB docs)",
+          "title_tr": "1. kaynağı kaydet (DuckDB dokümanları)",
+          "explain": "Copy the interesting part of the page into the notebook, word for word. Later steps check the claims against this exact text.",
+          "explain_tr": "Bulduğun sayfadaki ilginç kısmı birebir kopyalayıp deftere yapıştırıyorsun. Sonraki adımlar iddiaları tam bu metinle doğrulayacak.",
+          "see": "source_id: S1 — a PRIMARY source from duckdb.org",
+          "see_tr": "source_id: S1 — duckdb.org'dan birincil kaynak",
           "command": "research-add-source",
           "argv": [
             "--url", "https://duckdb.org/docs/sql/constraints",
@@ -45,11 +63,16 @@
             "--excerpt", "DuckDB serializes writes per table but allows concurrent readers during transactions."
           ],
           "pick": "source_id",
-          "pickLabel": "Source"
+          "pickLabel": "Source",
+          "pickLabel_tr": "Kaynak"
         },
         {
-          "title": "Register a second primary source (SQLite WAL)",
-          "explain": "The second side of the comparison gets its own primary source. Two independent primaries make the eventual matrix credible.",
+          "title": "Save source #2 (SQLite docs)",
+          "title_tr": "2. kaynağı kaydet (SQLite dokümanları)",
+          "explain": "The other side of the comparison needs its own source. Two independent primary sources = a comparison you can trust.",
+          "explain_tr": "Karşılaştırmanın diğer tarafının da kendi kaynağı gerek. İki bağımsız birincil kaynak = güvenebileceğin bir karşılaştırma.",
+          "see": "source_id: S2 — a PRIMARY source from sqlite.org",
+          "see_tr": "source_id: S2 — sqlite.org'tan birincil kaynak",
           "command": "research-add-source",
           "argv": [
             "--url", "https://www.sqlite.org/wal.html",
@@ -59,11 +82,16 @@
             "--excerpt", "WAL mode allows readers and one writer to proceed concurrently without blocking."
           ],
           "pick": "source_id",
-          "pickLabel": "Source"
+          "pickLabel": "Source",
+          "pickLabel_tr": "Kaynak"
         },
         {
-          "title": "File the first claim (verified)",
-          "explain": "A claim states one fact for one entity and field, backed by an exact quote. Because the quote appears verbatim in the stored excerpt, this claim lands as VERIFIED with HIGH confidence.",
+          "title": "Write claim #1 (verified)",
+          "title_tr": "1. iddiayı yaz (doğrulanmış)",
+          "explain": "Now you state a fact and back it with the exact quote from source S1. Because the quote matches word for word, the claim is automatically marked VERIFIED with HIGH confidence.",
+          "explain_tr": "Artık bir bilgi söylüyorsun ve S1'deki alıntıyla destekliyorsun. Alıntı birebir eşleştiği için iddia otomatik olarak VERIFIED (doğrulanmış) işaretlenir, güveni HIGH olur.",
+          "see": "claim_id: C1 — VERIFIED, confidence HIGH",
+          "see_tr": "claim_id: C1 — VERIFIED, güven: HIGH",
           "command": "research-add-claim",
           "argv": [
             "--claim-id", "C1",
@@ -76,11 +104,16 @@
             "--confidence", "HIGH"
           ],
           "pick": "claim_id",
-          "pickLabel": "Claim"
+          "pickLabel": "Claim",
+          "pickLabel_tr": "İddia"
         },
         {
-          "title": "File the second claim (verified)",
-          "explain": "Same discipline for SQLite. Note the quote again matches the excerpt exactly — that is what keeps the confidence HIGH.",
+          "title": "Write claim #2 (verified)",
+          "title_tr": "2. iddiayı yaz (doğrulanmış)",
+          "explain": "Same thing for SQLite. The quote matches source S2 exactly — that is why confidence stays HIGH.",
+          "explain_tr": "Aynısını SQLite için yapıyorsun. Alıntı S2 ile birebir eşleşiyor — güven bu yüzden yine HIGH.",
+          "see": "claim_id: C2 — VERIFIED, confidence HIGH",
+          "see_tr": "claim_id: C2 — VERIFIED, güven: HIGH",
           "command": "research-add-claim",
           "argv": [
             "--claim-id", "C2",
@@ -93,11 +126,16 @@
             "--confidence", "HIGH"
           ],
           "pick": "claim_id",
-          "pickLabel": "Claim"
+          "pickLabel": "Claim",
+          "pickLabel_tr": "İddia"
         },
         {
-          "title": "File a contradictory claim",
-          "explain": "A blog post disagrees with the official DuckDB docs. It gets recorded too — but with LOW confidence and an unverified quote, because honesty about weak evidence is the point.",
+          "title": "Write a claim that disagrees",
+          "title_tr": "Çelişen bir iddia yaz",
+          "explain": "A blog post says the opposite of the official DuckDB docs. You record it too — but the quote matches no source, so it lands unverified with LOW confidence. Being honest about weak evidence is the whole point.",
+          "explain_tr": "Bir blog, resmî DuckDB dokümanlarının tersini söylüyor. Onu da kaydediyorsun — ama alıntı hiçbir kaynakla eşleşmediği için doğrulanmamış ve LOW güvenle kalıyor. Zayıf kanıtla dürüst davranmak işin özü.",
+          "see": "claim_id: C3 — unverified, confidence LOW",
+          "see_tr": "claim_id: C3 — doğrulanmamış, güven: LOW",
           "command": "research-add-claim",
           "argv": [
             "--claim-id", "C3",
@@ -111,11 +149,16 @@
             "--allow-unverified-quote"
           ],
           "pick": "claim_id",
-          "pickLabel": "Claim"
+          "pickLabel": "Claim",
+          "pickLabel_tr": "İddia"
         },
         {
           "title": "Resolve the contradiction",
-          "explain": "Two claims now disagree about DuckDB. research-resolve declares the winner with a reason and marks the loser superseded, so no report can quietly cite the dead claim later.",
+          "title_tr": "Çelişkiyi çöz",
+          "explain": "Two claims now disagree about DuckDB. The official documentation wins; the blog claim is marked superseded so no future report can cite it.",
+          "explain_tr": "DuckDB hakkında iki iddia artık çelişiyor. Resmî dokümantasyon kazanıyor; blog iddiası geçersiz kılındı diye işaretleniyor ki ona bir daha atıf yapılmasın.",
+          "see": "winner_claim: C1 — the docs win",
+          "see_tr": "winner_claim: C1 — dokümanlar kazandı",
           "command": "research-resolve",
           "argv": [
             "--entity", "DuckDB",
@@ -124,11 +167,16 @@
             "--reason", "Primary DuckDB documentation overrides the secondary blog claim for the current release"
           ],
           "pick": "winner_claim",
-          "pickLabel": "Winner"
+          "pickLabel": "Winner",
+          "pickLabel_tr": "Kazanan"
         },
         {
-          "title": "Record what could not be found",
-          "explain": "Nobody published crash-recovery benchmarks for these two engines. A gap records exactly that, with the query that was tried and why it failed — so 'unknown' is a documented fact, not a shrug.",
+          "title": "Record what you could NOT find",
+          "title_tr": "Bulamadığını da kaydet",
+          "explain": "Nobody published crash-recovery benchmarks for these two engines. Writing that down — with the search you tried — turns unknown into a documented fact instead of a shrug.",
+          "explain_tr": "Bu iki motor için crash-recovery karşılaştırması yayımlamış kimse yok. Bunu, denediğin aramayla birlikte yazmak 'bilmiyorum'u omuz silkme değil, kayıtlı bir bilgi yapar.",
+          "see": "gap_id: G1 — reason: NO_PUBLIC_SOURCE",
+          "see_tr": "gap_id: G1 — neden: NO_PUBLIC_SOURCE (kaynak yok)",
           "command": "research-add-gap",
           "argv": [
             "--description", "No public source compares crash recovery times between DuckDB and SQLite",
@@ -138,19 +186,29 @@
             "--reason", "NO_PUBLIC_SOURCE"
           ],
           "pick": "gap_id",
-          "pickLabel": "Gap"
+          "pickLabel": "Gap",
+          "pickLabel_tr": "Boşluk"
         },
         {
-          "title": "Score the sources",
-          "explain": "Before trusting the ledger, each source gets a quality score based on tier, publisher and freshness. Low scorers would be flagged here.",
+          "title": "Grade the sources",
+          "title_tr": "Kaynakları puanla",
+          "explain": "Each source gets a quality grade based on tier, publisher and freshness. Weak sources would be flagged right here.",
+          "explain_tr": "Her kaynak kalitesine göre puan alır: birincil mi, kim yayımlamış, güncel mi? Zayıf kaynak varsa tam burada görünür.",
+          "see": "quality_score: 4.0 for the top source",
+          "see_tr": "En iyi kaynağın puanı: 4.0",
           "command": "research-score",
           "argv": [],
           "pick": "sources.0.quality_score",
-          "pickLabel": "Top source score"
+          "pickLabel": "Top source score",
+          "pickLabel_tr": "En iyi kaynak puanı"
         },
         {
-          "title": "Render the comparison matrix",
-          "explain": "The wide-table command turns the ledger into an entity-by-field matrix. Every cell shows its evidence state, so empty or contested cells are visible at a glance.",
+          "title": "Draw the comparison table",
+          "title_tr": "Karşılaştırma tablosunu çiz",
+          "explain": "Everything in the notebook becomes one table: DuckDB and SQLite side by side, every cell showing its evidence state. Empty or contested cells are visible at a glance.",
+          "explain_tr": "Defterdeki her şey tek bir tabloya dönüşür: DuckDB ve SQLite yan yana, her hücrede kanıt durumu yazılı. Boş ya da çelişkili hücreler bir bakışta görünür.",
+          "see": "verified cells: 2 — the rest is empty or contested",
+          "see_tr": "doğrulanmış hücre: 2 — gerisi boş ya da çelişkili",
           "command": "wide-table",
           "argv": [
             "--entity", "DuckDB",
@@ -158,25 +216,36 @@
             "--field", "concurrency model"
           ],
           "pick": "counts.verified",
-          "pickLabel": "Verified cells"
+          "pickLabel": "Verified cells",
+          "pickLabel_tr": "Doğrulanmış hücre"
         },
         {
-          "title": "Write the evidence pack",
-          "explain": "The session ends with a deliverable: a Markdown pack containing every usable claim with its citation and quote, every gap, and the resolution ruling — ready to hand to a writer or an agent.",
+          "title": "Write the evidence report",
+          "title_tr": "Kanıt raporunu yaz",
+          "explain": "The story ends with a real file: a Markdown report with every claim, its citation, its quote, every gap, and the resolution ruling. Hand it to a writer or an AI agent.",
+          "explain_tr": "Hikâye gerçek bir dosyayla bitiyor: her iddia, atıf, alıntı, her boşluk ve çelişki kararını içeren bir Markdown raporu. Yazara ya da yapay zekâya verip işini bitirtebilirsin.",
+          "see": "evidence_pack: artifacts/duckdb-vs-sqlite-evidence.md",
+          "see_tr": "evidence_pack: artifacts/duckdb-vs-sqlite-evidence.md",
           "command": "research-pack",
           "argv": ["--output", "artifacts/duckdb-vs-sqlite-evidence.md"],
           "pick": "evidence_pack",
-          "pickLabel": "Pack",
+          "pickLabel": "Report file",
+          "pickLabel_tr": "Rapor dosyası",
           "deliverable": true
         },
         {
-          "title": "Audit the ledger",
-          "explain": "Finally the suite audits itself: dangling source references, high-confidence claims without verified quotes, and weak citations all fail here. A clean PASS is what makes the pack trustworthy.",
+          "title": "Audit the notebook",
+          "title_tr": "Defteri denetle",
+          "explain": "Finally the tool checks itself: dangling source references, high-confidence claims without a matching quote, weak citations — all of them would fail here. A clean PASS is what makes the report trustworthy.",
+          "explain_tr": "Son olarak araç kendini kontrol eder: kaynağı olmayan iddia, alıntısız yüksek güven, zayıf atıf — hepsi burada patlar. Temiz bir PASS, rapora güvenilirliğini veren şeydir.",
+          "see": "status: PASS, blocking_count: 0 (zero problems)",
+          "see_tr": "status: PASS, blocking_count: 0 (sıfır sorun)",
           "command": "audit-report",
           "argv": [],
           "expectStatus": "PASS",
           "pick": "blocking_count",
-          "pickLabel": "Blocking issues"
+          "pickLabel": "Blocking issues",
+          "pickLabel_tr": "Ciddi sorun"
         }
       ]
     },
@@ -184,12 +253,20 @@
       "id": "ship",
       "icon": "rocket",
       "title": "Ship a change safely",
-      "subtitle": "Specify the goal, make it testable, build the deliverable, verify it mechanically, put it through review, and hand the session over — the spec-driven delivery loop end to end.",
-      "outcome": "verified delivery + reviewed + session handoff",
+      "title_tr": "Bir değişikliği güvenle teslim et",
+      "subtitle": "A CSV export button gets added to a billing dashboard: spec first, then acceptance criteria, then the deliverable, mechanical verification, review, and a clean handoff.",
+      "subtitle_tr": "Fatura paneline CSV indirme butonu ekliyoruz: önce spec, sonra kabul kriterleri, sonra çıktı, makine doğrulaması, inceleme ve temiz devir.",
+      "outcome": "verified delivery + review verdict + handoff",
+      "outcome_tr": "doğrulanmış teslim + inceleme kararı + devir dosyası",
+      "time_min": 2,
       "steps": [
         {
           "title": "Write the spec",
-          "explain": "A change starts as a goal with user stories and explicit non-goals — not as code. The spec ledger is also the contract every later gate checks against.",
+          "title_tr": "Spec'i yaz",
+          "explain": "Code comes later. First you write down the goal, one user story, and — the important part — what you will NOT build. This spec is the contract every later step checks against.",
+          "explain_tr": "Kod sonra gelir. Önce amaç, bir kullanıcı hikâyesi ve — önemli kısmı — NE YAPMAYACAĞINI yazarsın. Bu spec, sonraki her adımın kendini kontrol ettiği sözleşmedir.",
+          "see": "title: Billing CSV export — spec is open",
+          "see_tr": "title: Billing CSV export — spec açıldı",
           "command": "spec-new",
           "argv": [
             "--goal", "Ship a CSV export on the billing dashboard so finance can close the month without engineering help",
@@ -199,11 +276,16 @@
             "--force"
           ],
           "pick": "title",
-          "pickLabel": "Spec"
+          "pickLabel": "Spec",
+          "pickLabel_tr": "Spec"
         },
         {
           "title": "Make it testable",
-          "explain": "Each story gets acceptance criteria in Given / When / Then form. If a criterion cannot be written, the story is not ready to be built.",
+          "title_tr": "Test edilebilir hale getir",
+          "explain": "The story becomes a Given / When / Then sentence: given this screen, when the user clicks this, then this must happen. If it cannot be written like that, it is not ready to build.",
+          "explain_tr": "Hikâye 'Şu varken, şu yapılırsa, şu görünmeli' cümlesine dönüşür. Böyle yazılamıyorsa, o iş henüz yapılmaya hazır değil demektir.",
+          "see": "criterion AC1 added to story US1",
+          "see_tr": "US1 hikâyesine AC1 kriteri eklendi",
           "command": "spec-criterion",
           "argv": [
             "--story-id", "US1",
@@ -212,22 +294,32 @@
             "--then", "a file downloads containing every invoice row for that month"
           ],
           "pick": "criterion.id",
-          "pickLabel": "Criterion"
+          "pickLabel": "Criterion",
+          "pickLabel_tr": "Kriter"
         },
         {
-          "title": "Add the implementing task",
-          "explain": "Tasks link back to the criterion they verify, so 'done' is a graph, not a feeling. Uncovered criteria get flagged by spec-check.",
+          "title": "Add the task",
+          "title_tr": "Görevi ekle",
+          "explain": "The actual work enters the list with a link to the criterion it verifies. Done becomes a fact you can check, not a feeling.",
+          "explain_tr": "Asıl iş, doğruladığı kritere bağlantılı olarak listeye girer. 'Bitti' artık bir his değil, kontrol edilebilir bir gerçek olur.",
+          "see": "task T1 → verifies AC1",
+          "see_tr": "T1 görevi → AC1'i doğruluyor",
           "command": "spec-task",
           "argv": [
             "--task", "Wire the export button to the CSV endpoint and add a regression test",
             "--verifies", "AC1"
           ],
           "pick": "task.id",
-          "pickLabel": "Task"
+          "pickLabel": "Task",
+          "pickLabel_tr": "Görev"
         },
         {
           "title": "Build the deliverable",
-          "explain": "The work itself produces an artifact — here a delivery report instantiated from the artifact-studio template. An empty artifacts folder cannot pass verification.",
+          "title_tr": "Çıktıyı üret",
+          "explain": "The work itself must produce a file — here a delivery report from a template. An empty artifacts folder cannot pass verification.",
+          "explain_tr": "İşin kendisi bir dosya üretmek zorunda — burada şablondan bir teslim raporu. Boş bir klasörle 'bitti' diyemezsin.",
+          "see": "artifact: artifacts/billing-export-report.md",
+          "see_tr": "artifact: artifacts/billing-export-report.md",
           "command": "artifact-new",
           "argv": [
             "--type", "technical-report",
@@ -236,20 +328,30 @@
             "--force"
           ],
           "pick": "artifact",
-          "pickLabel": "Artifact"
+          "pickLabel": "Artifact",
+          "pickLabel_tr": "Çıktı dosyası"
         },
         {
           "title": "Check spec coverage",
-          "explain": "spec-check re-reads the ledger mechanically: every story has criteria, every criterion has a task, no dependency cycles, non-goals recorded.",
+          "title_tr": "Spec kapsamını kontrol et",
+          "explain": "The tool re-reads the spec mechanically: every story has criteria, every criterion has a covering task, no circular dependencies.",
+          "explain_tr": "Araç spec'i mekanik olarak yeniden okur: her hikâyenin kriteri var mı, her kriterin görevi var mı, döngüsel bağımlılık var mı?",
+          "see": "status: PASS — 1 task covers the criteria",
+          "see_tr": "status: PASS — kriterleri 1 görev karşılıyor",
           "command": "spec-check",
           "argv": [],
           "expectStatus": "PASS",
           "pick": "coverage.tasks",
-          "pickLabel": "Tasks covering criteria"
+          "pickLabel": "Covering tasks",
+          "pickLabel_tr": "Kapsayan görev"
         },
         {
           "title": "Verify the delivery",
-          "explain": "verify-delivery demands observable evidence: the artifact must exist (L1) and a real shell check must pass (L2). Claiming a level you did not reach fails the gate.",
+          "title_tr": "Teslimatı doğrula",
+          "explain": "'I finished' is not enough. Level 1 = the artifact exists; Level 2 = a real shell check passes on it. Here you claim L2 and prove it with a file check.",
+          "explain_tr": "'Bitirdim' demek yetmez. Seviye 1 = dosya var; Seviye 2 = üzerinde gerçek bir komut kontrolü geçiyor. Burada L2 iddia edip dosya kontrolüyle kanıtlıyorsun.",
+          "see": "verification_level: L2_STATIC_VERIFIED",
+          "see_tr": "verification_level: L2_STATIC_VERIFIED",
           "command": "verify-delivery",
           "argv": [
             "--artifact", "artifacts/billing-export-report.md",
@@ -258,11 +360,16 @@
           ],
           "expectStatus": "PASS",
           "pick": "verification_level",
-          "pickLabel": "Level"
+          "pickLabel": "Level",
+          "pickLabel_tr": "Seviye"
         },
         {
           "title": "Open a review",
-          "explain": "Mechanical verification says the artifact exists — it says nothing about quality. A review declares its target and focus, then records findings against them.",
+          "title_tr": "İnceleme aç",
+          "explain": "Mechanical verification says the file exists — it says nothing about quality. A review starts with a declared target and focus; findings get recorded against them.",
+          "explain_tr": "Makine doğrulaması dosyanın var olduğunu söyler — kalite hakkında hiçbir şey söylemez. İnceleme, ilan edilmiş bir hedef ve odakla başlar; bulgular ona göre yazılır.",
+          "see": "review target: src/billing/export.ts",
+          "see_tr": "inceleme hedefi: src/billing/export.ts",
           "command": "review-init",
           "argv": [
             "--title", "Billing CSV export PR #301",
@@ -271,11 +378,16 @@
             "--force"
           ],
           "pick": "target",
-          "pickLabel": "Target"
+          "pickLabel": "Target",
+          "pickLabel_tr": "Hedef"
         },
         {
           "title": "Record a real finding",
-          "explain": "Reviewers log findings with a file, a line and a severity — not vibes. A MAJOR is correct code that will bite soon; a BLOCKING would fail the verdict outright.",
+          "title_tr": "Gerçek bir bulgu kaydet",
+          "explain": "Findings are written with a file, a line and a severity — not vibes. This MAJOR is code that works today but will bite soon: commas in company names break the CSV.",
+          "explain_tr": "Bulgular dosya + satır + önem derecesiyle yazılır — hislerle değil. Bu MAJOR, bugün çalışan ama yakında sorun çıkaracak bir koddur: firma adındaki virgül CSV'yi bozar.",
+          "see": "finding F1 — MAJOR: unquoted CSV fields",
+          "see_tr": "bulgu F1 — MAJOR: alıntılanmamış CSV alanları",
           "command": "review-finding",
           "argv": [
             "--file", "src/billing/export.ts",
@@ -286,19 +398,29 @@
             "--suggestion", "Escape and quote fields per RFC 4180"
           ],
           "pick": "finding.id",
-          "pickLabel": "Finding"
+          "pickLabel": "Finding",
+          "pickLabel_tr": "Bulgu"
         },
         {
           "title": "Render the verdict",
-          "explain": "The verdict is computed, not negotiated: BLOCKING findings force FAIL, MAJOR or MINOR yield PASS_WITH_FINDINGS. The report also records what was not reviewed.",
+          "title_tr": "Kararı açıkla",
+          "explain": "The verdict is computed, not negotiated: a BLOCKING finding forces FAIL; MAJOR or MINOR findings yield PASS_WITH_FINDINGS.",
+          "explain_tr": "Karar pazarlıkla değil kuralla hesaplanır: BLOCKING bir bulgu FAIL demektir; MAJOR/MINOR bulgular PASS_WITH_FINDINGS demek.",
+          "see": "verdict: PASS_WITH_FINDINGS",
+          "see_tr": "verdict: PASS_WITH_FINDINGS (bulgularla geçti)",
           "command": "review-report",
           "argv": [],
           "pick": "verdict",
-          "pickLabel": "Verdict"
+          "pickLabel": "Verdict",
+          "pickLabel_tr": "Karar"
         },
         {
           "title": "Hand the session over",
-          "explain": "Done or not, the session ends with a handoff pack: what was completed, what the next person must do, and the open finding — so nothing lives only in someone's head.",
+          "title_tr": "Oturumu devret",
+          "explain": "Every session ends with a handoff file: what was done, what the next person must do, and the open finding. Nothing lives only in someone's head.",
+          "explain_tr": "Her oturum bir devir dosyasıyla kapanır: ne yapıldı, sıradaki kişi ne yapmalı, açık bulgu ne. Hiçbir bilgi sadece birinin kafasında kalmaz.",
+          "see": "HANDOFF.md written — session status: DONE",
+          "see_tr": "HANDOFF.md yazıldı — oturum durumu: DONE",
           "command": "handoff-pack",
           "argv": [
             "--title", "Billing CSV export session",
@@ -310,6 +432,7 @@
           ],
           "pick": "session_status",
           "pickLabel": "Session status",
+          "pickLabel_tr": "Oturum durumu",
           "deliverable": true
         }
       ]
@@ -318,12 +441,20 @@
       "id": "debug",
       "icon": "bug",
       "title": "Chase a bug to its root cause",
-      "subtitle": "A real bug in the bundled demo project: record the case, read only the suspect file, falsify one hypothesis, confirm the next one, and write the report.",
-      "outcome": "root-cause report with the fix",
+      "title_tr": "Bir hatayı kök nedenine kadar kovala",
+      "subtitle": "A real bug in the bundled demo project: running the app with a letter instead of a number prints an empty list instead of an error. Record the case, read only the suspect file, kill the wrong theory, confirm the right one.",
+      "subtitle_tr": "Demo projesindeki gerçek bir hata: uygulamaya sayı yerine harf girilince hata yerine boş liste basılıyor. Vakayı kaydet, sadece şüpheli dosyayı oku, yanlış teoriyi çürüt, doğru teoriyi doğrula.",
+      "outcome": "root-cause report",
+      "outcome_tr": "kök neden raporu",
+      "time_min": 1,
       "steps": [
         {
-          "title": "Record the case",
-          "explain": "Debugging starts with discipline, not guesses: the symptom, the suspect file and a repro command are written down before anything is touched.",
+          "title": "Record the bug",
+          "title_tr": "Hatayı kaydet",
+          "explain": "Debugging starts with a record, not a guess: the symptom, the suspect file, and the command that reproduces the bug are written down before anything is touched.",
+          "explain_tr": "Hata avı tahminle değil kayıtla başlar: belirti, şüpheli dosya ve hatayı yeniden üreten komut, her şeye dokunulmadan önce yazılır.",
+          "see": "case saved — symptom, target file, repro command",
+          "see_tr": "vaka kaydedildi — belirti, hedef dosya, tekrar komutu",
           "command": "debug-hypothesis",
           "argv": [
             "--symptom", "Running the demo app with a non-numeric limit prints an empty list instead of an error",
@@ -331,11 +462,16 @@
             "--repro", "python3 src/app.py abc"
           ],
           "pick": "symptom",
-          "pickLabel": "Symptom"
+          "pickLabel": "Symptom",
+          "pickLabel_tr": "Belirti"
         },
         {
-          "title": "Read the suspect file (scoped)",
-          "explain": "scope-read with --debug-scope only allows files registered as debug targets — no wandering through the whole repo. The read returns numbered lines and a checksum as evidence.",
+          "title": "Read the suspect file",
+          "title_tr": "Şüpheli dosyayı oku",
+          "explain": "The tool only allows reading files registered as debug targets — no wandering through the whole repo. The read comes back with numbered lines, so you can cite them as evidence.",
+          "explain_tr": "Araç sadece hedef olarak kaydedilmiş dosyaların okunmasına izin verir — bütün projede gezinme yok. Okuma numaralı satırlarla döner, yani satırları kanıt olarak gösterebilirsin.",
+          "see": "src/app.py — 18 numbered lines",
+          "see_tr": "src/app.py — 18 numaralı satır",
           "command": "scope-read",
           "argv": [
             "--project-root", "demo-project",
@@ -343,11 +479,16 @@
             "--debug-scope"
           ],
           "pick": "total_lines",
-          "pickLabel": "Lines read"
+          "pickLabel": "Lines read",
+          "pickLabel_tr": "Okunan satır"
         },
         {
-          "title": "Log hypothesis H1",
-          "explain": "A hypothesis is only valid if it predicts something checkable. H1 suspects the argument never reaches the program at all.",
+          "title": "Theory #1: the argument never arrives",
+          "title_tr": "1. teori: argüman hiç ulaşmıyor",
+          "explain": "A theory only counts if it predicts something checkable. H1 predicts the program behaves the same with and without an argument.",
+          "explain_tr": "Bir teori ancak kontrol edilebilir bir şey öngörüyorsa sayılır. H1, programın argümanla ve argümansız aynı davranacağını öngörüyor.",
+          "see": "active hypothesis: H1 (PENDING)",
+          "see_tr": "aktif hipotez: H1 (PENDING)",
           "command": "debug-hypothesis",
           "argv": [
             "--id", "H1",
@@ -357,11 +498,16 @@
             "--status", "PENDING"
           ],
           "pick": "active_hypothesis.id",
-          "pickLabel": "Hypothesis"
+          "pickLabel": "Hypothesis",
+          "pickLabel_tr": "Hipotez"
         },
         {
-          "title": "Falsify H1",
-          "explain": "The prediction fails: with 'abc' the program prints [] while with '3' it prints squares — so the argument clearly arrives. H1 is dead, and the ledger remembers why.",
+          "title": "Kill theory #1",
+          "title_tr": "1. teoriyi çürüt",
+          "explain": "The prediction fails: with 'abc' the program prints [], with 3 it prints squares — so the argument clearly arrives. H1 is dead, and the notebook remembers why.",
+          "explain_tr": "Öngörü tutmuyor: 'abc' ile program [] basıyor, 3 ile kareler basıyor — yani argüman net olarak ulaşıyor. H1 öldü ve defter nedenini hatırlıyor.",
+          "see": "failed_attempts: 1 — H1 is falsified",
+          "see_tr": "çürülen teori sayısı: 1 — H1 geçersiz",
           "command": "debug-hypothesis",
           "argv": [
             "--id", "H1",
@@ -369,11 +515,16 @@
             "--evidence", "Running with 'abc' prints [] while running with 3 prints squares — the argument clearly arrives"
           ],
           "pick": "failed_attempts",
-          "pickLabel": "Falsified so far"
+          "pickLabel": "Killed theories",
+          "pickLabel_tr": "Çürülen teori"
         },
         {
-          "title": "Log hypothesis H2",
-          "explain": "Next suspect: the input parser itself. H2 predicts that calling int() on the bad value raises an error that something upstream swallows.",
+          "title": "Theory #2: the error gets swallowed",
+          "title_tr": "2. teori: hata yakalanıp yutuluyor",
+          "explain": "Next suspect: the parse_int function. H2 predicts that int('abc') raises an error that something upstream quietly swallows.",
+          "explain_tr": "Sıradaki şüpheli: parse_int fonksiyonu. H2, int('abc') hatasının yukarıdaki bir kodun sessizce yuttuğunu öngörüyor.",
+          "see": "active hypothesis: H2 (PENDING)",
+          "see_tr": "aktif hipotez: H2 (PENDING)",
           "command": "debug-hypothesis",
           "argv": [
             "--id", "H2",
@@ -383,11 +534,16 @@
             "--status", "PENDING"
           ],
           "pick": "active_hypothesis.id",
-          "pickLabel": "Hypothesis"
+          "pickLabel": "Hypothesis",
+          "pickLabel_tr": "Hipotez"
         },
         {
-          "title": "Confirm H2",
-          "explain": "The test raises exactly as predicted, and the scoped read shows the except-branch returning 0. H2 is confirmed — root cause found. (Two falsified hypotheses in a row would trip a circuit breaker and force escalation instead of more guessing.)",
+          "title": "Confirm theory #2",
+          "title_tr": "2. teoriyi doğrula",
+          "explain": "The test raises exactly as predicted, and the code read showed the except-branch returning 0. Root cause found. (Had two theories failed in a row, the tool would have stopped you and demanded escalation instead of more guessing.)",
+          "explain_tr": "Test tam öngörüldüğü gibi patladı ve kod okuması except dalının 0 döndürdüğünü gösterdi. Kök neden bulundu. (Üst üste iki teori çürüseydi araç seni durdurur, tahmine devam etmek yerine 'yetkilendir' derdi.)",
+          "see": "H2: CONFIRMED — root cause found",
+          "see_tr": "H2: CONFIRMED — kök neden bulundu",
           "command": "debug-hypothesis",
           "argv": [
             "--id", "H2",
@@ -395,11 +551,16 @@
             "--evidence", "int('abc') raises ValueError; app.py catches it and silently returns 0"
           ],
           "pick": "active_hypothesis.status",
-          "pickLabel": "Status"
+          "pickLabel": "Status",
+          "pickLabel_tr": "Durum"
         },
         {
           "title": "Write the report",
-          "explain": "The session closes with a root-cause report: what the fix was, what was deliberately not checked, and the confirmed hypothesis chain that justifies it.",
+          "title_tr": "Raporu yaz",
+          "explain": "The session closes with a root-cause report: what the fix is, what was deliberately not checked, and the confirmed theory that justifies it all.",
+          "explain_tr": "Oturum bir kök neden raporuyla kapanır: düzeltme ne, bilinçli olarak ne kontrol edilmedi ve hepsini haklı çıkaran doğrulanmış teori.",
+          "see": "DEBUG_REPORT.md — root_cause_confirmed: true",
+          "see_tr": "DEBUG_REPORT.md — root_cause_confirmed: true",
           "command": "debug-report",
           "argv": [
             "--fix", "parse_int now re-raises ValueError instead of returning 0",
@@ -407,6 +568,7 @@
           ],
           "pick": "root_cause_confirmed",
           "pickLabel": "Root cause confirmed",
+          "pickLabel_tr": "Kök neden doğrulandı",
           "deliverable": true
         }
       ]
@@ -415,12 +577,20 @@
       "id": "decide",
       "icon": "scale",
       "title": "Make a call you won't regret",
-      "subtitle": "Frame an architecture question, score the options on a weighted matrix, and turn the outcome into a numbered ADR — the decision-review loop in three moves.",
-      "outcome": "a numbered, table-filled ADR",
+      "title_tr": "Pişman olmayacağın bir karar ver",
+      "subtitle": "A real architecture question — should the console run commands against a shared workspace or isolated sandboxes? Frame it, score the options on a weighted matrix, and write the numbered ADR.",
+      "subtitle_tr": "Gerçek bir mimari soru: konsol komutları ortak çalışma alanına mı, izole kum havuzuna mı çalışsın? Soruyu çerçevele, seçenekleri tartılı matrisle puanla, numaralı ADR'yi yaz.",
+      "outcome": "a numbered ADR file",
+      "outcome_tr": "numaralı ADR dosyası",
+      "time_min": 1,
       "steps": [
         {
           "title": "Frame the question",
-          "explain": "Good decisions start with an honest intake: the question, the context, the hard constraints and — crucially — what is explicitly out of scope.",
+          "title_tr": "Soruyu çerçevele",
+          "explain": "A good decision starts with an honest intake: the question, the context, the hard constraints — and, crucially, what is explicitly out of scope.",
+          "explain_tr": "İyi karar dürüst bir giriş ile başlar: soru, bağlam, zorunluluklar — ve en kritiği: hangi konular bilinçli olarak kapsam dışı bırakıldı.",
+          "see": "mode: architecture — intake saved",
+          "see_tr": "mode: architecture — giriş kaydedildi",
           "command": "advise-intake",
           "argv": [
             "--question", "Should the test console run commands against a shared demo workspace or isolated sandboxes per run?",
@@ -430,22 +600,32 @@
             "--mode", "architecture"
           ],
           "pick": "intake.mode",
-          "pickLabel": "Mode"
+          "pickLabel": "Mode",
+          "pickLabel_tr": "Mod"
         },
         {
           "title": "Score the options",
-          "explain": "The seeded decision matrix weighs inspectability, effort and reversibility for three options. decision-score does the weighted math, ranks them, and writes the result JSON for the next step.",
+          "title_tr": "Seçenekleri puanla",
+          "explain": "The seeded matrix weighs inspectability, effort and reversibility for three options. The tool does the weighted math and ranks them — the recommendation comes out of the table, not out of mood.",
+          "explain_tr": "Hazır matris üç seçeneği tartılı kriterlerle puanlar: incelenebilirlik, emek, geri dönüş. Araç ağırlıklı hesabı yapar ve sıralar — öneri keyiften değil tablodan çıkar.",
+          "see": "recommended: shared workspace",
+          "see_tr": "öneri: shared workspace (ortak alan)",
           "command": "decision-score",
           "argv": [
             "--spec-file", "decision-matrix.json",
             "--output", "decision-result.json"
           ],
           "pick": "recommended_option",
-          "pickLabel": "Recommended"
+          "pickLabel": "Recommended",
+          "pickLabel_tr": "Önerilen"
         },
         {
           "title": "Write the ADR",
-          "explain": "The ruling becomes an Architecture Decision Record: numbered, dated, owned, with the scored option table and a sensitivity analysis filled in from the result JSON. It even lists the sections a human still owes (context, consequences) — an ADR is a decision, not an essay.",
+          "title_tr": "ADR'yi yaz",
+          "explain": "The ruling becomes an Architecture Decision Record: numbered, dated, owned, with the scored option table filled in from the result. It even lists the sections a human still owes.",
+          "explain_tr": "Karar, numaralı bir ADR dosyasına dönüşür: tarihli, sahipli, puanlı seçenek tablosu dolu. İnsanın hâlâ yazması gereken bölümleri de listeler.",
+          "see": "docs/adr/0002-…md — numbered and dated",
+          "see_tr": "docs/adr/0002-…md — numaralı ve tarihli",
           "command": "adr-new",
           "argv": [
             "--title", "Run the test console against a shared demo workspace",
@@ -454,7 +634,8 @@
             "--owner", "console-team"
           ],
           "pick": "adr",
-          "pickLabel": "ADR",
+          "pickLabel": "ADR file",
+          "pickLabel_tr": "ADR dosyası",
           "deliverable": true
         }
       ]

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/components/theme-provider"
+import { LangProvider } from "@/lib/i18n"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,9 +16,9 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Local Advisor Suite — Console",
+  title: "Local Advisor Suite — Konsol / Console",
   description:
-    "Web test console for the Local Advisor Suite: run all 38 workbench commands, browse 13 skills, check installation health across 6 hosts — fully offline.",
+    "Local Advisor Suite'in web test konsolu: 38 workbench komutunun tamamını, 13 beceriyi ve 6 aracın kurulum sağlığını tarayıcıda dene — tamamen çevrimdışı. / Web test console for the Local Advisor Suite: try all 38 commands, 13 skills and 6-host health — fully offline.",
   icons: {
     icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
   },
@@ -29,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="tr" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
@@ -39,8 +40,10 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          {children}
-          <Toaster />
+          <LangProvider>
+            {children}
+            <Toaster />
+          </LangProvider>
         </ThemeProvider>
       </body>
     </html>

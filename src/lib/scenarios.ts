@@ -7,6 +7,8 @@ export interface Scenario {
   command: string
   argv: string[]
   note: string
+  /** Turkish note; falls back to `note` when absent. */
+  noteTr?: string
   /** Resets (wipes) its ledger before writing — shown amber in the UI. */
   resets?: boolean
   /** Exits non-zero on the seeded workspace by design (mechanical gate). */
@@ -15,96 +17,107 @@ export interface Scenario {
 
 export interface ScenarioGroup {
   title: string
+  titleTr?: string
   scenarios: Scenario[]
 }
 
 export const SCENARIO_GROUPS: ScenarioGroup[] = [
   {
     title: "Suite health",
+    titleTr: "Paket sağlığı",
     scenarios: [
-      { label: "doctor", command: "doctor", argv: [], note: "Cross-host install health for all six hosts" },
-      { label: "selfcheck", command: "selfcheck", argv: ["--path", "../suite"], note: "Structural self-test of the suite itself" },
+      { label: "doctor", command: "doctor", argv: [], note: "Cross-host install health for all six hosts", noteTr: "Altı aracın kurulum sağlığını tek tabloda gösterir" },
+      { label: "selfcheck", command: "selfcheck", argv: ["--path", "../suite"], note: "Structural self-test of the suite itself", noteTr: "Paketin kendi kendini yapısal testi" },
     ],
   },
   {
     title: "Research",
+    titleTr: "Araştırma",
     scenarios: [
-      { label: "research-status", command: "research-status", argv: [], note: "Ledger snapshot: sources, claims, query budget" },
-      { label: "research-gaps", command: "research-gaps", argv: [], note: "Open knowledge gaps and why they exist" },
-      { label: "research-score", command: "research-score", argv: [], note: "Source quality scoring (tier, freshness, domain)" },
-      { label: "research-pack", command: "research-pack", argv: [], note: "Render evidence_pack.md for synthesis" },
-      { label: "research-log-query", command: "research-log-query", argv: ["--query", "claude code skills directory layout docs", "--tool-used", "console-scenario"], note: "Log a unique query against the budget" },
-      { label: "research-add-source", command: "research-add-source", argv: ["--url", "https://code.visualstudio.com/docs/copilot/chat/agent-skills", "--title", "VS Code agent skills documentation", "--publisher", "Microsoft", "--tier", "PRIMARY", "--excerpt", "Agent Skills are folders with a SKILL.md file."], note: "Register a PRIMARY source with excerpt" },
-      { label: "research-add-claim", command: "research-add-claim", argv: ["--statement", "VS Code loads agent skills from a skills folder in the workspace", "--source-id", "S1", "--quote", "A skill is a folder with a SKILL.md file; name and description are required.", "--entity", "VS Code", "--field", "skills directory", "--value", "workspace skills folder", "--confidence", "MEDIUM", "--allow-unverified-quote"], note: "Add a PROVISIONAL claim backed by source S1" },
-      { label: "research-add-gap", command: "research-add-gap", argv: ["--description", "No public benchmark compares skill discovery latency across hosts", "--entity", "All hosts", "--field", "performance", "--query-tried", "agent skills discovery latency benchmark", "--reason", "NO_PUBLIC_SOURCE"], note: "Record a gap with reason NO_PUBLIC_SOURCE" },
-      { label: "research-resolve", command: "research-resolve", argv: ["--entity", "Cursor", "--field", "command surface", "--winner-claim", "C3", "--reason", "Primary Cursor docs describe .cursor/rules and generated commands."], note: "Resolve an entity/field to claim C3" },
-      { label: "fetch-url", command: "fetch-url", argv: ["--url", "https://agentskills.io/specification", "--allow-network"], note: "Fetch and cache an https source (explicit opt-in)" },
-      { label: "research-init", command: "research-init", argv: ["--topic", "Cross-host portability of agent skill suites", "--sub-question", "How should one SKILL.md serve every host?", "--entity", "Claude Code", "--entity", "Codex", "--field", "skills directory", "--max-queries", "8"], note: "Start a fresh research ledger (wipes sources, claims, gaps)", resets: true },
+      { label: "research-status", command: "research-status", argv: [], note: "Ledger snapshot: sources, claims, query budget", noteTr: "Defterin anlık görüntüsü: kaynaklar, iddialar, arama bütçesi" },
+      { label: "research-gaps", command: "research-gaps", argv: [], note: "Open knowledge gaps and why they exist", noteTr: "Açık bilgi boşlukları ve neden var oldukları" },
+      { label: "research-score", command: "research-score", argv: [], note: "Source quality scoring (tier, freshness, domain)", noteTr: "Kaynak kalite puanı (tür, güncellik, alan adı)" },
+      { label: "research-pack", command: "research-pack", argv: [], note: "Render evidence_pack.md for synthesis", noteTr: "Kanıt raporunu evidence_pack.md olarak yazar" },
+      { label: "research-log-query", command: "research-log-query", argv: ["--query", "claude code skills directory layout docs", "--tool-used", "console-scenario"], note: "Log a unique query against the budget", noteTr: "Bir aramayı bütçeye kaydeder" },
+      { label: "research-add-source", command: "research-add-source", argv: ["--url", "https://code.visualstudio.com/docs/copilot/chat/agent-skills", "--title", "VS Code agent skills documentation", "--publisher", "Microsoft", "--tier", "PRIMARY", "--excerpt", "Agent Skills are folders with a SKILL.md file."], note: "Register a PRIMARY source with excerpt", noteTr: "Alıntılı birincil (PRIMARY) kaynak kaydeder" },
+      { label: "research-add-claim", command: "research-add-claim", argv: ["--statement", "VS Code loads agent skills from a skills folder in the workspace", "--source-id", "S1", "--quote", "A skill is a folder with a SKILL.md file; name and description are required.", "--entity", "VS Code", "--field", "skills directory", "--value", "workspace skills folder", "--confidence", "MEDIUM", "--allow-unverified-quote"], note: "Add a PROVISIONAL claim backed by source S1", noteTr: "S1 kaynağına dayalı geçici (PROVISIONAL) iddia ekler" },
+      { label: "research-add-gap", command: "research-add-gap", argv: ["--description", "No public benchmark compares skill discovery latency across hosts", "--entity", "All hosts", "--field", "performance", "--query-tried", "agent skills discovery latency benchmark", "--reason", "NO_PUBLIC_SOURCE"], note: "Record a gap with reason NO_PUBLIC_SOURCE", noteTr: "Nedeni 'kaynak yok' olan bir bilgi boşluğu kaydeder" },
+      { label: "research-resolve", command: "research-resolve", argv: ["--entity", "Cursor", "--field", "command surface", "--winner-claim", "C3", "--reason", "Primary Cursor docs describe .cursor/rules and generated commands."], note: "Resolve an entity/field to claim C3", noteTr: "Bir varlık/alan çelişkisini C3 lehine çözer" },
+      { label: "fetch-url", command: "fetch-url", argv: ["--url", "https://agentskills.io/specification", "--allow-network"], note: "Fetch and cache an https source (explicit opt-in)", noteTr: "Bir https kaynağını çeker ve önbelleğe alır (açık izinle)" },
+      { label: "research-init", command: "research-init", argv: ["--topic", "Cross-host portability of agent skill suites", "--sub-question", "How should one SKILL.md serve every host?", "--entity", "Claude Code", "--entity", "Codex", "--field", "skills directory", "--max-queries", "8"], note: "Start a fresh research ledger (wipes sources, claims, gaps)", noteTr: "Yeni boş araştırma defteri açar (kaynak/iddia/boşlukları siler)", resets: true },
     ],
   },
   {
     title: "Spec",
+    titleTr: "Spec",
     scenarios: [
-      { label: "spec-check", command: "spec-check", argv: [], note: "Spec health: criteria coverage and task links" },
-      { label: "spec-criterion", command: "spec-criterion", argv: ["--story-id", "US1", "--given", "a seeded demo workspace", "--when", "wide-table runs with no arguments", "--then", "an entity by field matrix renders without errors"], note: "Add a Given/When/Then criterion to story US1" },
-      { label: "spec-task", command: "spec-task", argv: ["--task", "Add a scenario test for wide-table rendering", "--verifies", "AC1"], note: "Add a task that verifies criterion AC1" },
-      { label: "spec-new", command: "spec-new", argv: ["--goal", "Restart the spec from scratch via the console example scenarios", "--story", "As a developer I want example scenarios so I can explore commands fast", "--non-goal", "Covering every argument combination", "--force"], note: "Restart the spec ledger (wipes stories, criteria, tasks)", resets: true },
+      { label: "spec-check", command: "spec-check", argv: [], note: "Spec health: criteria coverage and task links", noteTr: "Spec sağlığı: kriter kapsamı ve görev bağlantıları" },
+      { label: "spec-criterion", command: "spec-criterion", argv: ["--story-id", "US1", "--given", "a seeded demo workspace", "--when", "wide-table runs with no arguments", "--then", "an entity by field matrix renders without errors"], note: "Add a Given/When/Then criterion to story US1", noteTr: "US1 hikâyesine Given/When/Then kriteri ekler" },
+      { label: "spec-task", command: "spec-task", argv: ["--task", "Add a scenario test for wide-table rendering", "--verifies", "AC1"], note: "Add a task that verifies criterion AC1", noteTr: "AC1 kriterini doğrulayan bir görev ekler" },
+      { label: "spec-new", command: "spec-new", argv: ["--goal", "Restart the spec from scratch via the console example scenarios", "--story", "As a developer I want example scenarios so I can explore commands fast", "--non-goal", "Covering every argument combination", "--force"], note: "Restart the spec ledger (wipes stories, criteria, tasks)", noteTr: "Spec defterini sıfırdan açar (hikâye/kriter/görevleri siler)", resets: true },
     ],
   },
   {
     title: "Review & evidence",
+    titleTr: "İnceleme ve kanıt",
     scenarios: [
-      { label: "review-report", command: "review-report", argv: [], note: "Mechanical verdict: FAIL while any BLOCKING finding is open (seed has MAJOR/MINOR → PASS_WITH_FINDINGS)" },
-      { label: "audit-report", command: "audit-report", argv: [], note: "Evidence-ledger integrity audit (claims vs quotes vs sources)" },
-      { label: "verify-delivery", command: "verify-delivery", argv: ["--artifact", "artifacts/demo-report.md"], note: "Delivery gate: artifact present (L1) and spec tasks verified" },
-      { label: "review-finding", command: "review-finding", argv: ["--file", "demo-project/src/app.py", "--line", "50", "--severity", "MINOR", "--category", "correctness", "--description", "Module uses sys.argv in __main__ without importing sys", "--suggestion", "Add import sys at the top of the module"], note: "Append a MINOR finding on the demo project" },
-      { label: "review-init", command: "review-init", argv: ["--title", "Second pass review", "--target", "demo-project/src", "--focus", "maintainability", "--force"], note: "Restart the review ledger (wipes findings)", resets: true },
+      { label: "review-report", command: "review-report", argv: [], note: "Mechanical verdict: FAIL while any BLOCKING finding is open (seed has MAJOR/MINOR → PASS_WITH_FINDINGS)", noteTr: "Mekanik karar: açık BLOCKING varsa FAIL (hazır veride MAJOR/MINOR var → PASS_WITH_FINDINGS)" },
+      { label: "audit-report", command: "audit-report", argv: [], note: "Evidence-ledger integrity audit (claims vs quotes vs sources)", noteTr: "Kanıt defteri bütünlük denetimi (iddia–alıntı–kaynak eşleşmesi)" },
+      { label: "verify-delivery", command: "verify-delivery", argv: ["--artifact", "artifacts/demo-report.md"], note: "Delivery gate: artifact present (L1) and spec tasks verified", noteTr: "Teslim kapısı: çıktı dosyası var (L1) ve spec görevleri doğrulanmış" },
+      { label: "review-finding", command: "review-finding", argv: ["--file", "demo-project/src/app.py", "--line", "50", "--severity", "MINOR", "--category", "correctness", "--description", "Module uses sys.argv in __main__ without importing sys", "--suggestion", "Add import sys at the top of the module"], note: "Append a MINOR finding on the demo project", noteTr: "Demo projesine MINOR bir bulgu ekler" },
+      { label: "review-init", command: "review-init", argv: ["--title", "Second pass review", "--target", "demo-project/src", "--focus", "maintainability", "--force"], note: "Restart the review ledger (wipes findings)", noteTr: "İnceleme defterini sıfırdan açar (bulguları siler)", resets: true },
     ],
   },
   {
     title: "Knowledge",
+    titleTr: "Bilgi tabanı",
     scenarios: [
-      { label: "kb-search", command: "kb-search", argv: ["--query", "skills"], note: "Deterministic offline keyword search" },
-      { label: "kb-add", command: "kb-add", argv: ["--question", "Which six hosts does install.py support?", "--answer", "claude, codex, zcode, cursor, opencode and a generic AGENTS.md mode.", "--tag", "install", "--assumed"], note: "Capture a Q&A entry as an explicit assumption" },
-      { label: "kb-export", command: "kb-export", argv: [], note: "Export the KB to KNOWLEDGE_BASE.md" },
+      { label: "kb-search", command: "kb-search", argv: ["--query", "skills"], note: "Deterministic offline keyword search", noteTr: "Çevrimdışı, deterministik anahtar kelime araması" },
+      { label: "kb-add", command: "kb-add", argv: ["--question", "Which six hosts does install.py support?", "--answer", "claude, codex, zcode, cursor, opencode and a generic AGENTS.md mode.", "--tag", "install", "--assumed"], note: "Capture a Q&A entry as an explicit assumption", noteTr: "Bir soru-cevabı 'varsayım' olarak kaydeder" },
+      { label: "kb-export", command: "kb-export", argv: [], note: "Export the KB to KNOWLEDGE_BASE.md", noteTr: "Bilgi tabanını KNOWLEDGE_BASE.md olarak dışa aktarır" },
     ],
   },
   {
     title: "Advice & decisions",
+    titleTr: "Tavsiye ve kararlar",
     scenarios: [
-      { label: "advise-intake", command: "advise-intake", argv: ["--question", "Should v3.1 add a security-audit skill for offline prompt-injection scanning?", "--context", "Planning the next release of the suite", "--constraint", "Keep every check offline and deterministic", "--non-goal", "Network scanning or external services", "--mode", "planning"], note: "Structured intake before advising (overwrites previous intake)" },
-      { label: "decision-score", command: "decision-score", argv: ["--spec-file", "decision-matrix.json"], note: "Weighted scoring of the seeded decision matrix" },
-      { label: "wide-table", command: "wide-table", argv: [], note: "Entity x field evidence matrix from the ledger" },
-      { label: "adr-new", command: "adr-new", argv: ["--title", "Adopt grouped example scenarios in the console", "--dir", "docs/adr", "--owner", "console-team"], note: "Write a new numbered ADR to docs/adr/" },
-      { label: "adr-check", command: "adr-check", argv: ["--file", "docs/adr/0001-use-a-single-shared-demo-workspace-for-the-test-console.md"], note: "Hygiene check: catches unfilled placeholders in the seeded ADR", expectFail: true },
+      { label: "advise-intake", command: "advise-intake", argv: ["--question", "Should v3.1 add a security-audit skill for offline prompt-injection scanning?", "--context", "Planning the next release of the suite", "--constraint", "Keep every check offline and deterministic", "--non-goal", "Network scanning or external services", "--mode", "planning"], note: "Structured intake before advising (overwrites previous intake)", noteTr: "Tavsiye öncesi yapılandırılmış giriş (öncekini ezer)" },
+      { label: "decision-score", command: "decision-score", argv: ["--spec-file", "decision-matrix.json"], note: "Weighted scoring of the seeded decision matrix", noteTr: "Hazır karar matrisinin tartılı puanlaması" },
+      { label: "wide-table", command: "wide-table", argv: [], note: "Entity x field evidence matrix from the ledger", noteTr: "Defterden varlık × alan kanıt matrisi" },
+      { label: "adr-new", command: "adr-new", argv: ["--title", "Adopt grouped example scenarios in the console", "--dir", "docs/adr", "--owner", "console-team"], note: "Write a new numbered ADR to docs/adr/", noteTr: "docs/adr/ altına yeni numaralı ADR yazar" },
+      { label: "adr-check", command: "adr-check", argv: ["--file", "docs/adr/0001-use-a-single-shared-demo-workspace-for-the-test-console.md"], note: "Hygiene check: catches unfilled placeholders in the seeded ADR", noteTr: "Sağlık kontrolü: hazır ADR'deki boş kalan yerleri yakalar (bilerek hata verir)", expectFail: true },
     ],
   },
   {
     title: "Debug",
+    titleTr: "Hata ayıklama",
     scenarios: [
-      { label: "debug-report", command: "debug-report", argv: [], note: "Hypothesis ledger and circuit-breaker state" },
-      { label: "debug-hypothesis", command: "debug-hypothesis", argv: ["--symptom", "kb-search returns no hits for a freshly added entry", "--statement", "The search index is cached and not refreshed after kb-add", "--prediction", "The new entry is found on the next kb-search run", "--test-command", "python3 workbench.py kb-search --query freshly", "--status", "PENDING", "--target-file", "demo-project/src/app.py"], note: "Add a falsifiable hypothesis with a prediction" },
+      { label: "debug-report", command: "debug-report", argv: [], note: "Hypothesis ledger and circuit-breaker state", noteTr: "Hipotez defteri ve sigorta (circuit-breaker) durumu" },
+      { label: "debug-hypothesis", command: "debug-hypothesis", argv: ["--symptom", "kb-search returns no hits for a freshly added entry", "--statement", "The search index is cached and not refreshed after kb-add", "--prediction", "The new entry is found on the next kb-search run", "--test-command", "python3 workbench.py kb-search --query freshly", "--status", "PENDING", "--target-file", "demo-project/src/app.py"], note: "Add a falsifiable hypothesis with a prediction", noteTr: "Öngörülü, çürütülebilir bir hipotez ekler" },
     ],
   },
   {
     title: "Artifacts",
+    titleTr: "Çıktılar",
     scenarios: [
-      { label: "artifact-list", command: "artifact-list", argv: [], note: "List artifact-studio templates" },
-      { label: "artifact-new", command: "artifact-new", argv: ["--type", "technical-report", "--title", "Scenario coverage report", "--output", "artifacts/scenario-coverage.md", "--force"], note: "Scaffold a technical report artifact" },
+      { label: "artifact-list", command: "artifact-list", argv: [], note: "List artifact-studio templates", noteTr: "Hazır çıktı şablonlarını listeler" },
+      { label: "artifact-new", command: "artifact-new", argv: ["--type", "technical-report", "--title", "Scenario coverage report", "--output", "artifacts/scenario-coverage.md", "--force"], note: "Scaffold a technical report artifact", noteTr: "Teknik rapor çıktısı oluşturur" },
     ],
   },
   {
     title: "Handoff",
+    titleTr: "Devir",
     scenarios: [
-      { label: "handoff-check", command: "handoff-check", argv: [], note: "Validate the seeded handoff pack (freshness, sections)" },
-      { label: "handoff-pack", command: "handoff-pack", argv: ["--title", "Scenario walkthrough session", "--session-status", "PARTIAL", "--summary", "Explored the example scenarios across every command group", "--completed", "Ran research, spec, review and knowledge scenarios", "--next-step", "Try the amber reset scenarios, then re-seed the workspace"], note: "Write a PARTIAL session handoff pack" },
+      { label: "handoff-check", command: "handoff-check", argv: [], note: "Validate the seeded handoff pack (freshness, sections)", noteTr: "Hazır devir dosyasını doğrular (tazelik, bölümler)" },
+      { label: "handoff-pack", command: "handoff-pack", argv: ["--title", "Scenario walkthrough session", "--session-status", "PARTIAL", "--summary", "Explored the example scenarios across every command group", "--completed", "Ran research, spec, review and knowledge scenarios", "--next-step", "Try the amber reset scenarios, then re-seed the workspace"], note: "Write a PARTIAL session handoff pack", noteTr: "PARTIAL durumunda bir devir dosyası yazar" },
     ],
   },
   {
     title: "Scope",
+    titleTr: "Kapsam",
     scenarios: [
-      { label: "scope-read", command: "scope-read", argv: ["--project-root", "demo-project", "--file", "src/app.py"], note: "Numbered, checksummed read of a demo file" },
-      { label: "scope-scan", command: "scope-scan", argv: ["--project-root", "demo-project", "--pattern", "TODO|FIXME|BUG", "--ignore-case"], note: "Scan the demo project for TODO/FIXME/BUG markers" },
+      { label: "scope-read", command: "scope-read", argv: ["--project-root", "demo-project", "--file", "src/app.py"], note: "Numbered, checksummed read of a demo file", noteTr: "Demo dosyasını numaralı ve sağlamalı okur" },
+      { label: "scope-scan", command: "scope-scan", argv: ["--project-root", "demo-project", "--pattern", "TODO|FIXME|BUG", "--ignore-case"], note: "Scan the demo project for TODO/FIXME/BUG markers", noteTr: "Demo projede TODO/FIXME/BUG işaretlerini tarar" },
     ],
   },
 ]

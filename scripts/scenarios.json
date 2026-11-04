@@ -2,47 +2,55 @@
   "groups": [
     {
       "title": "Suite health",
+      "title_tr": "Paket sağlığı",
       "scenarios": [
         {
           "label": "doctor",
           "command": "doctor",
           "argv": [],
-          "note": "Cross-host install health for all six hosts"
+          "note": "Cross-host install health for all six hosts",
+          "note_tr": "Altı aracın kurulum sağlığını tek tabloda gösterir"
         },
         {
           "label": "selfcheck",
           "command": "selfcheck",
           "argv": ["--path", "../suite"],
-          "note": "Structural self-test of the suite itself"
+          "note": "Structural self-test of the suite itself",
+          "note_tr": "Paketin kendi kendini yapısal testi"
         }
       ]
     },
     {
       "title": "Research",
+      "title_tr": "Araştırma",
       "scenarios": [
         {
           "label": "research-status",
           "command": "research-status",
           "argv": [],
-          "note": "Ledger snapshot: sources, claims, query budget"
+          "note": "Ledger snapshot: sources, claims, query budget",
+          "note_tr": "Defterin anlık görüntüsü: kaynaklar, iddialar, arama bütçesi"
         },
         {
           "label": "research-gaps",
           "command": "research-gaps",
           "argv": [],
-          "note": "Open knowledge gaps and why they exist"
+          "note": "Open knowledge gaps and why they exist",
+          "note_tr": "Açık bilgi boşlukları ve neden var oldukları"
         },
         {
           "label": "research-score",
           "command": "research-score",
           "argv": [],
-          "note": "Source quality scoring (tier, freshness, domain)"
+          "note": "Source quality scoring (tier, freshness, domain)",
+          "note_tr": "Kaynak kalite puanı (tür, güncellik, alan adı)"
         },
         {
           "label": "research-pack",
           "command": "research-pack",
           "argv": [],
-          "note": "Render evidence_pack.md for synthesis"
+          "note": "Render evidence_pack.md for synthesis",
+          "note_tr": "Kanıt raporunu evidence_pack.md olarak yazar"
         },
         {
           "label": "research-log-query",
@@ -51,7 +59,8 @@
             "--query", "claude code skills directory layout docs",
             "--tool-used", "console-scenario"
           ],
-          "note": "Log a unique query against the budget"
+          "note": "Log a unique query against the budget",
+          "note_tr": "Bir aramayı bütçeye kaydeder"
         },
         {
           "label": "research-add-source",
@@ -63,7 +72,8 @@
             "--tier", "PRIMARY",
             "--excerpt", "Agent Skills are folders with a SKILL.md file."
           ],
-          "note": "Register a PRIMARY source with excerpt"
+          "note": "Register a PRIMARY source with excerpt",
+          "note_tr": "Alıntılı birincil (PRIMARY) kaynak kaydeder"
         },
         {
           "label": "research-add-claim",
@@ -78,7 +88,8 @@
             "--confidence", "MEDIUM",
             "--allow-unverified-quote"
           ],
-          "note": "Add a PROVISIONAL claim backed by source S1"
+          "note": "Add a PROVISIONAL claim backed by source S1",
+          "note_tr": "S1 kaynağına dayalı geçici (PROVISIONAL) iddia ekler"
         },
         {
           "label": "research-add-gap",
@@ -90,7 +101,8 @@
             "--query-tried", "agent skills discovery latency benchmark",
             "--reason", "NO_PUBLIC_SOURCE"
           ],
-          "note": "Record a gap with reason NO_PUBLIC_SOURCE"
+          "note": "Record a gap with reason NO_PUBLIC_SOURCE",
+          "note_tr": "Nedeni 'kaynak yok' olan bir bilgi boşluğu kaydeder"
         },
         {
           "label": "research-resolve",
@@ -101,13 +113,15 @@
             "--winner-claim", "C3",
             "--reason", "Primary Cursor docs describe .cursor/rules and generated commands."
           ],
-          "note": "Resolve an entity/field to claim C3"
+          "note": "Resolve an entity/field to claim C3",
+          "note_tr": "Bir varlık/alan çelişkisini C3 lehine çözer"
         },
         {
           "label": "fetch-url",
           "command": "fetch-url",
           "argv": ["--url", "https://agentskills.io/specification", "--allow-network"],
-          "note": "Fetch and cache an https source (explicit opt-in)"
+          "note": "Fetch and cache an https source (explicit opt-in)",
+          "note_tr": "Bir https kaynağını çeker ve önbelleğe alır (açık izinle)"
         },
         {
           "label": "research-init",
@@ -121,18 +135,21 @@
             "--max-queries", "8"
           ],
           "note": "Start a fresh research ledger (wipes sources, claims, gaps)",
+          "note_tr": "Yeni boş araştırma defteri açar (kaynak/iddia/boşlukları siler)",
           "resets": true
         }
       ]
     },
     {
       "title": "Spec",
+      "title_tr": "Spec",
       "scenarios": [
         {
           "label": "spec-check",
           "command": "spec-check",
           "argv": [],
-          "note": "Spec health: criteria coverage and task links"
+          "note": "Spec health: criteria coverage and task links",
+          "note_tr": "Spec sağlığı: kriter kapsamı ve görev bağlantıları"
         },
         {
           "label": "spec-criterion",
@@ -143,7 +160,8 @@
             "--when", "wide-table runs with no arguments",
             "--then", "an entity by field matrix renders without errors"
           ],
-          "note": "Add a Given/When/Then criterion to story US1"
+          "note": "Add a Given/When/Then criterion to story US1",
+          "note_tr": "US1 hikâyesine Given/When/Then kriteri ekler"
         },
         {
           "label": "spec-task",
@@ -152,7 +170,8 @@
             "--task", "Add a scenario test for wide-table rendering",
             "--verifies", "AC1"
           ],
-          "note": "Add a task that verifies criterion AC1"
+          "note": "Add a task that verifies criterion AC1",
+          "note_tr": "AC1 kriterini doğrulayan bir görev ekler"
         },
         {
           "label": "spec-new",
@@ -164,30 +183,35 @@
             "--force"
           ],
           "note": "Restart the spec ledger (wipes stories, criteria, tasks)",
+          "note_tr": "Spec defterini sıfırdan açar (hikâye/kriter/görevleri siler)",
           "resets": true
         }
       ]
     },
     {
       "title": "Review & evidence",
+      "title_tr": "İnceleme ve kanıt",
       "scenarios": [
         {
           "label": "review-report",
           "command": "review-report",
           "argv": [],
-          "note": "Mechanical verdict: FAIL while any BLOCKING finding is open (seed has MAJOR/MINOR → PASS_WITH_FINDINGS)"
+          "note": "Mechanical verdict: FAIL while any BLOCKING finding is open (seed has MAJOR/MINOR → PASS_WITH_FINDINGS)",
+          "note_tr": "Mekanik karar: açık BLOCKING varsa FAIL (hazır veride MAJOR/MINOR var → PASS_WITH_FINDINGS)"
         },
         {
           "label": "audit-report",
           "command": "audit-report",
           "argv": [],
-          "note": "Evidence-ledger integrity audit (claims vs quotes vs sources)"
+          "note": "Evidence-ledger integrity audit (claims vs quotes vs sources)",
+          "note_tr": "Kanıt defteri bütünlük denetimi (iddia–alıntı–kaynak eşleşmesi)"
         },
         {
           "label": "verify-delivery",
           "command": "verify-delivery",
           "argv": ["--artifact", "artifacts/demo-report.md"],
-          "note": "Delivery gate: artifact present (L1) and spec tasks verified"
+          "note": "Delivery gate: artifact present (L1) and spec tasks verified",
+          "note_tr": "Teslim kapısı: çıktı dosyası var (L1) ve spec görevleri doğrulanmış"
         },
         {
           "label": "review-finding",
@@ -200,7 +224,8 @@
             "--description", "Module uses sys.argv in __main__ without importing sys",
             "--suggestion", "Add import sys at the top of the module"
           ],
-          "note": "Append a MINOR finding on the demo project"
+          "note": "Append a MINOR finding on the demo project",
+          "note_tr": "Demo projesine MINOR bir bulgu ekler"
         },
         {
           "label": "review-init",
@@ -212,18 +237,21 @@
             "--force"
           ],
           "note": "Restart the review ledger (wipes findings)",
+          "note_tr": "İnceleme defterini sıfırdan açar (bulguları siler)",
           "resets": true
         }
       ]
     },
     {
       "title": "Knowledge",
+      "title_tr": "Bilgi tabanı",
       "scenarios": [
         {
           "label": "kb-search",
           "command": "kb-search",
           "argv": ["--query", "skills"],
-          "note": "Deterministic offline keyword search"
+          "note": "Deterministic offline keyword search",
+          "note_tr": "Çevrimdışı, deterministik anahtar kelime araması"
         },
         {
           "label": "kb-add",
@@ -234,18 +262,21 @@
             "--tag", "install",
             "--assumed"
           ],
-          "note": "Capture a Q&A entry as an explicit assumption"
+          "note": "Capture a Q&A entry as an explicit assumption",
+          "note_tr": "Bir soru-cevabı 'varsayım' olarak kaydeder"
         },
         {
           "label": "kb-export",
           "command": "kb-export",
           "argv": [],
-          "note": "Export the KB to KNOWLEDGE_BASE.md"
+          "note": "Export the KB to KNOWLEDGE_BASE.md",
+          "note_tr": "Bilgi tabanını KNOWLEDGE_BASE.md olarak dışa aktarır"
         }
       ]
     },
     {
       "title": "Advice & decisions",
+      "title_tr": "Tavsiye ve kararlar",
       "scenarios": [
         {
           "label": "advise-intake",
@@ -257,19 +288,22 @@
             "--non-goal", "Network scanning or external services",
             "--mode", "planning"
           ],
-          "note": "Structured intake before advising (overwrites previous intake)"
+          "note": "Structured intake before advising (overwrites previous intake)",
+          "note_tr": "Tavsiye öncesi yapılandırılmış giriş (öncekini ezer)"
         },
         {
           "label": "decision-score",
           "command": "decision-score",
           "argv": ["--spec-file", "decision-matrix.json"],
-          "note": "Weighted scoring of the seeded decision matrix"
+          "note": "Weighted scoring of the seeded decision matrix",
+          "note_tr": "Hazır karar matrisinin tartılı puanlaması"
         },
         {
           "label": "wide-table",
           "command": "wide-table",
           "argv": [],
-          "note": "Entity x field evidence matrix from the ledger"
+          "note": "Entity x field evidence matrix from the ledger",
+          "note_tr": "Defterden varlık × alan kanıt matrisi"
         },
         {
           "label": "adr-new",
@@ -279,7 +313,8 @@
             "--dir", "docs/adr",
             "--owner", "console-team"
           ],
-          "note": "Write a new numbered ADR to docs/adr/"
+          "note": "Write a new numbered ADR to docs/adr/",
+          "note_tr": "docs/adr/ altına yeni numaralı ADR yazar"
         },
         {
           "label": "adr-check",
@@ -288,18 +323,21 @@
             "--file", "docs/adr/0001-use-a-single-shared-demo-workspace-for-the-test-console.md"
           ],
           "note": "Hygiene check: catches unfilled placeholders in the seeded ADR",
+          "note_tr": "Sağlık kontrolü: hazır ADR'deki boş kalan yerleri yakalar (bilerek hata verir)",
           "expectFail": true
         }
       ]
     },
     {
       "title": "Debug",
+      "title_tr": "Hata ayıklama",
       "scenarios": [
         {
           "label": "debug-report",
           "command": "debug-report",
           "argv": [],
-          "note": "Hypothesis ledger and circuit-breaker state"
+          "note": "Hypothesis ledger and circuit-breaker state",
+          "note_tr": "Hipotez defteri ve sigorta (circuit-breaker) durumu"
         },
         {
           "label": "debug-hypothesis",
@@ -312,18 +350,21 @@
             "--status", "PENDING",
             "--target-file", "demo-project/src/app.py"
           ],
-          "note": "Add a falsifiable hypothesis with a prediction"
+          "note": "Add a falsifiable hypothesis with a prediction",
+          "note_tr": "Öngörülü, çürütülebilir bir hipotez ekler"
         }
       ]
     },
     {
       "title": "Artifacts",
+      "title_tr": "Çıktılar",
       "scenarios": [
         {
           "label": "artifact-list",
           "command": "artifact-list",
           "argv": [],
-          "note": "List artifact-studio templates"
+          "note": "List artifact-studio templates",
+          "note_tr": "Hazır çıktı şablonlarını listeler"
         },
         {
           "label": "artifact-new",
@@ -334,18 +375,21 @@
             "--output", "artifacts/scenario-coverage.md",
             "--force"
           ],
-          "note": "Scaffold a technical report artifact"
+          "note": "Scaffold a technical report artifact",
+          "note_tr": "Teknik rapor çıktısı oluşturur"
         }
       ]
     },
     {
       "title": "Handoff",
+      "title_tr": "Devir",
       "scenarios": [
         {
           "label": "handoff-check",
           "command": "handoff-check",
           "argv": [],
-          "note": "Validate the seeded handoff pack (freshness, sections)"
+          "note": "Validate the seeded handoff pack (freshness, sections)",
+          "note_tr": "Hazır devir dosyasını doğrular (tazelik, bölümler)"
         },
         {
           "label": "handoff-pack",
@@ -357,12 +401,14 @@
             "--completed", "Ran research, spec, review and knowledge scenarios",
             "--next-step", "Try the amber reset scenarios, then re-seed the workspace"
           ],
-          "note": "Write a PARTIAL session handoff pack"
+          "note": "Write a PARTIAL session handoff pack",
+          "note_tr": "PARTIAL durumunda bir devir dosyası yazar"
         }
       ]
     },
     {
       "title": "Scope",
+      "title_tr": "Kapsam",
       "scenarios": [
         {
           "label": "scope-read",
@@ -371,7 +417,8 @@
             "--project-root", "demo-project",
             "--file", "src/app.py"
           ],
-          "note": "Numbered, checksummed read of a demo file"
+          "note": "Numbered, checksummed read of a demo file",
+          "note_tr": "Demo dosyasını numaralı ve sağlamalı okur"
         },
         {
           "label": "scope-scan",
@@ -381,7 +428,8 @@
             "--pattern", "TODO|FIXME|BUG",
             "--ignore-case"
           ],
-          "note": "Scan the demo project for TODO/FIXME/BUG markers"
+          "note": "Scan the demo project for TODO/FIXME/BUG markers",
+          "note_tr": "Demo projede TODO/FIXME/BUG işaretlerini tarar"
         }
       ]
     }
