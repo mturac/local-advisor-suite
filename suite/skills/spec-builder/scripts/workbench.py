@@ -68,7 +68,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 
-VERSION = "3.0.0"
+VERSION = "3.1.0"
 DEFAULT_STATE_DIR = ".local-workbench"
 MAX_FILE_BYTES = 512 * 1024  # 512 KB cap for scoped local file reads
 MAX_SCAN_FILES = 200
@@ -2465,6 +2465,296 @@ def cmd_kb_export(args: argparse.Namespace) -> Dict[str, Any]:
     return {"status": "OK", "knowledge_base": str(out), "entries": len(entries)}
 
 
+# ---------------------------------------------------------- load-skills
+# Deterministic prompt → skill routing. Given the user's request text this
+# decides which skills to load and emits the brief the agent should follow:
+# read order, template to fill, first command, stop rule. No LLM, no
+# network — the same request always routes the same way (testable).
+
+SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
+    "local-advisor": {
+        "wants": "Advice, design review, 'what should I do', architecture or planning help",
+        "wants_tr": "Danışma, tasarım incelemesi, 'ne yapmalıyım', mimari/planlama yardımı",
+        "triggers": ["advice", "should i", "what should", "recommend", "opinion", "architecture",
+                     "plan ", "planning", "help me decide how", "ne yapmalı", "öner", "tavsiye", "fikrin",
+                     "mimari", "değerlendirir misin"],
+        "read": ["SKILL.md", "references/advisory-modes.md", "references/answer-standards.md"],
+        "template": "templates/advisory-brief.md",
+        "first_command": "advise-intake --question ... --context ... --mode planning",
+        "stop_rule": "ask one precise question when context is missing; do not scan files by default",
+        "also_consider": ["decision-review"],
+        "fallback": True,
+    },
+    "decision-review": {
+        "wants": "Choose between options, an ADR, a trade-off matrix, a pre-mortem",
+        "wants_tr": "Seçenekler arasında seçim, ADR, ödünleşim matrisi, ön-ötüp",
+        "triggers": ["choose", "decide", "decision", "adr", "trade-off", "pre-mortem", "option",
+                     "which option", "hangisini seç", "karar", "kararsız", "tercih etmeli",
+                     "seçenek"],
+        "read": ["SKILL.md", "references/scoring-guide.md", "references/reversibility-classes.md"],
+        "template": "templates/adr.md",
+        "first_command": "decision-score --spec-file decision.json",
+        "stop_rule": "the decision is not final until the ADR passes adr-check",
+        "also_consider": ["wide-search"],
+    },
+    "local-debug": {
+        "wants": "A bug, failing test or stack trace in a named file",
+        "wants_tr": "İsimlendirilmiş bir dosyada hata, düşen test veya stack trace",
+        "triggers": ["bug", "error", "stack trace", "traceback", "exception", "fails", "failing",
+                     "broken", "crash", "neden", "hata", "çalışmıyor", "patlıyor", "çöküyor",
+                     "düşüyor"],
+        "read": ["SKILL.md", "references/hypothesis-discipline.md", "references/escalation.md"],
+        "template": "templates/root-cause-report.md",
+        "first_command": "debug-hypothesis --symptom ... --target-file ... --repro ...",
+        "stop_rule": "stop after 2 falsified hypotheses; run debug-report and ask for the missing information",
+        "also_consider": ["code-review"],
+    },
+    "web-search": {
+        "wants": "One factual answer that needs 1-3 sources (version, price, limit, date)",
+        "wants_tr": "1-3 kaynak gerektiren tek bilgisel cevap (sürüm, fiyat, limit, tarih)",
+        "triggers": ["what is the latest", "which version", "how much does", "current price",
+                     "release date", "supports", "sürüm", "fiyat", "kaç para", "destekliyor mu",
+                     "güncel"],
+        "read": ["SKILL.md", "references/quick-verification-protocol.md", "references/host-tools.md"],
+        "template": "templates/search-log.md",
+        "first_command": "none (use the host's own search tool, then log the query)",
+        "stop_rule": "cite a page only after opening it; quote it verbatim in the log",
+        "also_consider": ["deep-research"],
+    },
+    "deep-research": {
+        "wants": "Research with several sources and a synthesis",
+        "wants_tr": "Birden çok kaynak ve sentez gerektiren araştırma",
+        "triggers": ["research", "investigate", "deep dive", "multiple sources", "synthesis",
+                     "evidence for", "araştır", "kaynak", "literatür", "derinlemesine",
+                     "kanıtlarla"],
+        "read": ["SKILL.md", "references/research-protocol.md", "references/source-quality.md",
+                 "references/synthesis-standard.md"],
+        "template": "templates/research-notebook.md",
+        "first_command": "research-init --topic ... --sub-question ... --max-queries 8",
+        "stop_rule": "stop at the query budget; record remaining gaps instead of continuing silently",
+        "also_consider": ["web-search", "evidence-audit"],
+    },
+    "wide-search": {
+        "wants": "Compare many entities across the same fields, as a table",
+        "wants_tr": "Birden çok varlığı aynı alanlarda tablo olarak karşılaştırma",
+        "triggers": ["compare", "comparison", " vs ", "versus", "which is better", "alternatives",
+                     "matrix", "karşılaştır", "hangisi daha", "alternatif", "matris",
+                     "tablo olarak"],
+        "read": ["SKILL.md", "references/matrix-method.md"],
+        "template": "templates/wide-comparison-matrix.md",
+        "first_command": "research-init --mode wide-matrix --entity ... --field ...",
+        "stop_rule": "a ? cell is not acceptable in the final matrix — search, or declare a gap",
+        "also_consider": ["deep-research", "decision-review"],
+    },
+    "evidence-audit": {
+        "wants": "Check a draft's sources, numbers and claims",
+        "wants_tr": "Bir taslağın kaynaklarını, sayılarını ve iddialarını denetleme",
+        "triggers": ["audit", "fact-check", "check the claims", "verify sources", "citations",
+                     "denetle", "denetim", "iddiaları kontrol", "kaynakları kontrol"],
+        "read": ["SKILL.md", "references/audit-rules.md"],
+        "template": "templates/audit-verdict.md",
+        "first_command": "audit-report --report-file FILE",
+        "stop_rule": "deliver only on PASS; a FAIL lists exactly what must be fixed",
+        "also_consider": ["deep-research"],
+    },
+    "delivery-verify": {
+        "wants": "Prove that a change works before saying 'done'",
+        "wants_tr": "'Bitti' demeden önce değişikliğin çalıştığını kanıtlama",
+        "triggers": ["prove", "verify delivery", "does it work", "is it done", "tested",
+                     "before merging", "kanıtla", "teslim", "çalıştığını göster",
+                     "test edildi mi"],
+        "read": ["SKILL.md", "references/level-selection.md"],
+        "template": "templates/delivery-evidence.md",
+        "first_command": "verify-delivery --check L2:... --command ...",
+        "stop_rule": "never say 'done' or 'tested' above the level you observed",
+        "also_consider": ["evidence-audit"],
+    },
+    "artifact-studio": {
+        "wants": "Write a report, ADR, executive summary, slide outline or data schema",
+        "wants_tr": "Rapor, ADR, yönetici özeti, sunum iskeleti veya veri şeması yazma",
+        "triggers": ["write a report", "document", "executive summary", "presentation",
+                     "postmortem", "data schema", "rapor yaz", "rapor hazırla", "doküman",
+                     "özet çıkar", "sunum", "şema"],
+        "read": ["SKILL.md", "references/writing-standards.md"],
+        "template": "templates/technical-report.md",
+        "first_command": "artifact-new --type ... --title ... --output ...",
+        "stop_rule": "no pre-written content — the template provides structure, you provide substance",
+        "also_consider": ["evidence-audit"],
+    },
+    "session-handoff": {
+        "wants": "End, switch tools, delegate or resume work",
+        "wants_tr": "Oturumu bitirme, araç değiştirme, devretme veya kaldığı yerden devam",
+        "triggers": ["handoff", "end the session", "switch tools", "resume", "pick up tomorrow",
+                     "devir", "devret", "oturumu bitir", "kaldığım yerden", "yarın devam"],
+        "read": ["SKILL.md", "references/handoff-protocol.md", "references/state-inventory.md"],
+        "template": "templates/handoff-pack.md",
+        "first_command": "handoff-pack --title ... --session-status ...",
+        "stop_rule": "a handoff that forces the reader to ask 'where is the context?' has failed",
+        "also_consider": [],
+    },
+    "spec-builder": {
+        "wants": "Turn a request into a testable spec with acceptance criteria",
+        "wants_tr": "Bir talebi kabul kriterli, sınanabilir bir tarif dosyasına çevirme",
+        "triggers": ["spec", "specification", "acceptance criteria", "user story", "requirements",
+                     "spesifikasyon", "kabul kriteri", "gereksinim", "istenenleri tarif"],
+        "read": ["SKILL.md", "references/acceptance-criteria.md", "references/task-breakdown.md"],
+        "template": "templates/spec.md",
+        "first_command": "spec-new --goal ... --story ... --non-goal ...",
+        "stop_rule": "spec-check must PASS before implementation starts",
+        "also_consider": ["delivery-verify"],
+    },
+    "code-review": {
+        "wants": "A structured, severity-graded review of named files or a diff",
+        "wants_tr": "İsimlendirilmiş dosyaların veya diff'in yapılandırılmış, dereceli incelemesi",
+        "triggers": ["code review", "review my code", "review the diff", "pr review", "severity",
+                     "kod incele", "kod incelemesi", "gözden geçir", "diff'i incele"],
+        "read": ["SKILL.md", "references/severity-model.md", "references/review-checklist.md"],
+        "template": "templates/findings-report.md",
+        "first_command": "review-init --title ... --target ...",
+        "stop_rule": "the verdict is FAIL while any BLOCKING finding is open",
+        "also_consider": ["local-debug"],
+    },
+    "knowledge-capture": {
+        "wants": "Save, find and reuse reusable project knowledge as sourced Q&A",
+        "wants_tr": "Yeniden kullanılabilir proje bilgisini kaynaklı soru-cevap olarak saklama",
+        "triggers": ["remember this", "save this", "knowledge base", "reusable", "we decided",
+                     "kaydet", "unutma", "bilgi tabanı", "tekrar kullan", "kararımızı kaydet"],
+        "read": ["SKILL.md", "references/entry-standards.md", "references/lifecycle.md"],
+        "template": "templates/kb-entry.md",
+        "first_command": "kb-add --question ... --answer ... --source-url ...",
+        "stop_rule": "entries are sourced or explicitly marked assumed — never present an assumption as fact",
+        "also_consider": [],
+    },
+}
+
+_WORD_START = r"(?<![a-z0-9çğıöşüâîû])"
+
+
+def _trigger_hits(prompt: str, triggers: List[str]) -> List[str]:
+    """Return the subset of triggers present in the prompt (word-start anchored,
+    prefix matching so 'compare' also matches 'comparison' / 'comparing')."""
+    text = " " + prompt.lower() + " "
+    hits: List[str] = []
+    for trig in triggers:
+        needle = trig.lower()
+        pattern = _WORD_START + re.escape(needle)
+        if re.search(pattern, text):
+            hits.append(trig)
+    return hits
+
+
+def _route_prompt(prompt: str) -> List[Dict[str, Any]]:
+    scored: List[Dict[str, Any]] = []
+    for skill, route in SKILL_ROUTES.items():
+        hits = _trigger_hits(prompt, route["triggers"])
+        if hits:
+            scored.append({"skill": skill, "score": len(hits), "hits": hits})
+    scored.sort(key=lambda r: (-r["score"], r["skill"]))
+    return scored
+
+
+def _brief_for(skill: str) -> Dict[str, Any]:
+    route = SKILL_ROUTES.get(skill)
+    if not route:
+        raise WorkbenchError("UNKNOWN_SKILL", f"no route for skill '{skill}'",
+                             {"known": sorted(SKILL_ROUTES)})
+    return {
+        "skill": skill,
+        "wants": route["wants"],
+        "wants_tr": route["wants_tr"],
+        "read_in_order": route["read"],
+        "fill_template": route["template"],
+        "first_command": route["first_command"],
+        "stop_rule": route["stop_rule"],
+        "also_consider": route["also_consider"],
+    }
+
+
+def _render_brief_text(prompt: Optional[str], briefs: List[Dict[str, Any]],
+                       confidences: Dict[str, str]) -> str:
+    lines: List[str] = ["# Skill brief — load into context, then follow the read order", ""]
+    if prompt:
+        lines.append(f"Routed from prompt: \"{prompt}\"")
+        lines.append("")
+    for i, b in enumerate(briefs, 1):
+        conf = confidences.get(b["skill"], "")
+        lines.append(f"## {i}) {b['skill']} ({conf})")
+        lines.append("")
+        lines.append(f"- **Use when**: {b['wants']} / {b['wants_tr']}")
+        read = " → ".join(b["read_in_order"])
+        lines.append(f"- **Read in order**: {read}")
+        lines.append(f"- **Fill template**: {b['fill_template']}")
+        lines.append(f"- **First command**: `$WB {b['first_command']}`"
+                     if not b["first_command"].startswith("none")
+                     else f"- **First command**: {b['first_command']}")
+        lines.append(f"- **Stop rule**: {b['stop_rule']}")
+        if b["also_consider"]:
+            lines.append(f"- **Also consider**: {', '.join(b['also_consider'])}")
+        lines.append("")
+    lines.append("Follow progressive disclosure: read SKILL.md fully, open references only when")
+    lines.append("the step needs them, fill the template only when writing the deliverable.")
+    return "\n".join(lines)
+
+
+def cmd_load_skills(args: argparse.Namespace) -> Dict[str, Any]:
+    if args.list:
+        return {
+            "status": "OK",
+            "routes": [
+                {"skill": s, "wants": r["wants"], "wants_tr": r["wants_tr"],
+                 "triggers": r["triggers"], "fallback": r.get("fallback", False)}
+                for s, r in sorted(SKILL_ROUTES.items())
+            ],
+        }
+
+    if args.skill:
+        brief = _brief_for(args.skill)
+        confidences = {args.skill: "DIRECT"}
+        brief_text = _render_brief_text(None, [brief], confidences)
+        return {"status": "OK", "requested": args.skill, "routed": [brief],
+                "confidences": confidences, "brief_text": brief_text}
+
+    prompt = (args.prompt or "").strip()
+    if not prompt:
+        raise WorkbenchError("NO_INPUT", "provide --prompt TEXT or --skill NAME (or --list)")
+
+    if len(prompt) < 8:
+        raise WorkbenchError("PROMPT_TOO_SHORT",
+                             "the prompt is too short to route reliably (min 8 characters)")
+
+    scored = _route_prompt(prompt)
+    top = scored[: max(1, args.max)]
+    confidences: Dict[str, str] = {}
+    for r in scored:
+        confidences[r["skill"]] = "HIGH" if r["score"] >= 2 else "MEDIUM"
+
+    fallback = None
+    if top:
+        briefs = [_brief_for(r["skill"]) for r in top]
+        routed = [{"score": r["score"], "hits": r["hits"], "brief": b}
+                  for r, b in zip(top, briefs)]
+    else:
+        # No trigger matched: fall back to the advisory route, reason on record.
+        fallback = {
+            "skill": "local-advisor", "score": 0, "hits": [],
+            "reason": "no specific trigger matched — defaulting to the advisory route; "
+                      "answer from the conversation and ask one precise question if context is missing",
+        }
+        briefs = [_brief_for("local-advisor")]
+        routed = [{"score": 0, "hits": [], "brief": briefs[0]}]
+        confidences = {"local-advisor": "LOW"}
+
+    brief_text = _render_brief_text(prompt, briefs, confidences)
+    return {
+        "status": "OK",
+        "prompt": prompt,
+        "routed": routed,
+        "confidences": confidences,
+        "fallback": fallback,
+        "brief_text": brief_text,
+    }
+
+
 # ---------------------------------------------------------------- doctor
 
 
@@ -2950,6 +3240,14 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("kb-export", help="Render the knowledge base as Markdown")
     p.add_argument("--output", help="Default: <state-dir>/KNOWLEDGE_BASE.md")
     p.set_defaults(func=cmd_kb_export)
+
+    p = sub.add_parser("load-skills",
+                       help="Route a prompt to the skills it needs and emit their loading brief")
+    p.add_argument("--prompt", help="The user's request text (TR or EN) to route")
+    p.add_argument("--skill", help="Skip routing: load this skill's brief directly")
+    p.add_argument("--max", type=int, default=3, help="Max skills to return (default 3)")
+    p.add_argument("--list", action="store_true", help="List all routes with their triggers")
+    p.set_defaults(func=cmd_load_skills)
 
     return parser
 

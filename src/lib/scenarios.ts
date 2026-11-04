@@ -23,6 +23,13 @@ export interface ScenarioGroup {
 
 export const SCENARIO_GROUPS: ScenarioGroup[] = [
   {
+    title: "Skill routing",
+    titleTr: "Beceri yönlendirme",
+    scenarios: [
+      { label: "load-skills (TR)", command: "load-skills", argv: ["--prompt", "DuckDB mi SQLite mi, eşzamanlı yazma konusunda hangisi daha iyi, karşılaştır"], note: "Route any prompt (TR/EN) to its skills; returns the brief (read order, first command, stop rule). Try --skill NAME or --list too", noteTr: "Herhangi bir prompt'u (TR/EN) becerilere yönlendirir; brief döner (okuma sırası, ilk komut, durma kuralı). --skill AD ve --list de dene" },
+    ],
+  },
+  {
     title: "Suite health",
     titleTr: "Paket sağlığı",
     scenarios: [
@@ -122,4 +129,4 @@ export const SCENARIO_GROUPS: ScenarioGroup[] = [
   },
 ]
 
-export const SCENARIO_COUNT = 38
+export const SCENARIO_COUNT = 39

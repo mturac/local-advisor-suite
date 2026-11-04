@@ -1,6 +1,22 @@
 {
   "groups": [
     {
+      "title": "Skill routing",
+      "title_tr": "Beceri yönlendirme",
+      "scenarios": [
+        {
+          "label": "load-skills (TR)",
+          "command": "load-skills",
+          "argv": [
+            "--prompt",
+            "DuckDB mi SQLite mi, eşzamanlı yazma konusunda hangisi daha iyi, karşılaştır"
+          ],
+          "note": "Route any prompt (TR/EN) to its skills; returns the brief (read order, first command, stop rule). Try --skill NAME or --list too",
+          "note_tr": "Herhangi bir prompt'u (TR/EN) becerilere yönlendirir; brief döner (okuma sırası, ilk komut, durma kuralı). --skill AD ve --list de dene"
+        }
+      ]
+    },
+    {
       "title": "Suite health",
       "title_tr": "Paket sağlığı",
       "scenarios": [
@@ -14,7 +30,10 @@
         {
           "label": "selfcheck",
           "command": "selfcheck",
-          "argv": ["--path", "../suite"],
+          "argv": [
+            "--path",
+            "../suite"
+          ],
           "note": "Structural self-test of the suite itself",
           "note_tr": "Paketin kendi kendini yapısal testi"
         }
@@ -56,8 +75,10 @@
           "label": "research-log-query",
           "command": "research-log-query",
           "argv": [
-            "--query", "claude code skills directory layout docs",
-            "--tool-used", "console-scenario"
+            "--query",
+            "claude code skills directory layout docs",
+            "--tool-used",
+            "console-scenario"
           ],
           "note": "Log a unique query against the budget",
           "note_tr": "Bir aramayı bütçeye kaydeder"
@@ -66,11 +87,16 @@
           "label": "research-add-source",
           "command": "research-add-source",
           "argv": [
-            "--url", "https://code.visualstudio.com/docs/copilot/chat/agent-skills",
-            "--title", "VS Code agent skills documentation",
-            "--publisher", "Microsoft",
-            "--tier", "PRIMARY",
-            "--excerpt", "Agent Skills are folders with a SKILL.md file."
+            "--url",
+            "https://code.visualstudio.com/docs/copilot/chat/agent-skills",
+            "--title",
+            "VS Code agent skills documentation",
+            "--publisher",
+            "Microsoft",
+            "--tier",
+            "PRIMARY",
+            "--excerpt",
+            "Agent Skills are folders with a SKILL.md file."
           ],
           "note": "Register a PRIMARY source with excerpt",
           "note_tr": "Alıntılı birincil (PRIMARY) kaynak kaydeder"
@@ -79,13 +105,20 @@
           "label": "research-add-claim",
           "command": "research-add-claim",
           "argv": [
-            "--statement", "VS Code loads agent skills from a skills folder in the workspace",
-            "--source-id", "S1",
-            "--quote", "A skill is a folder with a SKILL.md file; name and description are required.",
-            "--entity", "VS Code",
-            "--field", "skills directory",
-            "--value", "workspace skills folder",
-            "--confidence", "MEDIUM",
+            "--statement",
+            "VS Code loads agent skills from a skills folder in the workspace",
+            "--source-id",
+            "S1",
+            "--quote",
+            "A skill is a folder with a SKILL.md file; name and description are required.",
+            "--entity",
+            "VS Code",
+            "--field",
+            "skills directory",
+            "--value",
+            "workspace skills folder",
+            "--confidence",
+            "MEDIUM",
             "--allow-unverified-quote"
           ],
           "note": "Add a PROVISIONAL claim backed by source S1",
@@ -95,11 +128,16 @@
           "label": "research-add-gap",
           "command": "research-add-gap",
           "argv": [
-            "--description", "No public benchmark compares skill discovery latency across hosts",
-            "--entity", "All hosts",
-            "--field", "performance",
-            "--query-tried", "agent skills discovery latency benchmark",
-            "--reason", "NO_PUBLIC_SOURCE"
+            "--description",
+            "No public benchmark compares skill discovery latency across hosts",
+            "--entity",
+            "All hosts",
+            "--field",
+            "performance",
+            "--query-tried",
+            "agent skills discovery latency benchmark",
+            "--reason",
+            "NO_PUBLIC_SOURCE"
           ],
           "note": "Record a gap with reason NO_PUBLIC_SOURCE",
           "note_tr": "Nedeni 'kaynak yok' olan bir bilgi boşluğu kaydeder"
@@ -108,10 +146,14 @@
           "label": "research-resolve",
           "command": "research-resolve",
           "argv": [
-            "--entity", "Cursor",
-            "--field", "command surface",
-            "--winner-claim", "C3",
-            "--reason", "Primary Cursor docs describe .cursor/rules and generated commands."
+            "--entity",
+            "Cursor",
+            "--field",
+            "command surface",
+            "--winner-claim",
+            "C3",
+            "--reason",
+            "Primary Cursor docs describe .cursor/rules and generated commands."
           ],
           "note": "Resolve an entity/field to claim C3",
           "note_tr": "Bir varlık/alan çelişkisini C3 lehine çözer"
@@ -119,7 +161,11 @@
         {
           "label": "fetch-url",
           "command": "fetch-url",
-          "argv": ["--url", "https://agentskills.io/specification", "--allow-network"],
+          "argv": [
+            "--url",
+            "https://agentskills.io/specification",
+            "--allow-network"
+          ],
           "note": "Fetch and cache an https source (explicit opt-in)",
           "note_tr": "Bir https kaynağını çeker ve önbelleğe alır (açık izinle)"
         },
@@ -127,12 +173,18 @@
           "label": "research-init",
           "command": "research-init",
           "argv": [
-            "--topic", "Cross-host portability of agent skill suites",
-            "--sub-question", "How should one SKILL.md serve every host?",
-            "--entity", "Claude Code",
-            "--entity", "Codex",
-            "--field", "skills directory",
-            "--max-queries", "8"
+            "--topic",
+            "Cross-host portability of agent skill suites",
+            "--sub-question",
+            "How should one SKILL.md serve every host?",
+            "--entity",
+            "Claude Code",
+            "--entity",
+            "Codex",
+            "--field",
+            "skills directory",
+            "--max-queries",
+            "8"
           ],
           "note": "Start a fresh research ledger (wipes sources, claims, gaps)",
           "note_tr": "Yeni boş araştırma defteri açar (kaynak/iddia/boşlukları siler)",
@@ -155,10 +207,14 @@
           "label": "spec-criterion",
           "command": "spec-criterion",
           "argv": [
-            "--story-id", "US1",
-            "--given", "a seeded demo workspace",
-            "--when", "wide-table runs with no arguments",
-            "--then", "an entity by field matrix renders without errors"
+            "--story-id",
+            "US1",
+            "--given",
+            "a seeded demo workspace",
+            "--when",
+            "wide-table runs with no arguments",
+            "--then",
+            "an entity by field matrix renders without errors"
           ],
           "note": "Add a Given/When/Then criterion to story US1",
           "note_tr": "US1 hikâyesine Given/When/Then kriteri ekler"
@@ -167,8 +223,10 @@
           "label": "spec-task",
           "command": "spec-task",
           "argv": [
-            "--task", "Add a scenario test for wide-table rendering",
-            "--verifies", "AC1"
+            "--task",
+            "Add a scenario test for wide-table rendering",
+            "--verifies",
+            "AC1"
           ],
           "note": "Add a task that verifies criterion AC1",
           "note_tr": "AC1 kriterini doğrulayan bir görev ekler"
@@ -177,9 +235,12 @@
           "label": "spec-new",
           "command": "spec-new",
           "argv": [
-            "--goal", "Restart the spec from scratch via the console example scenarios",
-            "--story", "As a developer I want example scenarios so I can explore commands fast",
-            "--non-goal", "Covering every argument combination",
+            "--goal",
+            "Restart the spec from scratch via the console example scenarios",
+            "--story",
+            "As a developer I want example scenarios so I can explore commands fast",
+            "--non-goal",
+            "Covering every argument combination",
             "--force"
           ],
           "note": "Restart the spec ledger (wipes stories, criteria, tasks)",
@@ -209,7 +270,10 @@
         {
           "label": "verify-delivery",
           "command": "verify-delivery",
-          "argv": ["--artifact", "artifacts/demo-report.md"],
+          "argv": [
+            "--artifact",
+            "artifacts/demo-report.md"
+          ],
           "note": "Delivery gate: artifact present (L1) and spec tasks verified",
           "note_tr": "Teslim kapısı: çıktı dosyası var (L1) ve spec görevleri doğrulanmış"
         },
@@ -217,12 +281,18 @@
           "label": "review-finding",
           "command": "review-finding",
           "argv": [
-            "--file", "demo-project/src/app.py",
-            "--line", "50",
-            "--severity", "MINOR",
-            "--category", "correctness",
-            "--description", "Module uses sys.argv in __main__ without importing sys",
-            "--suggestion", "Add import sys at the top of the module"
+            "--file",
+            "demo-project/src/app.py",
+            "--line",
+            "50",
+            "--severity",
+            "MINOR",
+            "--category",
+            "correctness",
+            "--description",
+            "Module uses sys.argv in __main__ without importing sys",
+            "--suggestion",
+            "Add import sys at the top of the module"
           ],
           "note": "Append a MINOR finding on the demo project",
           "note_tr": "Demo projesine MINOR bir bulgu ekler"
@@ -231,9 +301,12 @@
           "label": "review-init",
           "command": "review-init",
           "argv": [
-            "--title", "Second pass review",
-            "--target", "demo-project/src",
-            "--focus", "maintainability",
+            "--title",
+            "Second pass review",
+            "--target",
+            "demo-project/src",
+            "--focus",
+            "maintainability",
             "--force"
           ],
           "note": "Restart the review ledger (wipes findings)",
@@ -249,7 +322,10 @@
         {
           "label": "kb-search",
           "command": "kb-search",
-          "argv": ["--query", "skills"],
+          "argv": [
+            "--query",
+            "skills"
+          ],
           "note": "Deterministic offline keyword search",
           "note_tr": "Çevrimdışı, deterministik anahtar kelime araması"
         },
@@ -257,9 +333,12 @@
           "label": "kb-add",
           "command": "kb-add",
           "argv": [
-            "--question", "Which six hosts does install.py support?",
-            "--answer", "claude, codex, zcode, cursor, opencode and a generic AGENTS.md mode.",
-            "--tag", "install",
+            "--question",
+            "Which six hosts does install.py support?",
+            "--answer",
+            "claude, codex, zcode, cursor, opencode and a generic AGENTS.md mode.",
+            "--tag",
+            "install",
             "--assumed"
           ],
           "note": "Capture a Q&A entry as an explicit assumption",
@@ -282,11 +361,16 @@
           "label": "advise-intake",
           "command": "advise-intake",
           "argv": [
-            "--question", "Should v3.1 add a security-audit skill for offline prompt-injection scanning?",
-            "--context", "Planning the next release of the suite",
-            "--constraint", "Keep every check offline and deterministic",
-            "--non-goal", "Network scanning or external services",
-            "--mode", "planning"
+            "--question",
+            "Should v3.1 add a security-audit skill for offline prompt-injection scanning?",
+            "--context",
+            "Planning the next release of the suite",
+            "--constraint",
+            "Keep every check offline and deterministic",
+            "--non-goal",
+            "Network scanning or external services",
+            "--mode",
+            "planning"
           ],
           "note": "Structured intake before advising (overwrites previous intake)",
           "note_tr": "Tavsiye öncesi yapılandırılmış giriş (öncekini ezer)"
@@ -294,7 +378,10 @@
         {
           "label": "decision-score",
           "command": "decision-score",
-          "argv": ["--spec-file", "decision-matrix.json"],
+          "argv": [
+            "--spec-file",
+            "decision-matrix.json"
+          ],
           "note": "Weighted scoring of the seeded decision matrix",
           "note_tr": "Hazır karar matrisinin tartılı puanlaması"
         },
@@ -309,9 +396,12 @@
           "label": "adr-new",
           "command": "adr-new",
           "argv": [
-            "--title", "Adopt grouped example scenarios in the console",
-            "--dir", "docs/adr",
-            "--owner", "console-team"
+            "--title",
+            "Adopt grouped example scenarios in the console",
+            "--dir",
+            "docs/adr",
+            "--owner",
+            "console-team"
           ],
           "note": "Write a new numbered ADR to docs/adr/",
           "note_tr": "docs/adr/ altına yeni numaralı ADR yazar"
@@ -320,7 +410,8 @@
           "label": "adr-check",
           "command": "adr-check",
           "argv": [
-            "--file", "docs/adr/0001-use-a-single-shared-demo-workspace-for-the-test-console.md"
+            "--file",
+            "docs/adr/0001-use-a-single-shared-demo-workspace-for-the-test-console.md"
           ],
           "note": "Hygiene check: catches unfilled placeholders in the seeded ADR",
           "note_tr": "Sağlık kontrolü: hazır ADR'deki boş kalan yerleri yakalar (bilerek hata verir)",
@@ -343,12 +434,18 @@
           "label": "debug-hypothesis",
           "command": "debug-hypothesis",
           "argv": [
-            "--symptom", "kb-search returns no hits for a freshly added entry",
-            "--statement", "The search index is cached and not refreshed after kb-add",
-            "--prediction", "The new entry is found on the next kb-search run",
-            "--test-command", "python3 workbench.py kb-search --query freshly",
-            "--status", "PENDING",
-            "--target-file", "demo-project/src/app.py"
+            "--symptom",
+            "kb-search returns no hits for a freshly added entry",
+            "--statement",
+            "The search index is cached and not refreshed after kb-add",
+            "--prediction",
+            "The new entry is found on the next kb-search run",
+            "--test-command",
+            "python3 workbench.py kb-search --query freshly",
+            "--status",
+            "PENDING",
+            "--target-file",
+            "demo-project/src/app.py"
           ],
           "note": "Add a falsifiable hypothesis with a prediction",
           "note_tr": "Öngörülü, çürütülebilir bir hipotez ekler"
@@ -370,9 +467,12 @@
           "label": "artifact-new",
           "command": "artifact-new",
           "argv": [
-            "--type", "technical-report",
-            "--title", "Scenario coverage report",
-            "--output", "artifacts/scenario-coverage.md",
+            "--type",
+            "technical-report",
+            "--title",
+            "Scenario coverage report",
+            "--output",
+            "artifacts/scenario-coverage.md",
             "--force"
           ],
           "note": "Scaffold a technical report artifact",
@@ -395,11 +495,16 @@
           "label": "handoff-pack",
           "command": "handoff-pack",
           "argv": [
-            "--title", "Scenario walkthrough session",
-            "--session-status", "PARTIAL",
-            "--summary", "Explored the example scenarios across every command group",
-            "--completed", "Ran research, spec, review and knowledge scenarios",
-            "--next-step", "Try the amber reset scenarios, then re-seed the workspace"
+            "--title",
+            "Scenario walkthrough session",
+            "--session-status",
+            "PARTIAL",
+            "--summary",
+            "Explored the example scenarios across every command group",
+            "--completed",
+            "Ran research, spec, review and knowledge scenarios",
+            "--next-step",
+            "Try the amber reset scenarios, then re-seed the workspace"
           ],
           "note": "Write a PARTIAL session handoff pack",
           "note_tr": "PARTIAL durumunda bir devir dosyası yazar"
@@ -414,8 +519,10 @@
           "label": "scope-read",
           "command": "scope-read",
           "argv": [
-            "--project-root", "demo-project",
-            "--file", "src/app.py"
+            "--project-root",
+            "demo-project",
+            "--file",
+            "src/app.py"
           ],
           "note": "Numbered, checksummed read of a demo file",
           "note_tr": "Demo dosyasını numaralı ve sağlamalı okur"
@@ -424,8 +531,10 @@
           "label": "scope-scan",
           "command": "scope-scan",
           "argv": [
-            "--project-root", "demo-project",
-            "--pattern", "TODO|FIXME|BUG",
+            "--project-root",
+            "demo-project",
+            "--pattern",
+            "TODO|FIXME|BUG",
             "--ignore-case"
           ],
           "note": "Scan the demo project for TODO/FIXME/BUG markers",

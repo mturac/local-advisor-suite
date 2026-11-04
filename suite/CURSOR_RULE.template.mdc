@@ -15,6 +15,19 @@ State is written to `.local-workbench/` (keep it out of version control). After 
 
 ### Route the request
 
+**Step 0 — dynamic routing.** For every non-trivial request, run:
+
+```bash
+$WB load-skills --prompt "<the user's request, verbatim>"
+```
+
+It routes deterministically (Turkish or English) and returns a `brief_text`:
+the skills to load, the exact read order (SKILL.md → references), the
+template to fill, the first command and the stop rule. Load that brief into
+context and follow it. Use `--skill <name>` to load one skill directly, or
+`--list` to inspect all routes. The static table below is the fallback when
+you cannot run the command:
+
 | The user wants | Use skill (command) | First command |
 |---|---|---|
 | Advice, design review, architecture or planning help | `local-advisor` (`/local-advisor`) | none (answer from the conversation) |

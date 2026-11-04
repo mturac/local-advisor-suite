@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Local Advisor Suite — Konsol / Console",
   description:
-    "Local Advisor Suite'in web test konsolu: 38 workbench komutunun tamamını, 13 beceriyi ve 6 aracın kurulum sağlığını tarayıcıda dene; Deep Research hikâyesi Firecrawl ile canlı web'i araştır. Beceriler AI agent'ınla hazır — ek kurulum yok. / Web test console for the Local Advisor Suite: try all 38 commands, 13 skills and 6-host health in the browser; the Deep Research story searches the live web via Firecrawl. Skills are ready via your AI agent — no extra setup.",
+    "Local Advisor Suite'in web test konsolu: 39 workbench komutunun tamamını, 13 beceriyi ve 6 aracın kurulum sağlığını tarayıcıda dene; Deep Research hikâyesi Firecrawl ile canlı web'i araştır. Beceriler AI agent'ınla hazır — ek kurulum yok. / Web test console for the Local Advisor Suite: try all 39 commands, 13 skills and 6-host health in the browser; the Deep Research story searches the live web via Firecrawl. Skills are ready via your AI agent — no extra setup.",
   icons: {
     icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
   },

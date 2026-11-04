@@ -1,5 +1,33 @@
 # Changelog
 
+## 3.1.0 (2026-11-04)
+
+v3.0.0 command set and JSON contract preserved; everything below is additive.
+
+### Added: dynamic skill loading
+
+- New command **`load-skills`** — deterministic prompt → skill routing with a
+  context brief. Given the user's request (Turkish or English), it matches
+  trigger keywords per skill, ranks the matches (HIGH = 2+ hits, MEDIUM = 1)
+  and emits a `brief_text` the agent loads into context: the skills to use,
+  the exact read order (`SKILL.md` → `references/…`), the template to fill,
+  the first command to run and the stop rule. `--skill NAME` loads one
+  skill's brief directly; `--list` dumps the full route table; prompts that
+  match nothing fall back to the `local-advisor` advisory route (LOW
+  confidence, with the reason on record). Skills were static instruction
+  packs before — nothing told the agent *when* to load which one or *what*
+  to read first; this closes that gap without an LLM in the loop.
+- The AGENTS / CLAUDE / CURSOR_RULE templates now open with **Step 0 —
+  dynamic routing**: run `$WB load-skills --prompt "<request verbatim>"` and
+  follow the returned brief; the static routing table remains as fallback.
+- Every skill's `templates/` folder is now populated (10 fillable skeletons
+  added in 3.0.x hotfixes consolidated here): research-notebook,
+  findings-report, delivery-evidence, audit-verdict, kb-entry,
+  root-cause-report, handoff-pack, spec, search-log,
+  wide-comparison-matrix — all using the same field names as the workbench
+  CLI flags, so hand-filled and CLI-generated documents stay
+  interchangeable.
+
 ## 3.0.0 (2026-11-04)
 
 The v2.1 command set and JSON contract are preserved exactly: every v2.1 command and flag still works with the same output shape. Everything below is additive.

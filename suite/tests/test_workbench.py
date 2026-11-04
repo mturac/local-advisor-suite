@@ -637,5 +637,78 @@ class TestSelfcheck(WorkbenchTestCase):
         self.assertEqual(data["status"], "PASS")
 
 
+class TestLoadSkills(WorkbenchTestCase):
+    """Prompt → skill routing + the context brief (deterministic, TR and EN)."""
+
+    def test_routes_turkish_comparison_prompt_to_wide_search(self):
+        data = self.ok("load-skills",
+                       "--prompt", "DuckDB mi SQLite mi, hangisi daha iyi, karşılaştır")
+        top = data["routed"][0]
+        self.assertEqual(top["brief"]["skill"], "wide-search")
+        self.assertGreaterEqual(top["score"], 2)
+        self.assertEqual(data["confidences"]["wide-search"], "HIGH")
+        self.assertIn("matrix-method.md", " ".join(top["brief"]["read_in_order"]))
+
+    def test_routes_turkish_bug_prompt_to_local_debug(self):
+        data = self.ok("load-skills",
+                       "--prompt", "src/app.py çalışmıyor, abc verince hata basıyor, neden patlıyor")
+        top = data["routed"][0]
+        self.assertEqual(top["brief"]["skill"], "local-debug")
+        self.assertGreaterEqual(top["score"], 2)
+
+    def test_routes_english_research_prompt_to_deep_research(self):
+        data = self.ok("load-skills",
+                       "--prompt", "Research whether WebAssembly threads are production ready, multiple sources")
+        top = data["routed"][0]
+        self.assertEqual(top["brief"]["skill"], "deep-research")
+
+    def test_no_match_falls_back_to_local_advisor_with_reason(self):
+        data = self.ok("load-skills", "--prompt", "bana bu konuda genel bir şey söyler misin acaba")
+        self.assertIsNone(data["routed"][0].get("score"))
+        self.assertEqual(data["fallback"]["skill"], "local-advisor")
+        self.assertEqual(data["confidences"]["local-advisor"], "LOW")
+        self.assertIn("no specific trigger matched", data["fallback"]["reason"])
+
+    def test_direct_skill_load_returns_full_brief(self):
+        data = self.ok("load-skills", "--skill", "decision-review")
+        b = data["routed"][0]
+        self.assertEqual(b["skill"], "decision-review")
+        self.assertEqual(b["read_in_order"][0], "SKILL.md")
+        self.assertEqual(data["confidences"]["decision-review"], "DIRECT")
+        self.assertIn("decision-score", b["first_command"])
+
+    def test_brief_text_contains_read_order_command_and_stop_rule(self):
+        data = self.ok("load-skills", "--prompt", "research the topic with multiple sources please")
+        bt = data["brief_text"]
+        self.assertIn("# Skill brief", bt)
+        self.assertIn("**Read in order**", bt)
+        self.assertIn("**First command**", bt)
+        self.assertIn("**Stop rule**", bt)
+
+    def test_list_dumps_every_route_with_triggers(self):
+        data = self.ok("load-skills", "--list")
+        routes = data["routes"]
+        self.assertEqual(len(routes), 13)
+        by_skill = {r["skill"]: r for r in routes}
+        self.assertTrue(by_skill["local-advisor"]["fallback"])
+        self.assertFalse(by_skill["deep-research"]["fallback"])
+        self.assertTrue(any("araştır" in t for t in by_skill["deep-research"]["triggers"]))
+
+    def test_unknown_skill_is_structured_error(self):
+        data = self.err("load-skills", "--skill", "nope")
+        self.assertEqual(data["error_code"], "UNKNOWN_SKILL")
+
+    def test_too_short_prompt_is_structured_error(self):
+        data = self.err("load-skills", "--prompt", "kısa")
+        self.assertEqual(data["error_code"], "PROMPT_TOO_SHORT")
+
+    def test_routing_is_deterministic(self):
+        p = "karşılaştır: DuckDB vs SQLite, hangisi daha iyi?"
+        a = self.ok("load-skills", "--prompt", p)
+        b = self.ok("load-skills", "--prompt", p)
+        self.assertEqual([r["brief"]["skill"] for r in a["routed"]],
+                         [r["brief"]["skill"] for r in b["routed"]])
+
+
 if __name__ == "__main__":
     unittest.main()

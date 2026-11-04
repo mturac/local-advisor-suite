@@ -20,14 +20,14 @@ const STRINGS: Record<string, { tr: string; en: string }> = {
 
   // ── hero ────────────────────────────────────────────────────────────────
   "hero.badge": {
-    tr: "v3.0.0 · 38 komut · 13 beceri · hepsi AI agent'ınla hazır",
-    en: "v3.0.0 · 38 commands · 13 skills · all ready via your AI agent",
+    tr: "v3.1.0 · 39 komut · 13 beceri · hepsi AI agent'ınla hazır",
+    en: "v3.1.0 · 39 commands · 13 skills · all ready via your AI agent",
   },
   "hero.titleA": { tr: "Tarayıcıda dene.", en: "Try it right here." },
   "hero.titleB": { tr: "Kurulum yok, hesap yok.", en: "No setup. No account." },
   "hero.sub": {
-    tr: "Bu sayfa Local Advisor Suite'in 38 komutunu gerçekten çalıştırır — güvenli bir demo alanında. Beceriler ise AI agent'ının beyniyle çalışır: agent kuruluysa hepsi hazır. Bir hikâye seç, Çalıştır'a bas, gerçekte ne olduğunu izle.",
-    en: "This page actually runs the suite's 38 commands — inside a safe demo workspace. The skills run through your AI agent's reasoning: if the agent is installed, every skill is ready. Pick a story, press Run, and watch what really happens.",
+    tr: "Bu sayfa Local Advisor Suite'in 39 komutunu gerçekten çalıştırır — güvenli bir demo alanında. Beceriler ise AI agent'ının beyniyle çalışır: agent kuruluysa hepsi hazır. Bir hikâye seç, Çalıştır'a bas, gerçekte ne olduğunu izle.",
+    en: "This page actually runs the suite's 39 commands — inside a safe demo workspace. The skills run through your AI agent's reasoning: if the agent is installed, every skill is ready. Pick a story, press Run, and watch what really happens.",
   },
   "hero.cta": { tr: "Hemen bir hikâye dene", en: "Try a story now" },
   "hero.step1.title": { tr: "1 · Soldan bir hikâye seç", en: "1 · Pick a story on the left" },
@@ -108,10 +108,10 @@ const STRINGS: Record<string, { tr: string; en: string }> = {
   "runner.noMatch": { tr: "Şuna uyan komut yok: {q}", en: "No commands match \"{q}\"." },
   "runner.examplesTitle": { tr: "Tek tıkla örnekler", en: "One-click examples" },
   "runner.examplesDesc": {
-    tr: "Kum havuzu modu: 38 komutun tamamı, hazır çalışan argümanlarla. Yeni misin? Önce Hikâyeler sekmesinde bir hikâyeyi baştan sona çalıştır.",
-    en: "Sandbox mode: all 38 commands with pre-filled working arguments. New here? Run a full story in the Stories tab first.",
+    tr: "Kum havuzu modu: 39 komutun tamamı, hazır çalışan argümanlarla. Yeni misin? Önce Hikâyeler sekmesinde bir hikâyeyi baştan sona çalıştır.",
+    en: "Sandbox mode: all 39 commands with pre-filled working arguments. New here? Run a full story in the Stories tab first.",
   },
-  "runner.allCommands": { tr: "38 komutun tamamı", en: "all 38 commands" },
+  "runner.allCommands": { tr: "39 komutun tamamı", en: "all 39 commands" },
   "runner.amberNote": {
     tr: "Turuncu senaryolar yazmadan önce kendi defterini siler — demo veriyi her zaman Dosyalar sekmesindeki \"Çalışma alanını sıfırla\" ile geri getirebilirsin.",
     en: "Amber scenarios wipe their own ledger before writing — restore the demo data anytime with Reset workspace in the Files tab.",
