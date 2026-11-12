@@ -58,8 +58,8 @@ class WorkbenchTestCase(unittest.TestCase):
 
 
 class TestVersionAndContract(WorkbenchTestCase):
-    def test_version_is_3_3_0(self):
-        self.assertEqual(workbench.VERSION, "3.3.0")
+    def test_version_is_3_4_0(self):
+        self.assertEqual(workbench.VERSION, "3.4.0")
 
     def test_v21_subcommands_still_exist(self):
         """Every v2.1 subcommand must keep working with the same name (backward compatibility)."""
@@ -945,6 +945,51 @@ class TestLoadSkills(WorkbenchTestCase):
         self.assertNotIn("**Read in order**", compact["brief_text"])
         self.assertIn("first:", compact["brief_text"])
         self.assertLess(len(compact["brief_text"]), len(full["brief_text"]))
+
+    def test_core_brief_is_a_run_from_card(self):
+        prompt = "what is the latest python version"
+        full = self.ok("load-skills", "--prompt", prompt)
+        core = self.ok("load-skills", "--core", "--prompt", prompt)
+        self.assertTrue(core["core"])
+        self.assertEqual(core["depth"], "core")
+        self.assertEqual(full["depth"], "full")
+        self.assertIn("# Skill brief (core)", core["brief_text"])
+        self.assertIn("Core loop:", core["brief_text"])
+        self.assertNotIn("**Read in order**", core["brief_text"])
+        self.assertNotIn("**Fill template**", core["brief_text"])
+        self.assertLess(len(core["brief_text"]), len(full["brief_text"]))
+        # the core loop rides along in every brief, full depth included
+        self.assertIn("core", core["routed"][0]["brief"])
+        self.assertTrue(core["routed"][0]["brief"]["core"].startswith("1)"))
+
+    def test_core_brief_direct_skill_load(self):
+        data = self.ok("load-skills", "--core", "--skill", "devil-advocate")
+        self.assertTrue(data["core"])
+        self.assertEqual(data["depth"], "core")
+        self.assertIn("Core loop:", data["brief_text"])
+        self.assertIn("1) devil-advocate (DIRECT)", data["brief_text"])
+
+    def test_suggested_depth_core_for_single_high_short_prompt(self):
+        data = self.ok("load-skills", "--prompt",
+                       "what is the latest python version and its release date")
+        self.assertEqual(data["confidences"]["web-search"], "HIGH")
+        self.assertEqual(data["suggested_depth"], "core")
+
+    def test_suggested_depth_compact_for_multi_skill_prompt(self):
+        data = self.ok("load-skills", "--prompt",
+                       "research and compare duckdb vs sqlite with multiple sources and a matrix")
+        self.assertEqual(data["suggested_depth"], "compact")
+
+    def test_suggested_depth_full_for_low_confidence_fallback(self):
+        data = self.ok("load-skills", "--prompt", "bana bu konuda genel bir şey söyler misin acaba")
+        self.assertEqual(data["suggested_depth"], "full")
+
+    def test_every_route_has_a_core_loop(self):
+        for skill in sorted(workbench.SKILL_ROUTES):
+            route = workbench.SKILL_ROUTES[skill]
+            self.assertIn("core", route, f"{skill} has no core loop")
+            for step in ("1)", "2)", "3)"):
+                self.assertIn(step, route["core"], f"{skill} core loop missing {step}")
 
     def test_no_match_falls_back_to_local_advisor_with_reason(self):
         data = self.ok("load-skills", "--prompt", "bana bu konuda genel bir şey söyler misin acaba")

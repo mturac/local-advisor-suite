@@ -49,6 +49,12 @@ Capabilities:
      finding carrying the re-runnable command or formula that produced
      it, gaps declared instead of guessed, answer numbers linted
      against the findings before the report renders)
+8. v3.4 additions (additive only):
+   - load-skills depth system: --core renders a run-from-this-card brief
+     (skill + 3-step core loop + first command + stop rule, zero file
+     reading) so quick asks skip the full protocol; every prompt routing
+     also returns a deterministic suggested_depth (core / compact / full)
+     so the agent spends context only when the ask is worth it
 
 Network policy: the only command that can open a socket is `fetch-url`, and only
 with --allow-network. Every other command is offline and deterministic.
@@ -74,7 +80,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 
-VERSION = "3.3.0"
+VERSION = "3.4.0"
 DEFAULT_STATE_DIR = ".local-workbench"
 MAX_FILE_BYTES = 512 * 1024  # 512 KB cap for scoped local file reads
 MAX_SCAN_FILES = 200
@@ -2965,6 +2971,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
     "local-advisor": {
         "wants": "Advice, design review, 'what should I do', architecture or planning help",
         "wants_tr": "Danışma, tasarım incelemesi, 'ne yapmalıyım', mimari/planlama yardımı",
+        "core": "1) Restate the ask as a decision or design question. 2) Answer from what is already in the conversation: recommendation first, then the top risk and the one fact that would change it. 3) If stakes are high or two options are close, hand off to decision-review instead of padding the answer.",
         "triggers": ["advice", "should i", "what should", "recommend", "opinion", "architecture",
                      "plan ", "planning", "help me decide how", "ne yapmalı", "öner", "tavsiye", "fikrin",
                      "mimari", "değerlendirir misin"],
@@ -2978,6 +2985,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
     "decision-review": {
         "wants": "Choose between options, an ADR, a trade-off matrix, a pre-mortem",
         "wants_tr": "Seçenekler arasında seçim, ADR, ödünleşim matrisi, ön-ötüp",
+        "core": "1) List the options and the hard constraints. 2) Score the top 2-3 options on 3-5 weighted criteria. 3) Name the reversibility class and the single criterion whose score could flip the winner.",
         "triggers": ["choose", "decide", "decision", "adr", "trade-off", "pre-mortem", "option",
                      "which option", "hangisini seç", "karar", "kararsız", "tercih etmeli",
                      "seçenek"],
@@ -2990,6 +2998,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
     "local-debug": {
         "wants": "A bug, failing test or stack trace in a named file",
         "wants_tr": "İsimlendirilmiş bir dosyada hata, düşen test veya stack trace",
+        "core": "1) Reproduce with the smallest case; read only the named file. 2) State one falsifiable hypothesis and test it. 3) Two failed hypotheses → stop, run debug-report, ask for the missing information.",
         "triggers": ["bug", "error", "stack trace", "traceback", "exception", "fails", "failing",
                      "broken", "crash", "neden", "hata", "çalışmıyor", "patlıyor", "çöküyor",
                      "düşüyor"],
@@ -3002,6 +3011,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
     "web-search": {
         "wants": "One factual answer that needs 1-3 sources (version, price, limit, date)",
         "wants_tr": "1-3 kaynak gerektiren tek bilgisel cevap (sürüm, fiyat, limit, tarih)",
+        "core": "1) Search once for the exact fact. 2) Open one authoritative page and quote it verbatim. 3) Answer with quote + link, or declare the gap — never cite from memory.",
         "triggers": ["what is the latest", "which version", "how much does", "current price",
                      "release date", "supports", "sürüm", "fiyat", "kaç para", "destekliyor mu",
                      "güncel"],
@@ -3014,6 +3024,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
     "deep-research": {
         "wants": "Research with several sources and a synthesis",
         "wants_tr": "Birden çok kaynak ve sentez gerektiren araştırma",
+        "core": "1) Split the topic into 3-5 sub-questions with a query budget. 2) For each: search, open the page, register source + claim with its quote. 3) Synthesize only from registered claims; what is missing stays a declared gap.",
         "triggers": ["research", "investigate", "deep dive", "multiple sources", "synthesis",
                      "evidence for", "araştır", "kaynak", "literatür", "derinlemesine",
                      "kanıtlarla"],
@@ -3027,6 +3038,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
     "wide-search": {
         "wants": "Compare many entities across the same fields, as a table",
         "wants_tr": "Birden çok varlığı aynı alanlarda tablo olarak karşılaştırma",
+        "core": "1) Fix the entity × field matrix before searching. 2) Fill each cell from a page you actually opened. 3) Every remaining '?' becomes a sourced value or a declared gap.",
         "triggers": ["compare", "comparison", " vs ", "versus", "which is better", "alternatives",
                      "matrix", "karşılaştır", "hangisi daha", "alternatif", "matris",
                      "tablo olarak"],
@@ -3039,6 +3051,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
     "evidence-audit": {
         "wants": "Check a draft's sources, numbers and claims",
         "wants_tr": "Bir taslağın kaynaklarını, sayılarını ve iddialarını denetleme",
+        "core": "1) Extract every claim and number from the draft. 2) Check each against an opened source (link + verbatim quote). 3) Verdict is PASS only when every claim is grounded; otherwise list exactly what to fix.",
         "triggers": ["audit", "fact-check", "check the claims", "verify sources", "citations",
                      "denetle", "denetim", "iddiaları kontrol", "kaynakları kontrol"],
         "read": ["SKILL.md", "references/audit-rules.md"],
@@ -3050,6 +3063,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
     "delivery-verify": {
         "wants": "Prove that a change works before saying 'done'",
         "wants_tr": "'Bitti' demeden önce değişikliğin çalıştığını kanıtlama",
+        "core": "1) Pick the verification level the claim requires. 2) Run the real command and capture its output. 3) Report at the observed level only — 'tested' means the test ran.",
         "triggers": ["prove", "verify delivery", "does it work", "is it done", "tested",
                      "before merging", "kanıtla", "teslim", "çalıştığını göster",
                      "test edildi mi"],
@@ -3062,6 +3076,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
     "artifact-studio": {
         "wants": "Write a report, ADR, executive summary, slide outline or data schema",
         "wants_tr": "Rapor, ADR, yönetici özeti, sunum iskeleti veya veri şeması yazma",
+        "core": "1) Pick the template matching the artifact type. 2) Fill every section from logged facts. 3) No invented content — sections without material stay marked TODO with the reason.",
         "triggers": ["write a report", "document", "executive summary", "presentation",
                      "postmortem", "data schema", "rapor yaz", "rapor hazırla", "doküman",
                      "özet çıkar", "sunum", "şema"],
@@ -3074,6 +3089,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
     "session-handoff": {
         "wants": "End, switch tools, delegate or resume work",
         "wants_tr": "Oturumu bitirme, araç değiştirme, devretme veya kaldığı yerden devam",
+        "core": "1) List the state: done / in flight / blocked, each with file paths and the next command. 2) Write the handoff pack. 3) Reader test: the next agent must be able to start without asking anything.",
         "triggers": ["handoff", "end the session", "switch tools", "resume", "pick up tomorrow",
                      "devir", "devret", "oturumu bitir", "kaldığım yerden", "yarın devam"],
         "read": ["SKILL.md", "references/handoff-protocol.md", "references/state-inventory.md"],
@@ -3085,6 +3101,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
     "spec-builder": {
         "wants": "Turn a request into a testable spec with acceptance criteria",
         "wants_tr": "Bir talebi kabul kriterli, sınanabilir bir tarif dosyasına çevirme",
+        "core": "1) Write goal and non-goals as one-liners. 2) Turn stories into Given/When/Then criteria. 3) Break into tasks that each verify at least one criterion; spec-check must pass before code.",
         "triggers": ["spec", "specification", "acceptance criteria", "user story", "requirements",
                      "spesifikasyon", "kabul kriteri", "gereksinim", "istenenleri tarif"],
         "read": ["SKILL.md", "references/acceptance-criteria.md", "references/task-breakdown.md"],
@@ -3096,6 +3113,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
     "code-review": {
         "wants": "A structured, severity-graded review of named files or a diff",
         "wants_tr": "İsimlendirilmiş dosyaların veya diff'in yapılandırılmış, dereceli incelemesi",
+        "core": "1) Read the diff only. 2) Report findings with file:line, severity and the fix. 3) The verdict stays FAIL while a BLOCKING finding is open.",
         "triggers": ["code review", "review my code", "review the diff", "pr review", "severity",
                      "kod incele", "kod incelemesi", "gözden geçir", "diff'i incele"],
         "read": ["SKILL.md", "references/severity-model.md", "references/review-checklist.md"],
@@ -3107,6 +3125,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
     "knowledge-capture": {
         "wants": "Save, find and reuse reusable project knowledge as sourced Q&A",
         "wants_tr": "Yeniden kullanılabilir proje bilgisini kaynaklı soru-cevap olarak saklama",
+        "core": "1) Write the question as the future user will phrase it. 2) Answer in ≤5 sentences, sourced or explicitly marked assumed. 3) Verify findability: kb-search must hit on the obvious keywords.",
         "triggers": ["remember this", "save this", "knowledge base", "reusable", "we decided",
                      "kaydet", "unutma", "bilgi tabanı", "tekrar kullan", "kararımızı kaydet"],
         "read": ["SKILL.md", "references/entry-standards.md", "references/lifecycle.md"],
@@ -3118,6 +3137,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
     "data-analysis": {
         "wants": "Analyze a data file the user provides (CSV, TSV, JSON, logs) with traceable numbers",
         "wants_tr": "Kullanıcının verdiği veri dosyasını (CSV, TSV, JSON, log) izlenebilir sayılarla analiz",
+        "core": "1) Register the dataset (hash + question). 2) Log every number as a finding with the command or formula that produced it. 3) Answer only with logged findings; declare gaps instead of guessing.",
         "triggers": ["analyze", "analysis", "dataset", "csv", "tsv", "json file", "spreadsheet",
                      "data file", "how many rows", "trend in", "analiz", "veri seti", "verileri",
                      "kaç satır", "excel"],
@@ -3131,6 +3151,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
     "devil-advocate": {
         "wants": "Stress-test a plan, decision or spec before committing — the adversarial second opinion",
         "wants_tr": "Bir planı, kararı veya spesifikasyonu taahhüt öncesi stres testine sokma — advers ikinci görüş",
+        "core": "1) Steelman the plan honestly. 2) Attack the 2-3 load-bearing assumptions, each with severity and what would defeat it. 3) The verdict is mechanical: BLOCK while a FATAL stands, GUARDS while a SERIOUS stands.",
         "triggers": ["devil's advocate", "devil advocate", "play devil", "what could go wrong",
                      "what's wrong with", "poke holes", "stress test", "stress-test",
                      "second opinion", "convince me this is wrong", "challenge this plan",
@@ -3180,6 +3201,7 @@ def _brief_for(skill: str) -> Dict[str, Any]:
         "skill": skill,
         "wants": route["wants"],
         "wants_tr": route["wants_tr"],
+        "core": route["core"],
         "read_in_order": route["read"],
         "fill_template": route["template"],
         "first_command": route["first_command"],
@@ -3233,6 +3255,43 @@ def _render_brief_compact(prompt: Optional[str], briefs: List[Dict[str, Any]],
     return "\n".join(lines)
 
 
+def _render_brief_core(prompt: Optional[str], briefs: List[Dict[str, Any]],
+                       confidences: Dict[str, str]) -> str:
+    """The run-from-this-card brief: skill, 3-step core loop, first command, stop rule.
+    Zero file reading — for quick asks where the full protocol would cost more
+    context than it saves. The core loop is the skill, distilled; escalate to
+    full depth when a stop rule fires, a gate fails, or the stakes are high."""
+    lines: List[str] = ["# Skill brief (core) — run from this card; read nothing else"]
+    if prompt:
+        lines.append(f'Routed from prompt: "{prompt}"')
+    for i, b in enumerate(briefs, 1):
+        conf = confidences.get(b["skill"], "")
+        lines.append(f"{i}) {b['skill']} ({conf})")
+        lines.append(f"   Core loop: {b['core']}")
+        first = b["first_command"]
+        if not first.startswith("none"):
+            lines.append(f"   First: $WB {first}")
+        lines.append(f"   Stop: {b['stop_rule']}")
+    lines.append("Escalate to full depth (drop --core) when a stop rule fires, a gate")
+    lines.append("fails, or the stakes are high. Do not read SKILL.md for a core ask.")
+    return "\n".join(lines)
+
+
+def _suggest_depth(prompt: str, top: List[Dict[str, Any]],
+                   confidences: Dict[str, str]) -> str:
+    """Deterministic depth recommendation so the agent spends context only when
+    the ask is worth it: a single HIGH-confidence route on a short prompt is a
+    quick ask (core); several routed skills need coordination first (compact);
+    everything else — long prompts, fallbacks, low confidence — earns full depth."""
+    if not top:
+        return "full"
+    if len(top) == 1 and confidences.get(top[0]["skill"]) == "HIGH" and len(prompt) <= 120:
+        return "core"
+    if len(top) > 1:
+        return "compact"
+    return "full"
+
+
 def cmd_load_skills(args: argparse.Namespace) -> Dict[str, Any]:
     if args.list:
         return {
@@ -3247,11 +3306,16 @@ def cmd_load_skills(args: argparse.Namespace) -> Dict[str, Any]:
     if args.skill:
         brief = _brief_for(args.skill)
         confidences = {args.skill: "DIRECT"}
-        brief_text = (_render_brief_compact(None, [brief], confidences)
-                      if args.compact else _render_brief_text(None, [brief], confidences))
+        if args.core:
+            brief_text = _render_brief_core(None, [brief], confidences)
+        elif args.compact:
+            brief_text = _render_brief_compact(None, [brief], confidences)
+        else:
+            brief_text = _render_brief_text(None, [brief], confidences)
         return {"status": "OK", "requested": args.skill, "routed": [brief],
                 "confidences": confidences, "brief_text": brief_text,
-                "compact": bool(args.compact)}
+                "compact": bool(args.compact), "core": bool(args.core),
+                "depth": "core" if args.core else ("compact" if args.compact else "full")}
 
     prompt = (args.prompt or "").strip()
     if not prompt:
@@ -3285,8 +3349,11 @@ def cmd_load_skills(args: argparse.Namespace) -> Dict[str, Any]:
         routed = [{"hits": [], "brief": briefs[0]}]
         confidences = {"local-advisor": "LOW"}
 
-    brief_text = (_render_brief_compact(prompt, briefs, confidences)
+    brief_text = (_render_brief_core(prompt, briefs, confidences)
+                  if args.core else
+                  _render_brief_compact(prompt, briefs, confidences)
                   if args.compact else _render_brief_text(prompt, briefs, confidences))
+    suggested = _suggest_depth(prompt, top, confidences)
     return {
         "status": "OK",
         "prompt": prompt,
@@ -3295,6 +3362,9 @@ def cmd_load_skills(args: argparse.Namespace) -> Dict[str, Any]:
         "fallback": fallback,
         "brief_text": brief_text,
         "compact": bool(args.compact),
+        "core": bool(args.core),
+        "depth": "core" if args.core else ("compact" if args.compact else "full"),
+        "suggested_depth": suggested,
     }
 
 
@@ -3845,6 +3915,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--list", action="store_true", help="List all routes with their triggers")
     p.add_argument("--compact", action="store_true",
                    help="Emit a one-line-per-skill brief (token-efficient routing pass)")
+    p.add_argument("--core", action="store_true",
+                   help="Run-from-this-card brief: skill + 3-step core loop + first command "
+                        "+ stop rule, zero file reading (quickest path for simple asks)")
     p.set_defaults(func=cmd_load_skills)
 
     return parser

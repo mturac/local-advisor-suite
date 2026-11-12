@@ -1,5 +1,28 @@
 # Changelog
 
+## 3.4.0 (2026-11-12)
+
+v3.3.0 command set and JSON contract preserved; everything below is additive.
+
+### Added: response-depth system for load-skills (the efficiency pass)
+
+- **`--core` depth**: `load-skills --core --prompt ...` (or `--core --skill X`)
+  renders a run-from-this-card brief — skill, its 3-step core loop, first
+  command, stop rule. Zero file reading. The core loop is the skill distilled:
+  for a quick ask it replaces reading SKILL.md plus 1-3 references, which is
+  most of the context a simple question used to cost.
+- Every one of the 15 routes now carries a **`core` loop** (distilled 3-step
+  protocol), exposed in every brief at every depth — including full — so the
+  agent always knows the fast path exists and what escalating means.
+- **`suggested_depth`**: every prompt routing now returns a deterministic
+  recommendation — `core` (single HIGH-confidence route, short prompt),
+  `compact` (multiple routed skills, coordination pass first), `full`
+  (fallback, low confidence, or a long complex ask). The response also carries
+  a `depth` field reflecting the flag actually used.
+- New tests: core brief structure and length, direct core load, suggested
+  depth for core/compact/full cases, and a contract test that every route has
+  a 3-step core loop.
+
 ## 3.3.0 (2026-11-12)
 
 v3.2.0 command set and JSON contract preserved; everything below is additive.
