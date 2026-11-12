@@ -58,8 +58,8 @@ class WorkbenchTestCase(unittest.TestCase):
 
 
 class TestVersionAndContract(WorkbenchTestCase):
-    def test_version_is_3_5_0(self):
-        self.assertEqual(workbench.VERSION, "3.5.0")
+    def test_version_is_3_6_0(self):
+        self.assertEqual(workbench.VERSION, "3.6.0")
 
     def test_v21_subcommands_still_exist(self):
         """Every v2.1 subcommand must keep working with the same name (backward compatibility)."""
@@ -1005,6 +1005,78 @@ class TestDevilAdvocate(WorkbenchTestCase):
         self.assertIn("## Second-order effects", text)
 
 
+class TestQuestionContract(WorkbenchTestCase):
+    """Pin the question -> gate it -> assume on record."""
+
+    def _pin(self, question="Should we modernize the public API?", **kw):
+        args = ["qc-pin", "--question", kw.pop("question", question),
+                "--decision", kw.pop("decision",
+                                     "Choose between a rewrite and a compatibility layer this sprint")]
+        if kw.pop("force", False):
+            args.append("--force")
+        for k, v in kw.items():
+            args += [f"--{k.replace('_', '-')}", v]
+        return self.ok(*args)
+
+    def test_pin_requires_a_real_question_and_a_decision(self):
+        data = self.err("qc-pin", "--question", "the api",
+                        "--decision", "a real decision it informs")
+        self.assertEqual(data["error_code"], "QUESTION_TOO_SHORT")
+        data = self.err("qc-pin", "--question", "Should we modernize the public API?",
+                        "--decision", "decide")
+        self.assertEqual(data["error_code"], "DECISION_TOO_SHORT")
+
+    def test_pin_scans_vague_terms_deterministically(self):
+        data = self._pin(question="Which CI platform is better for our team, we need something scalable and simple")
+        terms = [v["term"] for v in data["vague_terms"]]
+        self.assertIn("better", terms)
+        self.assertIn("scalable", terms)
+        self.assertIn("simple", terms)
+        self.assertIn("note", data)
+
+    def test_gate_needs_input_then_ready(self):
+        # no contract: structured error
+        data = self.err("qc-check")
+        self.assertEqual(data["error_code"], "NO_QC_SESSION")
+        # contract without consumer: the gate demands it
+        self._pin()
+        data = self.nonzero("qc-check")
+        self.assertEqual(data["status"], "FAIL")
+        self.assertEqual(data["gate"], "NEEDS_INPUT")
+        self.assertIn("consumer", " ".join(data["missing"]))
+        # complete contract: READY
+        self._pin(consumer="the two engineers doing the migration", force=True)
+        data = self.ok("qc-check")
+        self.assertEqual(data["gate"], "READY")
+        self.assertEqual(data["missing"], [])
+
+    def test_assume_records_full_statements(self):
+        self._pin(consumer="the team")
+        data = self.err("qc-assume")
+        self.assertEqual(data["error_code"], "ASSUMPTIONS_REQUIRED")
+        data = self.err("qc-assume", "--assumption", "vague")
+        self.assertEqual(data["error_code"], "ASSUMPTION_TOO_SHORT")
+        data = self.ok("qc-assume",
+                       "--assumption", "modernize means the client-facing interface only",
+                       "--assumption", "mobile clients keep the current shapes this year")
+        self.assertEqual(data["assumption_count"], 2)
+
+    def test_pin_refuses_to_clobber_without_force(self):
+        self._pin(consumer="the team")
+        data = self.err("qc-pin", "--question", "Another question entirely, restated properly?",
+                        "--decision", "another real decision it informs")
+        self.assertEqual(data["error_code"], "QC_SESSION_EXISTS")
+        self.ok("qc-pin", "--force", "--question", "Another question entirely, restated properly?",
+                "--decision", "another real decision it informs")
+
+    def test_routes_to_question_contract(self):
+        data = self.ok("load-skills", "--prompt",
+                       "before you start: tam olarak ne istiyorsun netleştirelim mi")
+        top = data["routed"][0]
+        self.assertEqual(top["brief"]["skill"], "question-contract")
+        self.assertIn("qc-pin", top["brief"]["first_command"])
+
+
 class TestLoadSkills(WorkbenchTestCase):
     """Prompt → skill routing + the context brief (deterministic, TR and EN)."""
 
@@ -1145,7 +1217,7 @@ class TestLoadSkills(WorkbenchTestCase):
     def test_list_dumps_every_route_with_triggers(self):
         data = self.ok("load-skills", "--list")
         routes = data["routes"]
-        self.assertEqual(len(routes), 15)
+        self.assertEqual(len(routes), 16)
         by_skill = {r["skill"]: r for r in routes}
         self.assertTrue(by_skill["local-advisor"]["fallback"])
         self.assertFalse(by_skill["deep-research"]["fallback"])

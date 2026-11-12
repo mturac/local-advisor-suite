@@ -1,6 +1,6 @@
 {
   "name": "local-advisor-suite",
-  "version": "3.5.0",
+  "version": "3.6.0",
   "description": "Portable Local Advisor, Deep Research, Scoped Debugging, Spec Building, Code Review, Knowledge Capture and Evidence Audit skills for Codex CLI/IDE.",
   "skills": "./skills/"
 }

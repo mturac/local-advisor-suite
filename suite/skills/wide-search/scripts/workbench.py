@@ -64,6 +64,13 @@ Capabilities:
      devil-consequence (L1 -> L2 -> L3 'and then what?' chains). The
      CHALLENGE.md verdict now renders premortem, outside view and
      second-order sections plus a protocols_used summary.
+10. v3.6 additions (additive only):
+   - question-contract ledger: qc-pin / qc-check / qc-assume (pin the
+     question, the decision it informs and the consumer before spending
+     tokens; deterministic vague-term scan with the clarifying question
+     each vague word demands; a READY / NEEDS_INPUT gate; assumptions
+     recorded where the question was ambiguous, to be stated in the
+     answer's caveat)
 
 Network policy: the only command that can open a socket is `fetch-url`, and only
 with --allow-network. Every other command is offline and deterministic.
@@ -89,7 +96,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 
-VERSION = "3.5.0"
+VERSION = "3.6.0"
 DEFAULT_STATE_DIR = ".local-workbench"
 MAX_FILE_BYTES = 512 * 1024  # 512 KB cap for scoped local file reads
 MAX_SCAN_FILES = 200
@@ -2013,6 +2020,34 @@ KB_LEDGER_NAME = "kb_ledger.json"
 DATA_LEDGER_NAME = "data_ledger.json"
 MAX_DATASET_BYTES = 64 * 1024 * 1024  # 64 MB cap for dataset hashing
 DEVIL_LEDGER_NAME = "devil_ledger.json"
+QC_LEDGER_NAME = "qc_ledger.json"
+
+# Vague terms: the words that make an answer unjudgeable. Each maps to the
+# clarifying question it demands (v3.6 question-contract).
+QC_VAGUE_TERMS: Dict[str, str] = {
+    "better": "better by which measure (speed, cost, maintainability, ...)?",
+    "best": "best by which measure, and for whom?",
+    "optimal": "optimal against which constraints?",
+    "improve": "improve which metric, from what to what?",
+    "faster": "faster by how much, measured where?",
+    "cheaper": "cheaper on which cost line (license, ops, engineering time)?",
+    "modernize": "modernize which property — the stack, the interface, the ops?",
+    "efficient": "efficient in which resource — time, money, tokens, attention?",
+    "scalable": "scale to what load, measured how?",
+    "robust": "robust against which failure class?",
+    "user-friendly": "friendly for which user doing which task?",
+    "clean": "clean by which rule — style guide, architecture boundary, dead code?",
+    "simple": "simple for whom — the writer or the next reader?",
+    "production-ready": "ready by whose definition — traffic, on-call, compliance?",
+    "daha iyi": "hangi ölçüte göre daha iyi (hız, maliyet, bakım, ...)?",
+    "en iyi": "hangi ölçüte ve kime göre en iyi?",
+    "verimli": "hangi kaynakta verimli — zaman, para, emek, dikkat?",
+    "hızlı": "ne kadar hızlı, nerede ve nasıl ölçülecek?",
+    "temiz": "hangi kurala göre temiz — stil, mimari sınırı, ölü kod?",
+    "basit": "kimin için basit — yazan için mi, okuyan için mi?",
+    "kullanışlı": "hangi kullanıcı, hangi iş için kullanışlı bulacak?",
+    "ölçeklenebilir": "hangi yüke kadar, nasıl ölçülecek?",
+}
 
 DEVIL_SEVERITIES = ("FATAL", "SERIOUS", "MINOR")
 DEVIL_CATEGORIES = (
@@ -3348,6 +3383,145 @@ def cmd_devil_consequence(args: argparse.Namespace) -> Dict[str, Any]:
     }
 
 
+# ------------------------------------------------------ question-contract
+# Pin the question before spending tokens on it: the decision it informs,
+# who consumes the answer, what is already decided and what is genuinely
+# open. The most expensive AI failure is a brilliant answer to the wrong
+# question, and it is also the most preventable.
+
+def _qc_scan_vague(question: str) -> List[Dict[str, str]]:
+    """Deterministic vague-term scan: every vague word found in the pinned
+    question, each with the clarifying question it demands."""
+    text = " " + question.lower() + " "
+    hits: List[Dict[str, str]] = []
+    for term, ask in sorted(QC_VAGUE_TERMS.items()):
+        pattern = _WORD_START + re.escape(term)
+        if re.search(pattern, text):
+            hits.append({"term": term, "ask": ask})
+    return hits
+
+
+def _load_qc_ledger(state_dir: Path) -> Tuple[Path, Dict[str, Any]]:
+    ensure_state_dir(state_dir)
+    path = state_dir / QC_LEDGER_NAME
+    if not path.exists():
+        raise WorkbenchError(
+            "NO_QC_SESSION",
+            "No question contract is pinned. Start one: qc-pin --question \"...\" "
+            "--decision \"what this answer will inform\".",
+        )
+    return path, load_json(path, {})
+
+
+def cmd_qc_pin(args: argparse.Namespace) -> Dict[str, Any]:
+    state_dir = ensure_state_dir(Path(args.state_dir))
+    path = state_dir / QC_LEDGER_NAME
+    question = args.question.strip()
+    decision = args.decision.strip()
+    if len(question) < 15:
+        raise WorkbenchError(
+            "QUESTION_TOO_SHORT",
+            "State the question in at least 15 characters — a question that short is a topic, "
+            "not a question, and topics do not have answers.",
+        )
+    if len(decision) < 10:
+        raise WorkbenchError(
+            "DECISION_TOO_SHORT",
+            "Name the decision this answer will inform in at least 10 characters. If no decision "
+            "is informed, the answer is trivia; pin what the answer is FOR.",
+        )
+    if path.exists() and not args.force:
+        raise WorkbenchError(
+            "QC_SESSION_EXISTS",
+            f"{path} already holds a contract. Pass --force to re-pin (assumptions are wiped).",
+        )
+    consumer = (args.consumer or "").strip()
+    ledger = {
+        "question": question,
+        "decision": decision,
+        "consumer": consumer or None,
+        "budget": (args.budget or "").strip() or None,
+        "decided": [d.strip() for d in (args.decided or []) if d.strip()],
+        "open": [o.strip() for o in (args.open or []) if o.strip()],
+        "assumptions": [],
+        "status": "OPEN",
+        "created_at": utc_now_iso(),
+        "updated_at": utc_now_iso(),
+    }
+    save_json(path, ledger)
+    vague = _qc_scan_vague(question)
+    result: Dict[str, Any] = {
+        "status": "OK",
+        "contract": ledger,
+        "vague_terms": vague,
+        "next": "qc-check (the gate) — then research, analyze or build against the contract.",
+    }
+    if vague:
+        result["note"] = ("Vague terms found in the question. Each one makes the answer "
+                          "unjudgeable; ask the single most answer-changing question before "
+                          "proceeding, or record assumptions with qc-assume.")
+    return result
+
+
+def cmd_qc_check(args: argparse.Namespace) -> Dict[str, Any]:
+    path, ledger = _load_qc_ledger(Path(args.state_dir))
+    missing: List[str] = []
+    if len(ledger.get("question", "")) < 15:
+        missing.append("question (min 15 chars)")
+    if len(ledger.get("decision", "")) < 10:
+        missing.append("decision (what this answer informs, min 10 chars)")
+    if not ledger.get("consumer"):
+        missing.append("consumer (who reads this answer, and in what form)")
+    vague = _qc_scan_vague(ledger.get("question", ""))
+    ledger["checked_at"] = utc_now_iso()
+    ledger["updated_at"] = utc_now_iso()
+    save_json(path, ledger)
+    if missing:
+        return {
+            "status": "FAIL",
+            "gate": "NEEDS_INPUT",
+            "missing": missing,
+            "vague_terms": vague,
+            "exit_hint": 2,
+            "next": "Ask the user for the missing fields (one message), re-pin with --force, "
+                    "or proceed and record the guesses as assumptions with qc-assume.",
+        }
+    return {
+        "status": "OK",
+        "gate": "READY",
+        "missing": [],
+        "vague_terms": vague,
+        "clarify_opportunities": [v["ask"] for v in vague][:3],
+        "next": "Answer against the contract. If a vague term survives, qc-assume the "
+                "interpretation you chose and state it in the answer's caveat.",
+    }
+
+
+def cmd_qc_assume(args: argparse.Namespace) -> Dict[str, Any]:
+    path, ledger = _load_qc_ledger(Path(args.state_dir))
+    assumptions = [a.strip() for a in (args.assumption or []) if a.strip()]
+    if not assumptions:
+        raise WorkbenchError(
+            "ASSUMPTIONS_REQUIRED",
+            "Record at least one assumption (--assumption, repeatable) — the interpretation "
+            "you chose where the question was ambiguous.",
+        )
+    for a in assumptions:
+        if len(a) < 10:
+            raise WorkbenchError("ASSUMPTION_TOO_SHORT",
+                                 f"An assumption is a full statement (min 10 chars): '{a}' is not one.")
+    ledger["assumptions"].extend(assumptions)
+    ledger["updated_at"] = utc_now_iso()
+    save_json(path, ledger)
+    return {
+        "status": "OK",
+        "assumptions": ledger["assumptions"],
+        "assumption_count": len(ledger["assumptions"]),
+        "next": "State every assumption in the answer's caveat — an unstated assumption is "
+                "a landmine the next reader steps on.",
+    }
+
+
 # ---------------------------------------------------------- load-skills
 # Deterministic prompt → skill routing. Given the user's request text this
 # decides which skills to load and emits the brief the agent should follow:
@@ -3366,7 +3540,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
         "template": "templates/advisory-brief.md",
         "first_command": "advise-intake --question ... --context ... --mode planning",
         "stop_rule": "ask one precise question when context is missing; do not scan files by default",
-        "also_consider": ["decision-review", "devil-advocate"],
+        "also_consider": ["question-contract", "decision-review", "devil-advocate"],
         "fallback": True,
     },
     "decision-review": {
@@ -3420,7 +3594,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
         "template": "templates/research-notebook.md",
         "first_command": "research-init --topic ... --sub-question ... --max-queries 8",
         "stop_rule": "stop at the query budget; record remaining gaps instead of continuing silently",
-        "also_consider": ["web-search", "evidence-audit"],
+        "also_consider": ["question-contract", "web-search", "evidence-audit"],
     },
     "wide-search": {
         "wants": "Compare many entities across the same fields, as a table",
@@ -3551,6 +3725,19 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
         "first_command": "devil-plan --archetype build|launch|migrate|hire|buy|process, then devil-open --claim \"the plan in one sentence\" --steelman \"its best case, honestly\"",
         "stop_rule": "the verdict is BLOCK while any FATAL challenge is unanswered — answer it or change the plan",
         "also_consider": ["decision-review", "evidence-audit"],
+    },
+    "question-contract": {
+        "wants": "Pin what the question actually is — the decision it informs, the consumer, the budget — before research, analysis or building",
+        "wants_tr": "Sorunun gerçekte ne olduğunu sabitleme — hangi karara girdi verecek, kim okuyacak, bütçe ne — araştırma/analiz/yapım öncesi",
+        "core": "1) Restate the ask as the question, the decision it informs and who consumes the answer. 2) Scan for vague terms; ask the ONE question that would most change the answer, if any. 3) Proceed with qc-assume'd stated assumptions when nobody can answer; never silently guess scope.",
+        "triggers": ["clarify", "before we start", "before you research", "what i actually need",
+                     "real question", "scope it", "tam olarak ne", "gerçek soru", "önce netleştir",
+                     "netleştirir misin", "kapsamı netleştir"],
+        "read": ["SKILL.md", "references/contract-fields.md", "references/vague-terms.md"],
+        "template": "templates/question-contract.md",
+        "first_command": "qc-pin --question \"...\" --decision \"what this answer will inform\"",
+        "stop_rule": "never answer a question whose decision and consumer are unpinned; proceed with qc-assume'd assumptions when the user cannot answer",
+        "also_consider": ["local-advisor", "deep-research"],
     },
 }
 
@@ -4325,6 +4512,30 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--l2", required=True, help="What that causes (min 15 chars)")
     p.add_argument("--l3", help="What that causes in turn (optional; min 15 chars if present)")
     p.set_defaults(func=cmd_devil_consequence)
+
+    p = sub.add_parser("qc-pin",
+                       help="Pin the question contract: the question, the decision it informs, the consumer, the budget")
+    p.add_argument("--question", required=True, help="The question to answer (min 15 chars)")
+    p.add_argument("--decision", required=True,
+                   help="The decision this answer will inform (min 10 chars) — what the answer is FOR")
+    p.add_argument("--consumer", help="Who reads the answer, and in what form")
+    p.add_argument("--budget", help="Time/token/effort budget for answering")
+    p.add_argument("--decided", action="append",
+                   help="Already decided — not open for debate (repeatable)")
+    p.add_argument("--open", action="append",
+                   help="Genuinely open sub-questions (repeatable)")
+    p.add_argument("--force", action="store_true", help="Replace an existing contract (wipes assumptions)")
+    p.set_defaults(func=cmd_qc_pin)
+
+    p = sub.add_parser("qc-check",
+                       help="The gate: is the contract complete enough to answer? READY or NEEDS_INPUT with what to ask")
+    p.set_defaults(func=cmd_qc_check)
+
+    p = sub.add_parser("qc-assume",
+                       help="Record a stated assumption where the question was ambiguous — stated in the answer's caveat")
+    p.add_argument("--assumption", action="append",
+                   help="The interpretation chosen (repeatable, min 10 chars each)")
+    p.set_defaults(func=cmd_qc_assume)
 
     p = sub.add_parser("load-skills",
                        help="Route a prompt to the skills it needs and emit their loading brief")

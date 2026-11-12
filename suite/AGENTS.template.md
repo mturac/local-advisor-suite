@@ -31,6 +31,7 @@ you cannot run the command:
 | A bug, failing test or stack trace in a named file | `local-debug` | `$WB debug-hypothesis --symptom ... --target-file ... --repro ...` |
 | Analyze a data file the user provides, with traceable numbers | `data-analysis` | `$WB data-register --path FILE --question ...` |
 | Stress-test a plan before committing — the adversarial second opinion | `devil-advocate` | `$WB devil-open --claim "..." --steelman "..."` |
+| Pin what the question actually is, before research or building | `question-contract` | `$WB qc-pin --question "..." --decision "what it informs"` |
 | One factual answer that needs 1-3 sources (version, price, limit, date) | `web-search` | host search tool |
 | Research with several sources and a synthesis | `deep-research` | `$WB research-init --topic ... --sub-question ...` |
 | Compare many entities across the same fields, as a table | `wide-search` | `$WB research-init --mode wide-matrix --entity ... --field ...` |

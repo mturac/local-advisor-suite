@@ -1,0 +1,5 @@
+interface:
+  display_name: "Question Contract"
+  short_description: "Pin the question, the decision it informs and the consumer before spending tokens; vague-term scan; assumptions on record"
+policy:
+  allow_implicit_invocation: true

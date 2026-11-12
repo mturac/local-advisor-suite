@@ -1,5 +1,37 @@
 # Changelog
 
+## 3.6.0 (2026-11-12)
+
+v3.5.0 command set and JSON contract preserved; everything below is additive.
+
+### Added: question-contract skill (16th skill)
+
+The pre-flight layer: the most expensive AI failure is a brilliant answer to
+the wrong question, and it is the most preventable. "Before you start",
+"clarify what I need" and "tam olarak ne istiyorsun" now route somewhere
+real — and the router's also_consider now proposes the contract from
+local-advisor and deep-research before big work starts.
+
+- New commands **`qc-pin` / `qc-check` / `qc-assume`** and a new
+  `qc_ledger.json` state file:
+  - `qc-pin --question ... --decision ... [--consumer ...] [--budget ...]
+    [--decided ...] [--open ...]` pins the contract. The decision (what the
+    answer will inform) is mandatory: an answer that informs no decision is
+    trivia. `decided` kills re-litigated ground; `open` bounds what the
+    answer may leave unresolved.
+  - `qc-check` is the gate: READY, or NEEDS_INPUT (JSON FAIL, exit 2) naming
+    exactly which fields are missing — the decision and the consumer cannot
+    stay unpinned.
+  - `qc-assume --assumption ...` records full-statement assumptions where
+    ambiguity survived; every one is stated in the answer's caveat.
+- **Deterministic vague-term scan**: better, optimal, scalable, verimli,
+  daha iyi, and friends each return the clarifying question they demand
+  ("better by which measure?"). The discipline is one question — the one
+  whose answer most changes the work — and assumptions for the rest.
+- New references: `contract-fields.md` (each field's purpose, good/bad
+  examples) and `vague-terms.md` (the scan list and the one-question craft);
+  fillable template and a full example run included.
+
 ## 3.5.0 (2026-11-12)
 
 v3.4.0 command set and JSON contract preserved; everything below is additive.

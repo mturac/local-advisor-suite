@@ -28,6 +28,7 @@ Built on the user's own `workbench.py` and `tools/generate_shared.py`. The v2.1 
 | `local-debug` | A bug in a file you name; at most 2 hypotheses | `debug-hypothesis`, `scope-read --debug-scope`, `debug-report` |
 | `data-analysis` | A data file you name; every number traceable to a logged command | `data-register`, `data-finding`, `data-gap`, `data-report` |
 | `devil-advocate` | Stress-test a plan before committing: steelman, challenges, rebuttals, verdict | `devil-open`, `devil-challenge`, `devil-rebuttal`, `devil-verdict` |
+| `question-contract` | Pin the question, the decision it informs and the consumer before work starts; vague-term scan | `qc-pin`, `qc-check`, `qc-assume` |
 | `web-search` | Quick verified answers with 1-3 sources | host search/fetch tools + optional ledger |
 | `deep-research` | Multi-step research: decomposition, ledger, scoring, contradictions, gaps, synthesis | `research-*`, `audit-report` |
 | `wide-search` | Entity x field tables; every cell bound to a verified URL | `research-init --mode wide-matrix`, `wide-table --strict` |
