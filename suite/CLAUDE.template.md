@@ -41,6 +41,7 @@ you cannot run the command:
 | Analyze a data file the user provides, with traceable numbers | `data-analysis` | `$WB data-register --path FILE --question ...` |
 | Stress-test a plan before committing — the adversarial second opinion | `devil-advocate` | `$WB devil-open --claim "..." --steelman "..."` |
 | Pin what the question actually is, before research or building | `question-contract` | `$WB qc-pin --question "..." --decision "what it informs"` |
+| Track a decision and its prediction; grade it later; read the calibration report | `decision-journal` | `$WB journal-log --decision ... --prediction ... --confidence N --review-by YYYY-MM-DD` |
 | Save, find and reuse reusable project knowledge as sourced Q&A | `knowledge-capture` | `$WB kb-add --question ... --answer ... --source-url ...` |
 
 ### Do not scan by default

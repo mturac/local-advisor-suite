@@ -25,7 +25,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS_DIR = ROOT / "skills"
-VERSION = "3.6.0"
+VERSION = "3.7.0"
 
 
 def write_file(path: Path, content: str) -> None:
@@ -721,6 +721,7 @@ SKILL_INTERFACES = {
     "data-analysis": ("Data Analysis", "Grounded analysis of a user-provided data file with a computation ledger"),
     "devil-advocate": ("Devil's Advocate", "Adversarial stress-test: premortem, outside view, severity-graded challenges with defeaters, second-order chains, mechanical verdict"),
     "question-contract": ("Question Contract", "Pin the question, the decision it informs and the consumer before spending tokens; vague-term scan; assumptions on record"),
+    "decision-journal": ("Decision Journal", "Log decisions with falsifiable predictions and confidences; resolve against reality; calibration report flags overconfidence"),
 }
 
 FRONTMATTER_DESC_RE = re.compile(r"^description:\s*(.+)$", re.M)

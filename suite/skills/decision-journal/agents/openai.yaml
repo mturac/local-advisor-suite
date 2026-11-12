@@ -1,0 +1,5 @@
+interface:
+  display_name: "Decision Journal"
+  short_description: "Log decisions with falsifiable predictions and confidences; resolve against reality; calibration report flags overconfidence"
+policy:
+  allow_implicit_invocation: true

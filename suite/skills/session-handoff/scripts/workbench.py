@@ -71,6 +71,12 @@ Capabilities:
      each vague word demands; a READY / NEEDS_INPUT gate; assumptions
      recorded where the question was ambiguous, to be stated in the
      answer's caveat)
+11. v3.7 additions (additive only):
+   - decision journal: journal-log / journal-resolve / journal-report
+     (decisions logged with falsifiable predictions, confidence and a
+     review date; resolved HIT / MISS / PARTIAL against reality with the
+     lesson; calibration report per confidence band with an
+     overconfidence verdict and overdue-entry tracking)
 
 Network policy: the only command that can open a socket is `fetch-url`, and only
 with --allow-network. Every other command is offline and deterministic.
@@ -96,7 +102,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 
-VERSION = "3.6.0"
+VERSION = "3.7.0"
 DEFAULT_STATE_DIR = ".local-workbench"
 MAX_FILE_BYTES = 512 * 1024  # 512 KB cap for scoped local file reads
 MAX_SCAN_FILES = 200
@@ -2021,6 +2027,9 @@ DATA_LEDGER_NAME = "data_ledger.json"
 MAX_DATASET_BYTES = 64 * 1024 * 1024  # 64 MB cap for dataset hashing
 DEVIL_LEDGER_NAME = "devil_ledger.json"
 QC_LEDGER_NAME = "qc_ledger.json"
+JOURNAL_LEDGER_NAME = "journal_ledger.json"
+JOURNAL_OUTCOMES = ("HIT", "MISS", "PARTIAL")
+JOURNAL_BANDS = ((50, 69), (70, 84), (85, 100))
 
 # Vague terms: the words that make an answer unjudgeable. Each maps to the
 # clarifying question it demands (v3.6 question-contract).
@@ -3383,6 +3392,180 @@ def cmd_devil_consequence(args: argparse.Namespace) -> Dict[str, Any]:
     }
 
 
+# ------------------------------------------------------- decision-journal
+# The feedback loop: log decisions with falsifiable predictions and
+# confidences, resolve them against reality, and read the calibration
+# report. Advice that is never scored is advice that cannot improve.
+
+def _load_journal(state_dir: Path, required: bool = True) -> Tuple[Path, Dict[str, Any]]:
+    ensure_state_dir(state_dir)
+    path = state_dir / JOURNAL_LEDGER_NAME
+    if required and not path.exists():
+        raise WorkbenchError(
+            "NO_JOURNAL",
+            "No decision journal exists yet. Start one: journal-log --decision ... "
+            "--prediction ... --confidence N --review-by YYYY-MM-DD.",
+        )
+    return path, (load_json(path, {"entries": []}) if path.exists() else {"entries": []})
+
+
+def cmd_journal_log(args: argparse.Namespace) -> Dict[str, Any]:
+    state_dir = ensure_state_dir(Path(args.state_dir))
+    path, journal = _load_journal(state_dir, required=False)
+    decision = args.decision.strip()
+    prediction = args.prediction.strip()
+    if len(decision) < 15:
+        raise WorkbenchError(
+            "DECISION_TOO_SHORT",
+            "Name the decision in at least 15 characters — what was chosen, not that a choice happened.",
+        )
+    if len(prediction) < 15:
+        raise WorkbenchError(
+            "PREDICTION_TOO_SHORT",
+            "State the falsifiable prediction in at least 15 characters — something reality can "
+            "later grade, not an aspiration ('it will go well' cannot be graded).",
+        )
+    if not 0 <= args.confidence <= 100:
+        raise WorkbenchError("CONFIDENCE_RANGE", "Confidence is a percentage: 0-100.")
+    try:
+        review_by = dt.date.fromisoformat(args.review_by.strip())
+    except ValueError:
+        raise WorkbenchError("BAD_DATE", "Review date must be YYYY-MM-DD.")
+    entry = {
+        "id": f"J{len(journal['entries']) + 1}",
+        "decision": decision,
+        "prediction": prediction,
+        "confidence": args.confidence,
+        "review_by": args.review_by.strip(),
+        "mind_changer": (args.mind_changer or "").strip() or None,
+        "context": (args.context or "").strip() or None,
+        "status": "OPEN",
+        "outcome": None,
+        "lesson": None,
+        "logged_at": utc_now_iso(),
+        "resolved_at": None,
+    }
+    journal["entries"].append(entry)
+    journal["updated_at"] = utc_now_iso()
+    save_json(path, journal)
+    return {
+        "status": "OK",
+        "entry": entry,
+        "open_count": sum(1 for e in journal["entries"] if e["status"] == "OPEN"),
+        "next": ("When the review date arrives (or reality answers first): "
+                 f"journal-resolve --id {entry['id']} --outcome HIT|MISS|PARTIAL --lesson '...'"),
+    }
+
+
+def cmd_journal_resolve(args: argparse.Namespace) -> Dict[str, Any]:
+    path, journal = _load_journal(Path(args.state_dir))
+    target = None
+    for e in journal["entries"]:
+        if e["id"] == args.id:
+            target = e
+            break
+    if target is None:
+        raise WorkbenchError("UNKNOWN_ENTRY",
+                             f"No journal entry with id {args.id}.",
+                             {"known": [e["id"] for e in journal["entries"]]})
+    if target["status"] == "RESOLVED":
+        raise WorkbenchError(
+            "ENTRY_RESOLVED",
+            f"{args.id} is already resolved as {target['outcome']}: {target['lesson'][:80]}",
+        )
+    lesson = args.lesson.strip()
+    if len(lesson) < 15:
+        raise WorkbenchError(
+            "LESSON_TOO_SHORT",
+            "Write the lesson in at least 15 characters — what you would do differently, not "
+            "what happened (the outcome field already records that).",
+        )
+    target["status"] = "RESOLVED"
+    target["outcome"] = args.outcome
+    target["lesson"] = lesson
+    target["resolved_at"] = utc_now_iso()
+    journal["updated_at"] = utc_now_iso()
+    save_json(path, journal)
+    return {
+        "status": "OK",
+        "entry": target,
+        "open_count": sum(1 for e in journal["entries"] if e["status"] == "OPEN"),
+    }
+
+
+def cmd_journal_report(args: argparse.Namespace) -> Dict[str, Any]:
+    path, journal = _load_journal(Path(args.state_dir), required=False)
+    entries = journal["entries"]
+    if not entries:
+        raise WorkbenchError(
+            "EMPTY_JOURNAL",
+            "The journal has no entries. Log one: journal-log --decision ... --prediction ... "
+            "--confidence N --review-by YYYY-MM-DD.",
+        )
+    resolved = [e for e in entries if e["status"] == "RESOLVED"]
+    today = dt.date.today().isoformat()
+    overdue = [e for e in entries
+               if e["status"] == "OPEN" and e["review_by"] < today]
+
+    def band_of(conf: int) -> Optional[Tuple[int, int]]:
+        for band in JOURNAL_BANDS:
+            if band[0] <= conf <= band[1]:
+                return band
+        return None
+
+    bands: List[Dict[str, Any]] = []
+    for lo, hi in JOURNAL_BANDS:
+        members = [e for e in resolved if lo <= e["confidence"] <= hi]
+        if not members:
+            continue
+        score = sum(1.0 if e["outcome"] == "HIT" else 0.5 if e["outcome"] == "PARTIAL" else 0.0
+                    for e in members)
+        hit_rate = round(score / len(members) * 100)
+        avg_conf = round(sum(e["confidence"] for e in members) / len(members))
+        bands.append({
+            "band": f"{lo}-{hi}%",
+            "resolved": len(members),
+            "avg_confidence": avg_conf,
+            "hit_rate": hit_rate,
+            "gap": avg_conf - hit_rate,
+            "overconfident": avg_conf - hit_rate > 15,
+        })
+    overall: Optional[Dict[str, Any]] = None
+    overconfidence_flag = False
+    if resolved:
+        score = sum(1.0 if e["outcome"] == "HIT" else 0.5 if e["outcome"] == "PARTIAL" else 0.0
+                    for e in resolved)
+        hit_rate = round(score / len(resolved) * 100)
+        avg_conf = round(sum(e["confidence"] for e in resolved) / len(resolved))
+        overconfidence_flag = avg_conf - hit_rate > 15
+        overall = {
+            "resolved": len(resolved),
+            "open": len(entries) - len(resolved),
+            "avg_confidence": avg_conf,
+            "hit_rate": hit_rate,
+            "gap": avg_conf - hit_rate,
+            "overconfident": overconfidence_flag,
+        }
+    return {
+        "status": "OK",
+        "entries_total": len(entries),
+        "resolved": len(resolved),
+        "open": len(entries) - len(resolved),
+        "overdue": [{"id": e["id"], "decision": e["decision"], "review_by": e["review_by"]}
+                    for e in overdue],
+        "overdue_count": len(overdue),
+        "bands": bands,
+        "overall": overall,
+        "verdict_note": (
+            "Overconfident: when you say 85%+, be right 85 times out of 100. Widen your "
+            "confidence spread or sharpen your predictions — the next decision is priced "
+            "off these numbers."
+        ) if overconfidence_flag else
+        ("Calibration is honest within 15 points. Keep resolving on evidence, not on hope." if resolved
+         else "No resolved entries yet — the calibration math starts after the first resolution."),
+    }
+
+
 # ------------------------------------------------------ question-contract
 # Pin the question before spending tokens on it: the decision it informs,
 # who consumes the answer, what is already decided and what is genuinely
@@ -3554,7 +3737,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
         "template": "templates/adr.md",
         "first_command": "decision-score --spec-file decision.json",
         "stop_rule": "the decision is not final until the ADR passes adr-check",
-        "also_consider": ["wide-search", "devil-advocate"],
+        "also_consider": ["wide-search", "devil-advocate", "decision-journal"],
     },
     "local-debug": {
         "wants": "A bug, failing test or stack trace in a named file",
@@ -3724,7 +3907,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
         "template": "templates/challenge-report.md",
         "first_command": "devil-plan --archetype build|launch|migrate|hire|buy|process, then devil-open --claim \"the plan in one sentence\" --steelman \"its best case, honestly\"",
         "stop_rule": "the verdict is BLOCK while any FATAL challenge is unanswered — answer it or change the plan",
-        "also_consider": ["decision-review", "evidence-audit"],
+        "also_consider": ["decision-review", "evidence-audit", "decision-journal"],
     },
     "question-contract": {
         "wants": "Pin what the question actually is — the decision it informs, the consumer, the budget — before research, analysis or building",
@@ -3738,6 +3921,19 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
         "first_command": "qc-pin --question \"...\" --decision \"what this answer will inform\"",
         "stop_rule": "never answer a question whose decision and consumer are unpinned; proceed with qc-assume'd assumptions when the user cannot answer",
         "also_consider": ["local-advisor", "deep-research"],
+    },
+    "decision-journal": {
+        "wants": "Log decisions with falsifiable predictions and confidences, resolve them against reality, read the calibration report",
+        "wants_tr": "Kararları çürütülebilir tahmin ve güven düzeyiyle kaydetme, gerçeğe göre sonuçlandırma, kalibrasyon raporu okuma",
+        "core": "1) Log the decision, its falsifiable prediction, your confidence (0-100) and a review date. 2) On the review date, resolve it HIT/MISS/PARTIAL with the lesson. 3) Read journal-report: confidence minus hit rate over 15 points means you are overconfident — spread your confidences.",
+        "triggers": ["journal", "track this decision", "log the prediction", "how good were our calls",
+                     "were we right", "calibration", "track record", "karar defteri",
+                     "tahmini kaydet", "tahminler ne kadar tuttu", "haklı çıktık mı", "izleme kaydı"],
+        "read": ["SKILL.md", "references/journal-discipline.md", "references/calibration.md"],
+        "template": "templates/decision-entry.md",
+        "first_command": "journal-log --decision ... --prediction ... --confidence N --review-by YYYY-MM-DD",
+        "stop_rule": "resolve on evidence, not on hope; an overdue OPEN entry is a debt to reality",
+        "also_consider": ["decision-review", "devil-advocate"],
     },
 }
 
@@ -4536,6 +4732,32 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--assumption", action="append",
                    help="The interpretation chosen (repeatable, min 10 chars each)")
     p.set_defaults(func=cmd_qc_assume)
+
+    p = sub.add_parser("journal-log",
+                       help="Log a decision with its falsifiable prediction, confidence and review date")
+    p.add_argument("--decision", required=True,
+                   help="What was chosen (min 15 chars)")
+    p.add_argument("--prediction", required=True,
+                   help="The falsifiable prediction reality can grade (min 15 chars)")
+    p.add_argument("--confidence", type=int, required=True,
+                   help="Confidence the prediction hits: 0-100")
+    p.add_argument("--review-by", required=True,
+                   help="When to resolve this entry: YYYY-MM-DD")
+    p.add_argument("--mind-changer",
+                   help="What observation would change your mind before the review date")
+    p.add_argument("--context", help="One line of context for the future reader")
+    p.set_defaults(func=cmd_journal_log)
+
+    p = sub.add_parser("journal-resolve", help="Resolve an entry against reality: HIT, MISS or PARTIAL, plus the lesson")
+    p.add_argument("--id", required=True, help="Journal entry id (e.g. J1)")
+    p.add_argument("--outcome", required=True, choices=JOURNAL_OUTCOMES)
+    p.add_argument("--lesson", required=True,
+                   help="What you would do differently (min 15 chars)")
+    p.set_defaults(func=cmd_journal_resolve)
+
+    p = sub.add_parser("journal-report",
+                       help="Calibration report: hit rate vs claimed confidence per band, overdue entries")
+    p.set_defaults(func=cmd_journal_report)
 
     p = sub.add_parser("load-skills",
                        help="Route a prompt to the skills it needs and emit their loading brief")

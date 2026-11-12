@@ -1,5 +1,39 @@
 # Changelog
 
+## 3.7.0 (2026-11-12)
+
+v3.6.0 command set and JSON contract preserved; everything below is additive.
+
+### Added: decision-journal skill (17th skill) — the feedback loop
+
+The advisory stack was missing its other half: advice that is never scored
+cannot improve. Every significant decision now gets logged with a falsifiable
+prediction and a confidence, reality later grades it, and the calibration
+report measures whether "90% confident" actually means 90% right.
+
+- New commands **`journal-log` / `journal-resolve` / `journal-report`** and
+  a new `journal_ledger.json` state file:
+  - `journal-log --decision ... --prediction ... --confidence N
+    --review-by YYYY-MM-DD [--mind-changer ...]` records the commitment, the
+    gradeable prediction ("adoption above 60% at the 90-day review", not "it
+    will go well"), the confidence as a bet you would take, and the review
+    date. The mind-changer is the early-warning field: the observation that
+    would flip you before the review date.
+  - `journal-resolve --id Jn --outcome HIT|MISS|PARTIAL --lesson ...` grades
+    the entry against the prediction as written — no goalpost moves; PARTIAL
+    is for substance-held-specifics-slipped, not for dodging a MISS.
+  - `journal-report` computes hit rate vs claimed confidence per band
+    (50-69 / 70-84 / 85-100), flags overconfidence when the gap exceeds 15
+    points, and lists overdue OPEN entries as debts to reality.
+- The router now proposes the journal from `decision-review` and
+  `devil-advocate`: a verdict without a journaled prediction is a lesson
+  nobody will learn from.
+- New references: `journal-discipline.md` (what makes an entry gradeable,
+  resolution honesty) and `calibration.md` (reading the bands, why 15
+  points); fillable entry template and a three-entry example report with
+  teeth included.
+
+
 ## 3.6.0 (2026-11-12)
 
 v3.5.0 command set and JSON contract preserved; everything below is additive.

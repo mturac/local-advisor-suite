@@ -58,8 +58,8 @@ class WorkbenchTestCase(unittest.TestCase):
 
 
 class TestVersionAndContract(WorkbenchTestCase):
-    def test_version_is_3_6_0(self):
-        self.assertEqual(workbench.VERSION, "3.6.0")
+    def test_version_is_3_7_0(self):
+        self.assertEqual(workbench.VERSION, "3.7.0")
 
     def test_v21_subcommands_still_exist(self):
         """Every v2.1 subcommand must keep working with the same name (backward compatibility)."""
@@ -1077,6 +1077,82 @@ class TestQuestionContract(WorkbenchTestCase):
         self.assertIn("qc-pin", top["brief"]["first_command"])
 
 
+class TestDecisionJournal(WorkbenchTestCase):
+    """Log -> resolve -> calibrate."""
+
+    def _log(self, decision, prediction, confidence, review_by, **kw):
+        args = ["journal-log", "--decision", decision, "--prediction", prediction,
+                "--confidence", str(confidence), "--review-by", review_by]
+        for k, v in kw.items():
+            args += [f"--{k.replace('_', '-')}", v]
+        return self.ok(*args)
+
+    def test_log_requires_gradeable_prediction(self):
+        data = self.err("journal-log", "--decision", "Migrate CI to the managed platform",
+                        "--prediction", "fine", "--confidence", "75",
+                        "--review-by", "2027-02-10")
+        self.assertEqual(data["error_code"], "PREDICTION_TOO_SHORT")
+        data = self.err("journal-log", "--decision", "Migrate CI to the managed platform",
+                        "--prediction", "adoption exceeds 60% of the team at the 90-day review",
+                        "--confidence", "140", "--review-by", "2027-02-10")
+        self.assertEqual(data["error_code"], "CONFIDENCE_RANGE")
+        data = self.err("journal-log", "--decision", "Migrate CI to the managed platform",
+                        "--prediction", "adoption exceeds 60% of the team at the 90-day review",
+                        "--confidence", "75", "--review-by", "tomorrow")
+        self.assertEqual(data["error_code"], "BAD_DATE")
+
+    def test_resolve_grades_against_reality(self):
+        data = self.err("journal-resolve", "--id", "J1", "--outcome", "HIT",
+                        "--lesson", "a lesson about what to do differently")
+        self.assertEqual(data["error_code"], "NO_JOURNAL")
+        self._log("Migrate CI to the managed platform",
+                  "adoption exceeds 60% of the team at the 90-day review",
+                  75, "2027-02-10")
+        data = self.err("journal-resolve", "--id", "J9", "--outcome", "HIT",
+                        "--lesson", "a lesson about what to do differently")
+        self.assertEqual(data["error_code"], "UNKNOWN_ENTRY")
+        data = self.err("journal-resolve", "--id", "J1", "--outcome", "HIT",
+                        "--lesson", "short")
+        self.assertEqual(data["error_code"], "LESSON_TOO_SHORT")
+        data = self.ok("journal-resolve", "--id", "J1", "--outcome", "HIT",
+                       "--lesson", "the plugin spike de-risked the mobile build before the decision")
+        self.assertEqual(data["entry"]["status"], "RESOLVED")
+        data = self.err("journal-resolve", "--id", "J1", "--outcome", "MISS",
+                        "--lesson", "grading the same entry twice must not work")
+        self.assertEqual(data["error_code"], "ENTRY_RESOLVED")
+
+    def test_report_calibrates_and_flags_overdue(self):
+        # two confident technical calls that HIT, one modest people call that MISSed
+        self._log("Ship the versioned compatibility layer",
+                  "no mobile client breaks on the layer this quarter", 85, "2027-01-31")
+        self._log("Hire the contractor for the billing service",
+                  "the contractor is productive on billing within four weeks", 60, "2027-01-31")
+        self._log("An old entry past its review date", "something checkable happens by now",
+                  70, "2020-01-01")
+        self.ok("journal-resolve", "--id", "J1", "--outcome", "HIT",
+                "--lesson", "the contract tests caught the shape drift before clients did")
+        self.ok("journal-resolve", "--id", "J2", "--outcome", "MISS",
+                "--lesson", "price people-timing claims 15 points lower than the feeling")
+        report = self.ok("journal-report")
+        self.assertEqual(report["entries_total"], 3)
+        self.assertEqual(report["resolved"], 2)
+        self.assertEqual(report["overdue_count"], 1)
+        self.assertEqual(report["overdue"][0]["id"], "J3")
+        self.assertIsNotNone(report["overall"])
+        # J1 hit (100) at 85 claimed; J2 missed (0) at 60 claimed -> 50% hit rate, avg 72.5 -> 73
+        self.assertEqual(report["overall"]["hit_rate"], 50)
+
+    def test_report_on_empty_journal_is_structured_error(self):
+        data = self.err("journal-report")
+        self.assertEqual(data["error_code"], "EMPTY_JOURNAL")
+
+    def test_routes_to_decision_journal(self):
+        data = self.ok("load-skills", "--prompt",
+                       "keep a karar defteri: track this decision and how good our calls were")
+        top = data["routed"][0]
+        self.assertEqual(top["brief"]["skill"], "decision-journal")
+
+
 class TestLoadSkills(WorkbenchTestCase):
     """Prompt → skill routing + the context brief (deterministic, TR and EN)."""
 
@@ -1217,7 +1293,7 @@ class TestLoadSkills(WorkbenchTestCase):
     def test_list_dumps_every_route_with_triggers(self):
         data = self.ok("load-skills", "--list")
         routes = data["routes"]
-        self.assertEqual(len(routes), 16)
+        self.assertEqual(len(routes), 17)
         by_skill = {r["skill"]: r for r in routes}
         self.assertTrue(by_skill["local-advisor"]["fallback"])
         self.assertFalse(by_skill["deep-research"]["fallback"])
