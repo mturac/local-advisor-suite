@@ -58,8 +58,8 @@ class WorkbenchTestCase(unittest.TestCase):
 
 
 class TestVersionAndContract(WorkbenchTestCase):
-    def test_version_is_3_4_0(self):
-        self.assertEqual(workbench.VERSION, "3.4.0")
+    def test_version_is_3_5_0(self):
+        self.assertEqual(workbench.VERSION, "3.5.0")
 
     def test_v21_subcommands_still_exist(self):
         """Every v2.1 subcommand must keep working with the same name (backward compatibility)."""
@@ -875,6 +875,134 @@ class TestDevilAdvocate(WorkbenchTestCase):
         data = self.err("devil-verdict", "--kill-criterion", "a signal that would falsify the plan")
         self.assertEqual(data["error_code"], "FILE_EXISTS")
         self.ok("devil-verdict", "--force", "--kill-criterion", "a signal that would falsify the plan")
+
+    def test_plan_returns_archetype_attack_plan_stateless(self):
+        data = self.ok("devil-plan", "--archetype", "migrate")
+        self.assertEqual(data["status"], "OK")
+        self.assertEqual(data["archetype"], "migrate")
+        self.assertTrue(any("rollback-path" in a for a in data["attack_order"]))
+        self.assertTrue(data["premortem_prompts"])
+        self.assertTrue(data["kill_signal_candidates"])
+        self.assertIn("devil-premortem", " ".join(data["workflow"]))
+        # all six archetypes are real choices
+        for arch in ("build", "launch", "migrate", "hire", "buy", "process"):
+            self.ok("devil-plan", "--archetype", arch)
+        # an unknown archetype is rejected before it can misroute an attack plan
+        self.nonzero("devil-plan", "--archetype", "nope")
+
+    def test_plan_records_archetype_on_open_session(self):
+        self._open()
+        self.ok("devil-plan", "--archetype", "build")
+        self.ok("devil-premortem",
+                "--failure-story", "It shipped late: the billing integration was assumed trivial "
+                                   "and ate six weeks nobody had budgeted",
+                "--cause", "the billing integration was never scoped")
+        self._challenge()
+        v = self.ok("devil-verdict", "--kill-criterion", "a signal that would falsify the plan")
+        self.assertEqual(v["verdict"], "PROCEED_WITH_GUARDS")
+        text = Path(v["report"]).read_text(encoding="utf-8")
+        self.assertIn("**Plan archetype**: build", text)
+        self.assertIn("## Premortem", text)
+
+    def test_premortem_requires_story_and_causes_and_open_session(self):
+        data = self.err("devil-premortem",
+                        "--failure-story", "too short",
+                        "--cause", "a real cause of failure here")
+        self.assertEqual(data["error_code"], "NO_DEVIL_SESSION")
+        self._open()
+        data = self.err("devil-premortem",
+                        "--failure-story", "a long enough failure story that says something concrete")
+        self.assertEqual(data["error_code"], "CAUSES_REQUIRED")
+        data = self.err("devil-premortem",
+                        "--failure-story", "a long enough failure story that says something concrete",
+                        "--cause", "short")
+        self.assertEqual(data["error_code"], "CAUSE_TOO_SHORT")
+        data = self.err("devil-premortem",
+                        "--failure-story", "thin",
+                        "--cause", "a real cause of failure here")
+        self.assertEqual(data["error_code"], "FAILURE_STORY_TOO_SHORT")
+        ok = self.ok("devil-premortem",
+                     "--failure-story", "Twelve months on the plan failed: the adoption stalled "
+                                        "and both systems stayed alive",
+                     "--cause", "no owner was named for the 90-day push",
+                     "--cause", "the promised connector missed our edge cases")
+        self.assertEqual(ok["cause_count"], 2)
+        self.assertEqual(len(ok["suggested_challenges"]), 2)
+        # one premortem per session
+        data = self.err("devil-premortem",
+                        "--failure-story", "a second story about the same failure",
+                        "--cause", "a real cause of failure here")
+        self.assertEqual(data["error_code"], "PREMORTEM_EXISTS")
+
+    def test_outside_view_flags_optimism_bias_mechanically(self):
+        self._open()
+        data = self.ok("devil-outside",
+                       "--reference-class", "small teams migrating CI platforms",
+                       "--base-rate", "40")
+        self.assertTrue(data["optimism_bias_flagged"])
+        self.assertEqual(data["open_counts"]["SERIOUS"], 1)
+        self.assertIn("reference class", data["note"])
+        # a good base rate, or an argued adjustment, does not flag
+        self.ok("devil-open", "--force",
+                "--claim", "Second plan under attack with a fresh session",
+                "--steelman", "Its best case stated honestly so the attack is fair")
+        data = self.ok("devil-outside",
+                       "--reference-class", "small teams migrating CI platforms",
+                       "--base-rate", "40",
+                       "--adjustment", "we completed two similar migrations fully, same engineers")
+        self.assertFalse(data["optimism_bias_flagged"])
+        self.assertEqual(data["open_counts"]["SERIOUS"], 0)
+
+    def test_consequence_chain_three_levels_and_validation(self):
+        data = self.err("devil-consequence", "--l1", "too short", "--l2", "also short")
+        self.assertEqual(data["error_code"], "NO_DEVIL_SESSION")
+        self._open()
+        data = self.err("devil-consequence", "--l1", "too short", "--l2", "also short")
+        self.assertEqual(data["error_code"], "LEVELS_TOO_SHORT")
+        data = self.ok("devil-consequence",
+                       "--l1", "the free tier removes the signup barrier entirely",
+                       "--l2", "support load triples because trials are unqualified",
+                       "--l3", "paying customers see slower support and start evaluating rivals")
+        self.assertEqual(data["consequence_count"], 1)
+        self.assertEqual(data["consequence"]["l3"],
+                         "paying customers see slower support and start evaluating rivals")
+
+    def test_verdict_reports_protocols_and_missing_premortem(self):
+        self._open()
+        self._challenge()
+        v = self.ok("devil-verdict", "--kill-criterion", "a signal that would falsify the plan")
+        self.assertTrue(v["premortem_missing"])
+        self.assertFalse(v["protocols_used"]["premortem"])
+        self.assertFalse(v["protocols_used"]["outside_view"])
+        text = Path(v["report"]).read_text(encoding="utf-8")
+        self.assertNotIn("## Premortem", text)
+
+        # full protocol run renders every section in the report
+        self.ok("devil-open", "--force",
+                "--claim", "Adopt the managed CI platform this quarter for speed",
+                "--steelman", "Two engineers stop maintaining glue scripts and releases stop "
+                              "depending on one laptop")
+        self.ok("devil-premortem",
+                "--failure-story", "Both systems stayed alive at month twelve and we paid twice",
+                "--cause", "no decommission owner was named in the plan")
+        self.ok("devil-outside",
+                "--reference-class", "small teams migrating CI platforms",
+                "--base-rate", "40",
+                "--adjustment", "two prior migrations completed fully by the same team")
+        self.ok("devil-consequence",
+                "--l1", "the old CI stops receiving changes once unused",
+                "--l2", "edge cases break quietly while it is still a release path")
+        self._challenge()
+        v = self.ok("devil-verdict", "--force",
+                    "--kill-criterion", "a signal that would falsify the plan")
+        self.assertNotIn("premortem_missing", v)
+        self.assertTrue(v["protocols_used"]["premortem"])
+        self.assertTrue(v["protocols_used"]["outside_view"])
+        self.assertTrue(v["protocols_used"]["second_order"])
+        text = Path(v["report"]).read_text(encoding="utf-8")
+        self.assertIn("## Premortem", text)
+        self.assertIn("## Outside view", text)
+        self.assertIn("## Second-order effects", text)
 
 
 class TestLoadSkills(WorkbenchTestCase):

@@ -2,18 +2,39 @@
 
 > Skeleton for the devil-advocate skill. The verdict is mechanical: BLOCK while
 > a FATAL challenge stands, PROCEED_WITH_GUARDS while a SERIOUS one does,
-> PROCEED only when every attack is answered. Fields match the devil-open /
-> devil-challenge / devil-rebuttal / devil-verdict CLI (claim, steelman,
-> assumption, attack, category, severity, defeater, rebuttal, basis, kill
-> criteria).
+> PROCEED only when every attack is answered. Fields match the devil-plan /
+> devil-open / devil-premortem / devil-outside / devil-challenge /
+> devil-consequence / devil-rebuttal / devil-verdict CLI.
 
 - **Claim under attack**: <the plan/decision/spec, in one sentence>
+- **Plan archetype**: <build | launch | migrate | hire | buy | process>
 - **Date**: <YYYY-MM-DD>
 
 ## The steelman (the plan's best case, stated honestly)
 
 <The plan's best case as its advocates would state it — no strawmen here;
 the challenge is only meaningful against this.>
+
+## Premortem (it is 12 months later and the plan failed)
+
+<The failure story, past tense, concrete — then the named causes, each
+specific enough that someone could check whether it is already forming.>
+
+- <cause 1>
+- <cause 2>
+
+## Outside view (the reference class, before the plan's own story)
+
+- **Reference class**: <who else has tried something like this, named by the
+  similarity that matters for the outcome>
+- **Base rate**: <X>% of them succeed.
+- **Inside-view adjustment**: <why this attempt differs — or "none", which
+  auto-opens an optimism-bias challenge that must be rebutted like any other>
+
+## Second-order effects (and then what?)
+
+1. L1 <what the effect directly causes> → L2 <what that causes once people
+   and systems react> → L3 <what that world causes; optional>
 
 ## Verdict: <BLOCK | PROCEED_WITH_GUARDS | PROCEED>
 

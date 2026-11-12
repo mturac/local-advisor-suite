@@ -55,6 +55,15 @@ Capabilities:
      reading) so quick asks skip the full protocol; every prompt routing
      also returns a deterministic suggested_depth (core / compact / full)
      so the agent spends context only when the ask is worth it
+9. v3.5 additions (additive only):
+   - devil-advocate red-team protocols: devil-plan (archetype attack
+     plans for build / launch / migrate / hire / buy / process),
+     devil-premortem (the failure story, written before the challenges),
+     devil-outside (reference class + base rate; a bad base rate with no
+     argued adjustment auto-opens a SERIOUS optimism-bias challenge),
+     devil-consequence (L1 -> L2 -> L3 'and then what?' chains). The
+     CHALLENGE.md verdict now renders premortem, outside view and
+     second-order sections plus a protocols_used summary.
 
 Network policy: the only command that can open a socket is `fetch-url`, and only
 with --allow-network. Every other command is offline and deterministic.
@@ -80,7 +89,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 
-VERSION = "3.4.0"
+VERSION = "3.5.0"
 DEFAULT_STATE_DIR = ".local-workbench"
 MAX_FILE_BYTES = 512 * 1024  # 512 KB cap for scoped local file reads
 MAX_SCAN_FILES = 200
@@ -2017,6 +2026,140 @@ DEVIL_CATEGORIES = (
     "external-risk",             # success depends on a party or event outside your control
 )
 
+# Attack plans per plan archetype (v3.5): which assumptions to attack first,
+# which premortem questions prime real divergence, what reference class the
+# outside view should reach for, and which kill signals fit the archetype.
+DEVIL_ARCHETYPES: Dict[str, Dict[str, Any]] = {
+    "build": {
+        "label": "Build a system, feature or tool",
+        "attack_order": [
+            "complexity-budget — the plan's true scope vs the time and skill actually available; "
+            "the last 20% of scope eats the first 80% of the calendar",
+            "hidden-workload — edge cases, error paths, migrations, docs, ops: the unglamorous "
+            "majority that the pitch slide never shows",
+            "dependency-risk — every external piece: what breaks, who fixes it, when it dies",
+            "skill-assumption — the plan assumes abilities nobody in the room has demonstrated",
+            "integration-seam — where the new thing meets the old thing is where it fails first",
+            "abandonment-risk — who maintains this in month six, and does that person exist",
+        ],
+        "premortem_prompts": [
+            "It shipped late and over budget — which underestimated part ate the calendar?",
+            "It works in the demo and fails in production — which seam broke?",
+            "Six months on, nobody touches it — why did it stop being maintained?",
+        ],
+        "base_rate_hint": "software projects of similar scope: delivered on time and complete",
+        "kill_signals": [
+            "two consecutive weeks with the same blocking defect unresolved",
+            "scope grows past the agreed non-goals without a new decision",
+        ],
+    },
+    "launch": {
+        "label": "Launch a product, feature, campaign or public release",
+        "attack_order": [
+            "demand-evidence — is there evidence anyone wants this, or only enthusiasm",
+            "timing-window — too early (no market) vs too late (entrenched winner)",
+            "single-point-failure — the one review, approval or dependency that can stall it",
+            "reversibility — what is permanently on the record the day after launch",
+            "success-capacity — if it works, can you serve/fulfill/support the volume",
+            "narrative-risk — how the worst plausible misreading spreads, and the response",
+        ],
+        "premortem_prompts": [
+            "The launch landed and nobody came — where did the audience assumption break?",
+            "It worked too well and buckled — which capacity assumption failed?",
+            "Day three: the one screenshot everyone is quoting — what is it?",
+        ],
+        "base_rate_hint": "launches of this type: they moved their target metric",
+        "kill_signals": [
+            "pre-committed adoption/engagement threshold not hit by the review date",
+            "top user complaint becomes the product's public identity",
+        ],
+    },
+    "migrate": {
+        "label": "Migrate: platform, database, cloud, provider or rewrite",
+        "attack_order": [
+            "rollback-path — can you actually get back, and has anyone tested that path",
+            "data-loss-surface — every transformation, encoding and edge record that can silently break",
+            "parallel-run-cost — running both systems at once: money, sanity, drift",
+            "freeze-fallacy — 'we will not touch the old system during the migration' never holds",
+            "estimation-anchor — migrations average several times their first estimate; what is yours",
+            "exit-trigger — the observable point where the right move is to stop and undo",
+        ],
+        "premortem_prompts": [
+            "Cutover week: what specifically broke that 'just needed a script'?",
+            "Six months later you are back on the old system — what dragged you back?",
+            "The data checked out and the business numbers didn't — which transformation lied?",
+        ],
+        "base_rate_hint": "comparable migrations: completed without material incident",
+        "kill_signals": [
+            "parallel-run discrepancy above the agreed threshold after two checks",
+            "rollback rehearsal (not the plan — the rehearsal) fails",
+        ],
+    },
+    "hire": {
+        "label": "Add people: hire, partner, co-founder or outsource",
+        "attack_order": [
+            "problem-fit — is the actual bottleneck a missing person, or something a person cannot fix",
+            "key-person-risk — the plan works only if this specific human performs",
+            "ramp-reality — the months before contribution exceeds cost",
+            "incentive-alignment — what this person is optimizing for, honestly",
+            "chemistry-evidence — the specific past collaboration that proves it works with this team",
+            "unmake-decision — how expensive is it to undo this in 90 days",
+        ],
+        "premortem_prompts": [
+            "90 days in and it is not working — what did the interviews never test?",
+            "It worked, then they left — what made the role a launchpad instead of a home?",
+            "The output is fine and the team is worse — what broke below the surface?",
+        ],
+        "base_rate_hint": "similar hires/partnerships: still delivering value at the one-year mark",
+        "kill_signals": [
+            "agreed 90-day deliverables missed with no credible recovery plan",
+            "alignment conversation happened twice and changed nothing",
+        ],
+    },
+    "buy": {
+        "label": "Buy or adopt a tool, service or vendor",
+        "attack_order": [
+            "problem-existence — the workflow this tool fixes: does it actually cost what you think",
+            "lock-in-surface — data, formats, integrations: the cost of leaving in 18 months",
+            "tco-honesty — licenses are the small number; setup, training, ops, drift are the big one",
+            "vendor-mortality — what happens to you if they are acquired, pivot or die",
+            "integration-reality — the promised connector vs your actual edge cases",
+            "adoption-risk — the tool works and nobody uses it: the default failure mode",
+        ],
+        "premortem_prompts": [
+            "Twelve months in, the old tool is still the real one — why did adoption fail?",
+            "The renewal price tripled and you paid it — what made leaving unthinkable?",
+            "The vendor's roadmap diverged from your needs — which promised feature never came?",
+        ],
+        "base_rate_hint": "tool adoptions of this kind: still the primary tool two years later",
+        "kill_signals": [
+            "adoption below the agreed usage threshold at the 90-day review",
+            "migration-out cost estimate exceeds the value the tool has delivered",
+        ],
+    },
+    "process": {
+        "label": "Change how the team works: methodology, reorg or policy",
+        "attack_order": [
+            "problem-evidence — the pain this process fixes: measured, or remembered inaccurately",
+            "adoption-friction — every extra step is a tax; who pays it and will they revolt",
+            "ceremony-vs-value — the parts that feel productive and change nothing",
+            "metric-gaming — what this process rewards people for optimizing, and how they will",
+            "transition-trough — the productivity dip before the gain; can the team survive it",
+            "reversal-plan — how you admit it failed and go back without losing face",
+        ],
+        "premortem_prompts": [
+            "Everyone signed up and nobody changed — where did the daily reality win?",
+            "The numbers improved because the numbers were redefined — what was gamed?",
+            "The good parts survived and the meetings doubled — what calcified?",
+        ],
+        "base_rate_hint": "process changes of this type: still in force, unmodified, a year later",
+        "kill_signals": [
+            "the named problem the process fixes is still occurring at review date",
+            "two consecutive retros call out the same part of the process as net-negative",
+        ],
+    },
+}
+
 REVIEW_SEVERITIES = ("BLOCKING", "MAJOR", "MINOR", "INFO")
 REVIEW_CATEGORIES = ("correctness", "security", "performance", "maintainability", "tests", "style")
 KB_STOPWORDS = {
@@ -2902,13 +3045,45 @@ def cmd_devil_verdict(args: argparse.Namespace) -> Dict[str, Any]:
         "",
         f"**Claim under attack**: {ledger['claim']}",
         "",
+    ]
+    if ledger.get("archetype"):
+        arch = DEVIL_ARCHETYPES.get(ledger["archetype"], {})
+        lines += [f"**Plan archetype**: {ledger['archetype']}"
+                  + (f" — {arch.get('label', '')}" if arch else ""), ""]
+    lines += [
         "## The steelman (the plan's best case, stated honestly)",
         "",
         ledger["steelman"],
         "",
-        f"## Verdict: {verdict}",
-        "",
     ]
+    premortem = ledger.get("premortem")
+    if premortem:
+        lines += ["## Premortem (it is 12 months later and the plan failed)", "",
+                  premortem["failure_story"], "", "Named causes:", ""]
+        for c in premortem["causes"]:
+            lines.append(f"- {c}")
+        lines.append("")
+    outside = ledger.get("outside_view")
+    if outside:
+        lines += ["## Outside view (the reference class, before the plan's own story)", "",
+                  f"Reference class: {outside['reference_class']} — "
+                  f"~{outside['base_rate']}% of them succeed.", "",
+                  f"Inside-view adjustment: {outside['adjustment']}", ""]
+    consequences = ledger.get("consequences") or []
+    if consequences:
+        lines += ["## Second-order effects (and then what?)", ""]
+        for i, cq in enumerate(consequences, 1):
+            chain = f"L1 {cq['l1']} -> L2 {cq['l2']}"
+            if cq.get("l3"):
+                chain += f" -> L3 {cq['l3']}"
+            lines.append(f"{i}. {chain}")
+        lines.append("")
+    protocols_used = {
+        "premortem": bool(premortem),
+        "outside_view": bool(outside),
+        "second_order": bool(consequences),
+    }
+    lines += [f"## Verdict: {verdict}", ""]
     if verdict == "BLOCK":
         lines.append(f"BLOCKED — {counts['FATAL']} FATAL challenge(s) stand unanswered. "
                      "Answer them or change the plan; do not proceed and do not soften them.")
@@ -2950,7 +3125,7 @@ def cmd_devil_verdict(args: argparse.Namespace) -> Dict[str, Any]:
     out.write_text("\n".join(lines), encoding="utf-8")
     save_json(path, ledger)
     status = {"BLOCK": "FAIL", "PROCEED_WITH_GUARDS": "WARN", "PROCEED": "PASS"}[verdict]
-    return {
+    result = {
         "status": status,
         "verdict": verdict,
         "report": str(out),
@@ -2958,6 +3133,218 @@ def cmd_devil_verdict(args: argparse.Namespace) -> Dict[str, Any]:
         "answered_count": ledger["verdict"]["answered_count"],
         "guards": guards,
         "kill_criteria": kill_criteria,
+        "protocols_used": protocols_used,
+    }
+    if not premortem:
+        # Not a gate (the v3.3 contract stands), but the record shows the
+        # cheapest high-value protocol was skipped.
+        result["premortem_missing"] = True
+        result["premortem_note"] = ("No premortem on record — the failure story was never "
+                                    "written. Next session, run devil-premortem before the "
+                                    "challenges.")
+    return result
+
+
+def cmd_devil_plan(args: argparse.Namespace) -> Dict[str, Any]:
+    """The archetype attack plan: which assumptions to attack first for this kind
+    of plan, which premortem questions prime real divergence, the reference class
+    the outside view should reach for, and archetype-appropriate kill signals.
+    Works without an open session (pure reference); records the archetype on an
+    open session so the verdict can show which plan was attacked."""
+    archetype = DEVIL_ARCHETYPES.get(args.archetype)
+    if archetype is None:
+        raise WorkbenchError("UNKNOWN_ARCHETYPE",
+                             f"Unknown archetype '{args.archetype}'.",
+                             {"known": sorted(DEVIL_ARCHETYPES)})
+    result: Dict[str, Any] = {
+        "status": "OK",
+        "archetype": args.archetype,
+        "label": archetype["label"],
+        "attack_order": archetype["attack_order"],
+        "premortem_prompts": archetype["premortem_prompts"],
+        "base_rate_hint": archetype["base_rate_hint"],
+        "kill_signal_candidates": archetype["kill_signals"],
+        "workflow": [
+            "devil-open --claim ... --steelman ...  (fair hearing first)",
+            "devil-premortem --failure-story ... --cause ...  (it failed — write the story)",
+            "devil-outside --reference-class ... --base-rate N  (what happens to most who try)",
+            "devil-challenge ...  (attack in the order above; every attack names its defeater)",
+            "devil-consequence --l1 ... --l2 ...  (and then what? for the top risks)",
+            "devil-rebuttal --id Cn ...  (answer what can be answered)",
+            "devil-verdict --kill-criterion ...  (the gate decides, not the mood)",
+        ],
+    }
+    path = Path(args.state_dir) / DEVIL_LEDGER_NAME
+    if path.exists():
+        _, ledger = _load_devil_ledger(Path(args.state_dir))
+        if ledger.get("status") == "OPEN":
+            ledger["archetype"] = args.archetype
+            ledger["updated_at"] = utc_now_iso()
+            save_json(path, ledger)
+            result["recorded_on_session"] = True
+    return result
+
+
+def cmd_devil_premortem(args: argparse.Namespace) -> Dict[str, Any]:
+    """The premortem (Klein): it is 12 months later and the plan has failed —
+    write the story. Run BEFORE the challenges: asking 'why did it fail' primes
+    genuinely divergent thinking in a way 'what might go wrong' never does,
+    because failure is already assumed and defending the plan is pointless."""
+    path, ledger = _load_devil_ledger(Path(args.state_dir))
+    if ledger.get("status") != "OPEN":
+        raise WorkbenchError("SESSION_DECIDED",
+                             "The session already has a verdict. Open a new session (devil-open "
+                             "--force) before running another premortem.")
+    if ledger.get("premortem"):
+        raise WorkbenchError(
+            "PREMORTEM_EXISTS",
+            "This session already has a premortem. One per session — a second story is a "
+            "rewrite of the first, not fresh divergence.",
+        )
+    story = args.failure_story.strip()
+    if len(story) < 40:
+        raise WorkbenchError(
+            "FAILURE_STORY_TOO_SHORT",
+            "Write the actual failure story in at least 40 characters — concrete, past tense, "
+            "no hedging ('unforeseen difficulties' is not a cause, it is a placeholder).",
+        )
+    causes = [c.strip() for c in (args.cause or []) if c.strip()]
+    if not causes:
+        raise WorkbenchError(
+            "CAUSES_REQUIRED",
+            "A premortem story needs at least one named cause (--cause, repeatable) — specific "
+            "enough that someone could go check whether it is already forming.",
+        )
+    for c in causes:
+        if len(c) < 10:
+            raise WorkbenchError("CAUSE_TOO_SHORT",
+                                 f"Each cause must be at least 10 characters: '{c}' is not a cause.")
+    ledger["premortem"] = {
+        "failure_story": story,
+        "causes": causes,
+        "recorded_at": utc_now_iso(),
+    }
+    ledger["updated_at"] = utc_now_iso()
+    save_json(path, ledger)
+    suggestions = [
+        f'devil-challenge --assumption "{c[:60]}..." --attack "the premortem cause: {c[:60]}..." '
+        f'--category unfounded-assumption --severity SERIOUS --defeater "..."'
+        for c in causes
+    ]
+    return {
+        "status": "OK",
+        "premortem": ledger["premortem"],
+        "cause_count": len(causes),
+        "next": "Turn each cause into a challenge (or answer it), then devil-outside. "
+                "Suggested commands:",
+        "suggested_challenges": suggestions,
+    }
+
+
+def cmd_devil_outside(args: argparse.Namespace) -> Dict[str, Any]:
+    """The outside view (Kahneman): before trusting the plan's own story, find
+    the reference class — everyone who has tried something like this — and its
+    base rate. The inside view is where optimism lives; the base rate is where
+    the truth usually is. A bad base rate with no adjustment is recorded as a
+    SERIOUS challenge automatically: optimism bias must be argued, not assumed."""
+    path, ledger = _load_devil_ledger(Path(args.state_dir))
+    if ledger.get("status") != "OPEN":
+        raise WorkbenchError("SESSION_DECIDED",
+                             "The session already has a verdict. Open a new session (devil-open "
+                             "--force) before recording another outside view.")
+    reference_class = args.reference_class.strip()
+    if len(reference_class) < 10:
+        raise WorkbenchError(
+            "REFERENCE_CLASS_TOO_SHORT",
+            "Name the reference class in at least 10 characters — 'comparable tool adoptions of "
+            "this kind', not 'everyone'.",
+        )
+    base_rate = args.base_rate
+    if not 0 <= base_rate <= 100:
+        raise WorkbenchError("BASE_RATE_RANGE", "Base rate is a percentage: 0-100.")
+    adjustment = (args.adjustment or "none").strip()
+    if base_rate <= 50 and adjustment.lower() in ("none", "", "-"):
+        # Mechanical optimism-bias flag: the reference class says most fail, and
+        # nobody argued why this case differs. That is a SERIOUS open challenge.
+        cid = f"C{len(ledger['challenges']) + 1}"
+        challenge = {
+            "id": cid,
+            "assumption": "this case beats the reference class",
+            "attack": f"The outside view says only ~{base_rate}% of {reference_class} succeed, "
+                      "and no adjustment was argued for why this attempt differs. The plan "
+                      "proceeds on optimism, not evidence.",
+            "category": "unfounded-assumption",
+            "severity": "SERIOUS",
+            "defeater": "a concrete, checkable reason this attempt differs from the class "
+                        "(not 'we will try harder')",
+            "status": "OPEN",
+            "rebuttal": None,
+            "rebuttal_basis": None,
+            "auto": "outside-view",
+            "created_at": utc_now_iso(),
+        }
+        ledger["challenges"].append(challenge)
+    ledger["outside_view"] = {
+        "reference_class": reference_class,
+        "base_rate": base_rate,
+        "adjustment": adjustment,
+        "recorded_at": utc_now_iso(),
+    }
+    ledger["updated_at"] = utc_now_iso()
+    save_json(path, ledger)
+    result: Dict[str, Any] = {
+        "status": "OK",
+        "outside_view": ledger["outside_view"],
+        "open_counts": _devil_open_counts(ledger),
+        "optimism_bias_flagged": bool(
+            base_rate <= 50 and adjustment.lower() in ("none", "", "-")),
+    }
+    if result["optimism_bias_flagged"]:
+        result["note"] = ("Bad base rate + no adjustment → an auto SERIOUS challenge is now open: "
+                          "the plan must beat the reference class, and that is now an assumption "
+                          "under attack. Rebut it with the concrete reason this case differs, or "
+                          "change the plan.")
+    return result
+
+
+def cmd_devil_consequence(args: argparse.Namespace) -> Dict[str, Any]:
+    """Second-order effects: 'and then what?'. First-order thinking stops at the
+    plan's intended effect; the interesting failures live one and two levels
+    later — what the effect causes, and what that causes. Three levels, each a
+    full sentence, forced before the verdict so 'we did not see it coming' is
+    on record as a choice."""
+    path, ledger = _load_devil_ledger(Path(args.state_dir))
+    if ledger.get("status") != "OPEN":
+        raise WorkbenchError("SESSION_DECIDED",
+                             "The session already has a verdict. Open a new session (devil-open "
+                             "--force) before mapping more consequences.")
+    l1 = args.l1.strip()
+    l2 = args.l2.strip()
+    l3 = (args.l3 or "").strip()
+    if len(l1) < 15 or len(l2) < 15:
+        raise WorkbenchError(
+            "LEVELS_TOO_SHORT",
+            "Each consequence level is a full sentence (min 15 chars): what happens (L1), what "
+            "that causes (L2), what that causes (L3). 'Chaos' is not a consequence.",
+        )
+    if l3 and len(l3) < 15:
+        raise WorkbenchError("L3_TOO_SHORT",
+                             "L3 is optional, but if present it is a full sentence (min 15 chars).")
+    entry = {
+        "l1": l1,
+        "l2": l2,
+        "l3": l3 or None,
+        "recorded_at": utc_now_iso(),
+    }
+    ledger.setdefault("consequences", []).append(entry)
+    ledger["updated_at"] = utc_now_iso()
+    save_json(path, ledger)
+    return {
+        "status": "OK",
+        "consequence": entry,
+        "consequence_count": len(ledger["consequences"]),
+        "next": "Map the top risks this deep, then challenge any level with no owner: "
+                "devil-challenge --category second-order-effect ...",
     }
 
 
@@ -3158,9 +3545,10 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
                      "too good to be true", "şeytanın avukat", "avukatlığını", "avukatını oyna",
                      "delik bul", "delik aç", "stres testi", "ikinci görüş", "neden yanlış",
                      "nereden yanıl", "zayıf nokta", "karşı argüman", "itiraz et"],
-        "read": ["SKILL.md", "references/challenge-discipline.md", "references/attack-categories.md"],
+        "read": ["SKILL.md", "references/challenge-discipline.md", "references/attack-categories.md",
+                 "references/premortem-protocol.md", "references/outside-view.md"],
         "template": "templates/challenge-report.md",
-        "first_command": "devil-open --claim \"the plan in one sentence\" --steelman \"its best case, honestly\"",
+        "first_command": "devil-plan --archetype build|launch|migrate|hire|buy|process, then devil-open --claim \"the plan in one sentence\" --steelman \"its best case, honestly\"",
         "stop_rule": "the verdict is BLOCK while any FATAL challenge is unanswered — answer it or change the plan",
         "also_consider": ["decision-review", "evidence-audit"],
     },
@@ -3906,6 +4294,37 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--output", help="Default: <state-dir>/CHALLENGE.md")
     p.add_argument("--force", action="store_true", help="Overwrite an existing report file")
     p.set_defaults(func=cmd_devil_verdict)
+
+    p = sub.add_parser("devil-plan",
+                       help="Archetype attack plan: which assumptions to attack first for build/launch/migrate/hire/buy/process")
+    p.add_argument("--archetype", required=True, choices=sorted(DEVIL_ARCHETYPES),
+                   help="The plan's archetype: build, launch, migrate, hire, buy or process")
+    p.set_defaults(func=cmd_devil_plan)
+
+    p = sub.add_parser("devil-premortem",
+                       help="It is 12 months later and the plan failed — write the story and its causes (before the challenges)")
+    p.add_argument("--failure-story", required=True,
+                   help="The concrete failure story, past tense (min 40 chars, no hedging)")
+    p.add_argument("--cause", action="append",
+                   help="A named cause of the failure, specific enough to check (repeatable, min 1)")
+    p.set_defaults(func=cmd_devil_premortem)
+
+    p = sub.add_parser("devil-outside",
+                       help="The outside view: reference class + base rate; a bad base rate with no adjustment auto-opens a SERIOUS challenge")
+    p.add_argument("--reference-class", required=True,
+                   help="Who else has tried something like this (min 10 chars)")
+    p.add_argument("--base-rate", type=int, required=True,
+                   help="Percent of the reference class that succeeds (0-100)")
+    p.add_argument("--adjustment", default="none",
+                   help="Why this attempt differs from the class; 'none' means the inside view is unargued")
+    p.set_defaults(func=cmd_devil_outside)
+
+    p = sub.add_parser("devil-consequence",
+                       help="Second-order effects: the L1 -> L2 -> L3 'and then what?' chain for a top risk")
+    p.add_argument("--l1", required=True, help="What the plan's effect causes (min 15 chars)")
+    p.add_argument("--l2", required=True, help="What that causes (min 15 chars)")
+    p.add_argument("--l3", help="What that causes in turn (optional; min 15 chars if present)")
+    p.set_defaults(func=cmd_devil_consequence)
 
     p = sub.add_parser("load-skills",
                        help="Route a prompt to the skills it needs and emit their loading brief")

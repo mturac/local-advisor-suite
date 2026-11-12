@@ -81,7 +81,9 @@ class TestSkillLayer(unittest.TestCase):
             "code-review": {"severity-model.md", "review-checklist.md"},
             "knowledge-capture": {"entry-standards.md", "lifecycle.md"},
             "data-analysis": {"dataset-intake.md", "computation-ledger.md", "pitfalls.md"},
-            "devil-advocate": {"challenge-discipline.md", "attack-categories.md"},
+            "devil-advocate": {"challenge-discipline.md", "attack-categories.md",
+                           "premortem-protocol.md", "outside-view.md",
+                           "second-order-effects.md", "falsification.md"},
         }
         for skill, refs in required.items():
             for ref in refs:
@@ -154,7 +156,7 @@ class TestSharedLayer(unittest.TestCase):
             self.assertTrue(p.is_file(), f"missing {mf}")
             json.loads(p.read_text(encoding="utf-8"))  # must parse
         plugin = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
-        self.assertEqual(plugin["version"], "3.4.0")
+        self.assertEqual(plugin["version"], "3.5.0")
         self.assertEqual(plugin["skills"], "./skills/")
 
     def test_host_compatibility_covers_six_hosts(self):
@@ -172,12 +174,12 @@ class TestVersionConsistency(unittest.TestCase):
     def test_versions_align_everywhere(self):
         import workbench
         import install
-        self.assertEqual(workbench.VERSION, "3.4.0")
-        self.assertEqual(install.VERSION, "3.4.0")
+        self.assertEqual(workbench.VERSION, "3.5.0")
+        self.assertEqual(install.VERSION, "3.5.0")
         gen = (ROOT / "tools" / "generate_shared.py").read_text(encoding="utf-8")
-        self.assertIn('VERSION = "3.4.0"', gen)
+        self.assertIn('VERSION = "3.5.0"', gen)
         plugin = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
-        self.assertEqual(plugin["version"], "3.4.0")
+        self.assertEqual(plugin["version"], "3.5.0")
         manifest_like = (ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8")
         self.assertIn("15", manifest_like)
 
@@ -186,7 +188,7 @@ class TestVersionConsistency(unittest.TestCase):
             proc = subprocess.run([sys.executable, str(ROOT / script), "--version"],
                                   capture_output=True, text=True, timeout=60)
             self.assertEqual(proc.returncode, 0)
-            self.assertIn("3.4.0", proc.stdout + proc.stderr)
+            self.assertIn("3.5.0", proc.stdout + proc.stderr)
 
 
 class TestDocs(unittest.TestCase):

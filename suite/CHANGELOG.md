@@ -1,5 +1,46 @@
 # Changelog
 
+## 3.5.0 (2026-11-12)
+
+v3.4.0 command set and JSON contract preserved; everything below is additive.
+
+### Added: devil-advocate v2 — the red-team engine
+
+The adversarial pass grows from a challenge ledger into a full red-team
+protocol stack. Generic skepticism ("what could go wrong?") catches obvious
+risks and misses the failure modes each protocol below exists for.
+
+- **`devil-plan --archetype build|launch|migrate|hire|buy|process`** —
+  attack plans per plan archetype. A migration dies on rollback-path, a tool
+  adoption on adoption-risk, a hire on key-person-risk; the archetype says
+  what to attack first, with premortem prompts, the reference class to look
+  up and archetype-calibrated kill signals. Stateless (usable before the
+  session opens); records the archetype on an open session.
+- **`devil-premortem --failure-story ... --cause ...`** — the premortem,
+  run before the challenges: it is 12 months later and the plan failed;
+  write the story. Assuming failure already happened is the one reliably
+  proven way to surface politely-withheld doubts. Story min 40 chars, causes
+  specific enough to check, one premortem per session, and each cause comes
+  back as a ready-to-run devil-challenge command.
+- **`devil-outside --reference-class ... --base-rate N [--adjustment ...]`**
+  — the outside view: what happens to most who try this. A base rate of 50%
+  or worse with no argued adjustment auto-opens a SERIOUS optimism-bias
+  challenge — "this case beats the reference class" becomes an assumption
+  under attack instead of a free premise.
+- **`devil-consequence --l1 ... --l2 ... [--l3 ...]`** — second-order
+  effects, three levels deep with a mechanism in each. The failures that
+  surprise people are rarely first-order; the discipline forces the chain
+  onto the record before the verdict.
+- **Verdict report upgrade**: CHALLENGE.md now renders the archetype, the
+  premortem, the outside view and the consequence chains, and every verdict
+  returns `protocols_used`; a session closed without a premortem carries
+  `premortem_missing` on the record (the v3.3 gate semantics are unchanged).
+- New references: `premortem-protocol.md`, `outside-view.md`,
+  `second-order-effects.md`, `falsification.md`; new example
+  `premortem-tool-adoption.md` (a full protocol run); SKILL.md workflow
+  rewritten around the protocol order (plan → open → premortem → outside →
+  challenges → consequences → rebuttals → verdict).
+
 ## 3.4.0 (2026-11-12)
 
 v3.3.0 command set and JSON contract preserved; everything below is additive.
