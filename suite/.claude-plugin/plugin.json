@@ -1,6 +1,6 @@
 {
   "name": "local-advisor-suite",
-  "version": "3.8.0",
+  "version": "4.0.0",
   "description": "Portable Local Advisor, Deep Research, Scoped Debugging, Spec Building, Code Review, Knowledge Capture, Data Analysis, Devil's Advocate and Evidence Audit skills for Claude Code, Codex, ZCode, Cursor and OpenCode. Zero external vendor dependencies.",
   "author": {
     "name": "Local Advisor Workbench"

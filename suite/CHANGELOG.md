@@ -1,5 +1,32 @@
 # Changelog
 
+## 4.0.0 (2026-11-12)
+
+v3.8.0 command set and JSON contract preserved; everything below is additive.
+The suite grows from a skill collection into an advisory system: depth-aware
+routing, a red-team protocol stack, a pre-flight question contract, a scored
+decision journal, and playbooks that compose it all.
+
+### Added: v4 console scenarios
+
+- Eleven new demo scenarios in the web console (58 total): the full
+  devil-advocate protocol run (devil-plan / devil-premortem / devil-outside
+  with its optimism-bias flag / devil-consequence), the question-contract
+  group (qc-pin with the vague-term scan firing, qc-check gate, qc-assume),
+  the decision-journal group (log → resolve HIT → calibration report), and
+  load-skills --core.
+- test_scenarios.py duplicate check refined: same command with different
+  flags is an intentional scenario, not a duplicate; only identical
+  command+argv pairs are rejected.
+
+### Changed: documentation for the system, not the list
+
+- suite/README.md rewritten for v4: the "why" leads with the depth system,
+  the question contract, the red-team protocols and the calibration loop;
+  the growth-path section traces 14 skills → 17 skills + playbooks.
+- Root console README updated (59 commands, 17 skills, 5 playbooks).
+
+
 ## 3.8.0 (2026-11-12)
 
 v3.7.0 command set and JSON contract preserved; everything below is additive.

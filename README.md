@@ -1,14 +1,14 @@
 # Local Advisor Suite — Console
 
-**v3.3.0** · cross-host agent skill suite + a web console to drive every command from your browser.
+**v4.0.0** · cross-host agent skill suite + a web console to drive every command from your browser.
 
-> **Türkçe:** Bu depo iki şey içerir: **Local Advisor Suite** (çevrimdışı çalışan, 47 komutluk, 6 araca kurulabilen bir beceri paketi) ve onu **tarayıcıdan denemeni sağlayan web konsolu**. Kurulum yok, hesap yok: bir hikâye seç, *Çalıştır*'a bas, gerçek komutların gerçek çıktılarını gör. Arayüz **Türkçe ve İngilizce** — sağ üstteki TR/EN düğmesiyle değiştir.
+> **Türkçe:** Bu depo iki şey içerir: **Local Advisor Suite** (çevrimdışı çalışan, 59 komutluk, 6 araca kurulabilen bir beceri paketi) ve onu **tarayıcıdan denemeni sağlayan web konsolu**. Kurulum yok, hesap yok: bir hikâye seç, *Çalıştır*'a bas, gerçek komutların gerçek çıktılarını gör. Arayüz **Türkçe ve İngilizce** — sağ üstteki TR/EN düğmesiyle değiştir.
 
 This repository contains two things:
 
 | Path | What it is |
 | --- | --- |
-| `suite/` | **Local Advisor Suite v3.3.0** — the offline, vendor-neutral workbench: 47 commands, 15 skills, 125 tests, installer for 6 hosts (Claude Code, Codex, ZCode, Cursor, OpenCode, generic AGENTS.md) |
+| `suite/` | **Local Advisor Suite v4.0.0** — the offline, vendor-neutral workbench: 59 commands, 17 skills, 5 playbooks, 152+ tests, installer for 6 hosts (Claude Code, Codex, ZCode, Cursor, OpenCode, generic AGENTS.md) |
 | root | **Web Console** — a bilingual (🇹🇷 TR / 🇬🇧 EN) Next.js 16 app that runs every workbench command against a seeded demo workspace, no setup required |
 
 ![Console](public/console.png)
@@ -75,10 +75,10 @@ For single commands, the **one-click examples** cover all 47 commands with pre-f
 ## Repository layout
 
 ```
-├── suite/                    # Local Advisor Suite v3.3.0 (self-contained)
+├── suite/                    # Local Advisor Suite v4.0.0 (self-contained)
 │   ├── workbench.py          # 47-command CLI (JSON in, JSON out)
 │   ├── install.py            # 6-host installer / uninstaller
-│   ├── skills/               # 15 skills with references/templates/examples
+│   ├── skills/               # 17 skills with references/templates/examples
 │   ├── tests/                # 125 tests (run_tests.sh)
 │   └── references/ templates/ tools/
 ├── src/

@@ -1,662 +1,805 @@
 {
-  "groups": [
+ "groups": [
+  {
+   "title": "Skill routing",
+   "title_tr": "Beceri yönlendirme",
+   "scenarios": [
     {
-      "title": "Skill routing",
-      "title_tr": "Beceri yönlendirme",
-      "scenarios": [
-        {
-          "label": "load-skills (TR)",
-          "command": "load-skills",
-          "argv": [
-            "--prompt",
-            "DuckDB mi SQLite mi, eşzamanlı yazma konusunda hangisi daha iyi, karşılaştır"
-          ],
-          "note": "Route any prompt (TR/EN) to its skills; returns the brief (read order, first command, stop rule). Try --skill NAME or --list too",
-          "note_tr": "Herhangi bir prompt'u (TR/EN) becerilere yönlendirir; brief döner (okuma sırası, ilk komut, durma kuralı). --skill AD ve --list de dene"
-        }
-      ]
+     "label": "load-skills (TR)",
+     "command": "load-skills",
+     "argv": [
+      "--prompt",
+      "DuckDB mi SQLite mi, eşzamanlı yazma konusunda hangisi daha iyi, karşılaştır"
+     ],
+     "note": "Route any prompt (TR/EN) to its skills; returns the brief (read order, first command, stop rule). Try --skill NAME or --list too",
+     "note_tr": "Herhangi bir prompt'u (TR/EN) becerilere yönlendirir; brief döner (okuma sırası, ilk komut, durma kuralı). --skill AD ve --list de dene"
     },
     {
-      "title": "Suite health",
-      "title_tr": "Paket sağlığı",
-      "scenarios": [
-        {
-          "label": "doctor",
-          "command": "doctor",
-          "argv": [],
-          "note": "Cross-host install health for all six hosts",
-          "note_tr": "Altı aracın kurulum sağlığını tek tabloda gösterir"
-        },
-        {
-          "label": "selfcheck",
-          "command": "selfcheck",
-          "argv": [
-            "--path",
-            "../suite"
-          ],
-          "note": "Structural self-test of the suite itself",
-          "note_tr": "Paketin kendi kendini yapısal testi"
-        }
-      ]
-    },
-    {
-      "title": "Research",
-      "title_tr": "Araştırma",
-      "scenarios": [
-        {
-          "label": "research-status",
-          "command": "research-status",
-          "argv": [],
-          "note": "Ledger snapshot: sources, claims, query budget",
-          "note_tr": "Defterin anlık görüntüsü: kaynaklar, iddialar, arama bütçesi"
-        },
-        {
-          "label": "research-gaps",
-          "command": "research-gaps",
-          "argv": [],
-          "note": "Open knowledge gaps and why they exist",
-          "note_tr": "Açık bilgi boşlukları ve neden var oldukları"
-        },
-        {
-          "label": "research-score",
-          "command": "research-score",
-          "argv": [],
-          "note": "Source quality scoring (tier, freshness, domain)",
-          "note_tr": "Kaynak kalite puanı (tür, güncellik, alan adı)"
-        },
-        {
-          "label": "research-pack",
-          "command": "research-pack",
-          "argv": [],
-          "note": "Render evidence_pack.md for synthesis",
-          "note_tr": "Kanıt raporunu evidence_pack.md olarak yazar"
-        },
-        {
-          "label": "research-log-query",
-          "command": "research-log-query",
-          "argv": [
-            "--query",
-            "claude code skills directory layout docs",
-            "--tool-used",
-            "console-scenario"
-          ],
-          "note": "Log a unique query against the budget",
-          "note_tr": "Bir aramayı bütçeye kaydeder"
-        },
-        {
-          "label": "research-add-source",
-          "command": "research-add-source",
-          "argv": [
-            "--url",
-            "https://code.visualstudio.com/docs/copilot/chat/agent-skills",
-            "--title",
-            "VS Code agent skills documentation",
-            "--publisher",
-            "Microsoft",
-            "--tier",
-            "PRIMARY",
-            "--excerpt",
-            "Agent Skills are folders with a SKILL.md file."
-          ],
-          "note": "Register a PRIMARY source with excerpt",
-          "note_tr": "Alıntılı birincil (PRIMARY) kaynak kaydeder"
-        },
-        {
-          "label": "research-add-claim",
-          "command": "research-add-claim",
-          "argv": [
-            "--statement",
-            "VS Code loads agent skills from a skills folder in the workspace",
-            "--source-id",
-            "S1",
-            "--quote",
-            "A skill is a folder with a SKILL.md file; name and description are required.",
-            "--entity",
-            "VS Code",
-            "--field",
-            "skills directory",
-            "--value",
-            "workspace skills folder",
-            "--confidence",
-            "MEDIUM",
-            "--allow-unverified-quote"
-          ],
-          "note": "Add a PROVISIONAL claim backed by source S1",
-          "note_tr": "S1 kaynağına dayalı geçici (PROVISIONAL) iddia ekler"
-        },
-        {
-          "label": "research-add-gap",
-          "command": "research-add-gap",
-          "argv": [
-            "--description",
-            "No public benchmark compares skill discovery latency across hosts",
-            "--entity",
-            "All hosts",
-            "--field",
-            "performance",
-            "--query-tried",
-            "agent skills discovery latency benchmark",
-            "--reason",
-            "NO_PUBLIC_SOURCE"
-          ],
-          "note": "Record a gap with reason NO_PUBLIC_SOURCE",
-          "note_tr": "Nedeni 'kaynak yok' olan bir bilgi boşluğu kaydeder"
-        },
-        {
-          "label": "research-resolve",
-          "command": "research-resolve",
-          "argv": [
-            "--entity",
-            "Cursor",
-            "--field",
-            "command surface",
-            "--winner-claim",
-            "C3",
-            "--reason",
-            "Primary Cursor docs describe .cursor/rules and generated commands."
-          ],
-          "note": "Resolve an entity/field to claim C3",
-          "note_tr": "Bir varlık/alan çelişkisini C3 lehine çözer"
-        },
-        {
-          "label": "fetch-url",
-          "command": "fetch-url",
-          "argv": [
-            "--url",
-            "https://agentskills.io/specification",
-            "--allow-network"
-          ],
-          "note": "Fetch and cache an https source (explicit opt-in)",
-          "note_tr": "Bir https kaynağını çeker ve önbelleğe alır (açık izinle)"
-        },
-        {
-          "label": "research-init",
-          "command": "research-init",
-          "argv": [
-            "--topic",
-            "Cross-host portability of agent skill suites",
-            "--sub-question",
-            "How should one SKILL.md serve every host?",
-            "--entity",
-            "Claude Code",
-            "--entity",
-            "Codex",
-            "--field",
-            "skills directory",
-            "--max-queries",
-            "8"
-          ],
-          "note": "Start a fresh research ledger (wipes sources, claims, gaps)",
-          "note_tr": "Yeni boş araştırma defteri açar (kaynak/iddia/boşlukları siler)",
-          "resets": true
-        }
-      ]
-    },
-    {
-      "title": "Spec",
-      "title_tr": "Spec",
-      "scenarios": [
-        {
-          "label": "spec-check",
-          "command": "spec-check",
-          "argv": [],
-          "note": "Spec health: criteria coverage and task links",
-          "note_tr": "Spec sağlığı: kriter kapsamı ve görev bağlantıları"
-        },
-        {
-          "label": "spec-criterion",
-          "command": "spec-criterion",
-          "argv": [
-            "--story-id",
-            "US1",
-            "--given",
-            "a seeded demo workspace",
-            "--when",
-            "wide-table runs with no arguments",
-            "--then",
-            "an entity by field matrix renders without errors"
-          ],
-          "note": "Add a Given/When/Then criterion to story US1",
-          "note_tr": "US1 hikâyesine Given/When/Then kriteri ekler"
-        },
-        {
-          "label": "spec-task",
-          "command": "spec-task",
-          "argv": [
-            "--task",
-            "Add a scenario test for wide-table rendering",
-            "--verifies",
-            "AC1"
-          ],
-          "note": "Add a task that verifies criterion AC1",
-          "note_tr": "AC1 kriterini doğrulayan bir görev ekler"
-        },
-        {
-          "label": "spec-new",
-          "command": "spec-new",
-          "argv": [
-            "--goal",
-            "Restart the spec from scratch via the console example scenarios",
-            "--story",
-            "As a developer I want example scenarios so I can explore commands fast",
-            "--non-goal",
-            "Covering every argument combination",
-            "--force"
-          ],
-          "note": "Restart the spec ledger (wipes stories, criteria, tasks)",
-          "note_tr": "Spec defterini sıfırdan açar (hikâye/kriter/görevleri siler)",
-          "resets": true
-        }
-      ]
-    },
-    {
-      "title": "Review & evidence",
-      "title_tr": "İnceleme ve kanıt",
-      "scenarios": [
-        {
-          "label": "review-report",
-          "command": "review-report",
-          "argv": [],
-          "note": "Mechanical verdict: FAIL while any BLOCKING finding is open (seed has MAJOR/MINOR → PASS_WITH_FINDINGS)",
-          "note_tr": "Mekanik karar: açık BLOCKING varsa FAIL (hazır veride MAJOR/MINOR var → PASS_WITH_FINDINGS)"
-        },
-        {
-          "label": "audit-report",
-          "command": "audit-report",
-          "argv": [],
-          "note": "Evidence-ledger integrity audit (claims vs quotes vs sources)",
-          "note_tr": "Kanıt defteri bütünlük denetimi (iddia–alıntı–kaynak eşleşmesi)"
-        },
-        {
-          "label": "verify-delivery",
-          "command": "verify-delivery",
-          "argv": [
-            "--artifact",
-            "artifacts/demo-report.md"
-          ],
-          "note": "Delivery gate: artifact present (L1) and spec tasks verified",
-          "note_tr": "Teslim kapısı: çıktı dosyası var (L1) ve spec görevleri doğrulanmış"
-        },
-        {
-          "label": "review-finding",
-          "command": "review-finding",
-          "argv": [
-            "--file",
-            "demo-project/src/app.py",
-            "--line",
-            "50",
-            "--severity",
-            "MINOR",
-            "--category",
-            "correctness",
-            "--description",
-            "Module uses sys.argv in __main__ without importing sys",
-            "--suggestion",
-            "Add import sys at the top of the module"
-          ],
-          "note": "Append a MINOR finding on the demo project",
-          "note_tr": "Demo projesine MINOR bir bulgu ekler"
-        },
-        {
-          "label": "review-init",
-          "command": "review-init",
-          "argv": [
-            "--title",
-            "Second pass review",
-            "--target",
-            "demo-project/src",
-            "--focus",
-            "maintainability",
-            "--force"
-          ],
-          "note": "Restart the review ledger (wipes findings)",
-          "note_tr": "İnceleme defterini sıfırdan açar (bulguları siler)",
-          "resets": true
-        }
-      ]
-    },
-    {
-      "title": "Knowledge",
-      "title_tr": "Bilgi tabanı",
-      "scenarios": [
-        {
-          "label": "kb-search",
-          "command": "kb-search",
-          "argv": [
-            "--query",
-            "skills"
-          ],
-          "note": "Deterministic offline keyword search",
-          "note_tr": "Çevrimdışı, deterministik anahtar kelime araması"
-        },
-        {
-          "label": "kb-add",
-          "command": "kb-add",
-          "argv": [
-            "--question",
-            "Which six hosts does install.py support?",
-            "--answer",
-            "claude, codex, zcode, cursor, opencode and a generic AGENTS.md mode.",
-            "--tag",
-            "install",
-            "--assumed"
-          ],
-          "note": "Capture a Q&A entry as an explicit assumption",
-          "note_tr": "Bir soru-cevabı 'varsayım' olarak kaydeder"
-        },
-        {
-          "label": "kb-export",
-          "command": "kb-export",
-          "argv": [],
-          "note": "Export the KB to KNOWLEDGE_BASE.md",
-          "note_tr": "Bilgi tabanını KNOWLEDGE_BASE.md olarak dışa aktarır"
-        }
-      ]
-    },
-    {
-      "title": "Data analysis",
-      "title_tr": "Veri analizi",
-      "scenarios": [
-        {
-          "label": "data-register",
-          "command": "data-register",
-          "argv": [
-            "--path",
-            "demo-project/README.md",
-            "--question",
-            "How many lines and words does the demo README have?"
-          ],
-          "note": "Pin the dataset first: path, size and SHA-256 go on the record",
-          "note_tr": "Önce veri setini sabitle: yol, boyut ve SHA-256 kayda geçer"
-        },
-        {
-          "label": "data-finding",
-          "command": "data-finding",
-          "argv": [
-            "--statement",
-            "The README mentions 7 names in backticks",
-            "--method",
-            "grep -o '`[^`]*`' demo-project/README.md | wc -l",
-            "--result",
-            "7 names"
-          ],
-          "note": "Log a number together with the exact command that produced it",
-          "note_tr": "Sayıyı üreten tam komutla birlikte kayda geçir"
-        },
-        {
-          "label": "data-gap",
-          "command": "data-gap",
-          "argv": [
-            "--description",
-            "A per-author word split is not computable from the README",
-            "--reason",
-            "NO_DATA: the file has no author column"
-          ],
-          "note": "Declare what the file cannot answer instead of guessing",
-          "note_tr": "Dosyanın cevaplayamadığını tahmin etmek yerine beyan et"
-        },
-        {
-          "label": "data-report",
-          "command": "data-report",
-          "argv": [
-            "--answer",
-            "The demo README has 8 lines and 52 words; a per-section split is not computable."
-          ],
-          "note": "Render ANALYSIS.md; numbers in the answer are linted against the findings",
-          "note_tr": "ANALYSIS.md üretir; cevaptaki sayılar bulgularla karşılanmak zorunda"
-        }
-      ]
-    },
-    {
-      "title": "Devil's advocate",
-      "title_tr": "Şeytanın avukatı",
-      "scenarios": [
-        {
-          "label": "devil-challenge",
-          "command": "devil-challenge",
-          "argv": [
-            "--assumption",
-            "the shared workspace can be restored if isolation disappoints",
-            "--attack",
-            "Once scenario definitions depend on per-run state, wiring them back to a shared ledger is a manual rework of every scenario",
-            "--category",
-            "reversibility",
-            "--severity",
-            "SERIOUS",
-            "--defeater",
-            "a documented flag that switches the runner between shared and isolated modes"
-          ],
-          "note": "Attack a load-bearing assumption; every attack names what would defeat it",
-          "note_tr": "Yük taşıyan bir varsayıma saldır; her saldırı kendi yenilgisini neyin sağlayacağını söyler"
-        },
-        {
-          "label": "devil-rebuttal",
-          "command": "devil-rebuttal",
-          "argv": [
-            "--id",
-            "C1",
-            "--rebuttal",
-            "The seeded workspace deliberately pre-fills every ledger, so even a fresh isolated run starts from a realistic, inspectable state",
-            "--basis",
-            "evidence: seed_workspace.py pre-registers all ledgers before any run"
-          ],
-          "note": "Answer an open challenge with a basis; a sound rebuttal leaves the verdict",
-          "note_tr": "Açık bir itirazı temeliyle cevapla; sağlam cevap karardan çıkar"
-        },
-        {
-          "label": "devil-verdict",
-          "command": "devil-verdict",
-          "argv": [
-            "--kill-criterion",
-            "any scenario still reads state from a previous run after isolation"
-          ],
-          "note": "Mechanical gate: BLOCK while a FATAL stands; renders CHALLENGE.md with guards and kill criteria",
-          "note_tr": "Mekanik kapı: ayakta bir FATAL varken BLOCK; CHALLENGE.md guard ve kill kriterleriyle üretilir"
-        },
-        {
-          "label": "devil-open (TR)",
-          "command": "devil-open",
-          "argv": [
-            "--force",
-            "--claim",
-            "Konsolun paylaşımlı çalışma alanını her çalıştırmada izole kum havuzuna çevirelim",
-            "--steelman",
-            "İzole çalıştırmalar birbirinin defter durumunu bozamaz; her senaryo temiz başlangıçtan tekrar üretilebilir"
-          ],
-          "note": "Open a session on a new claim — the honest steelman comes first (resets the ledger)",
-          "note_tr": "Yeni bir iddiayla oturum aç — önce dürüst çelik-adam gelir (defteri sıfırlar)",
-          "resets": true
-        }
-      ]
-    },
-    {
-      "title": "Advice & decisions",
-      "title_tr": "Tavsiye ve kararlar",
-      "scenarios": [
-        {
-          "label": "advise-intake",
-          "command": "advise-intake",
-          "argv": [
-            "--question",
-            "Should v3.1 add a security-audit skill for offline prompt-injection scanning?",
-            "--context",
-            "Planning the next release of the suite",
-            "--constraint",
-            "Keep every check offline and deterministic",
-            "--non-goal",
-            "Network scanning or external services",
-            "--mode",
-            "planning"
-          ],
-          "note": "Structured intake before advising (overwrites previous intake)",
-          "note_tr": "Tavsiye öncesi yapılandırılmış giriş (öncekini ezer)"
-        },
-        {
-          "label": "decision-score",
-          "command": "decision-score",
-          "argv": [
-            "--spec-file",
-            "decision-matrix.json"
-          ],
-          "note": "Weighted scoring of the seeded decision matrix",
-          "note_tr": "Hazır karar matrisinin tartılı puanlaması"
-        },
-        {
-          "label": "wide-table",
-          "command": "wide-table",
-          "argv": [],
-          "note": "Entity x field evidence matrix from the ledger",
-          "note_tr": "Defterden varlık × alan kanıt matrisi"
-        },
-        {
-          "label": "adr-new",
-          "command": "adr-new",
-          "argv": [
-            "--title",
-            "Adopt grouped example scenarios in the console",
-            "--dir",
-            "docs/adr",
-            "--owner",
-            "console-team"
-          ],
-          "note": "Write a new numbered ADR to docs/adr/",
-          "note_tr": "docs/adr/ altına yeni numaralı ADR yazar"
-        },
-        {
-          "label": "adr-check",
-          "command": "adr-check",
-          "argv": [
-            "--file",
-            "docs/adr/0001-use-a-single-shared-demo-workspace-for-the-test-console.md"
-          ],
-          "note": "Hygiene check: catches unfilled placeholders in the seeded ADR",
-          "note_tr": "Sağlık kontrolü: hazır ADR'deki boş kalan yerleri yakalar (bilerek hata verir)",
-          "expectFail": true
-        }
-      ]
-    },
-    {
-      "title": "Debug",
-      "title_tr": "Hata ayıklama",
-      "scenarios": [
-        {
-          "label": "debug-report",
-          "command": "debug-report",
-          "argv": [],
-          "note": "Hypothesis ledger and circuit-breaker state",
-          "note_tr": "Hipotez defteri ve sigorta (circuit-breaker) durumu"
-        },
-        {
-          "label": "debug-hypothesis",
-          "command": "debug-hypothesis",
-          "argv": [
-            "--symptom",
-            "kb-search returns no hits for a freshly added entry",
-            "--statement",
-            "The search index is cached and not refreshed after kb-add",
-            "--prediction",
-            "The new entry is found on the next kb-search run",
-            "--test-command",
-            "python3 workbench.py kb-search --query freshly",
-            "--status",
-            "PENDING",
-            "--target-file",
-            "demo-project/src/app.py"
-          ],
-          "note": "Add a falsifiable hypothesis with a prediction",
-          "note_tr": "Öngörülü, çürütülebilir bir hipotez ekler"
-        }
-      ]
-    },
-    {
-      "title": "Artifacts",
-      "title_tr": "Çıktılar",
-      "scenarios": [
-        {
-          "label": "artifact-list",
-          "command": "artifact-list",
-          "argv": [],
-          "note": "List artifact-studio templates",
-          "note_tr": "Hazır çıktı şablonlarını listeler"
-        },
-        {
-          "label": "artifact-new",
-          "command": "artifact-new",
-          "argv": [
-            "--type",
-            "technical-report",
-            "--title",
-            "Scenario coverage report",
-            "--output",
-            "artifacts/scenario-coverage.md",
-            "--force"
-          ],
-          "note": "Scaffold a technical report artifact",
-          "note_tr": "Teknik rapor çıktısı oluşturur"
-        }
-      ]
-    },
-    {
-      "title": "Handoff",
-      "title_tr": "Devir",
-      "scenarios": [
-        {
-          "label": "handoff-check",
-          "command": "handoff-check",
-          "argv": [],
-          "note": "Validate the seeded handoff pack (freshness, sections)",
-          "note_tr": "Hazır devir dosyasını doğrular (tazelik, bölümler)"
-        },
-        {
-          "label": "handoff-pack",
-          "command": "handoff-pack",
-          "argv": [
-            "--title",
-            "Scenario walkthrough session",
-            "--session-status",
-            "PARTIAL",
-            "--summary",
-            "Explored the example scenarios across every command group",
-            "--completed",
-            "Ran research, spec, review and knowledge scenarios",
-            "--next-step",
-            "Try the amber reset scenarios, then re-seed the workspace"
-          ],
-          "note": "Write a PARTIAL session handoff pack",
-          "note_tr": "PARTIAL durumunda bir devir dosyası yazar"
-        }
-      ]
-    },
-    {
-      "title": "Scope",
-      "title_tr": "Kapsam",
-      "scenarios": [
-        {
-          "label": "scope-read",
-          "command": "scope-read",
-          "argv": [
-            "--project-root",
-            "demo-project",
-            "--file",
-            "src/app.py"
-          ],
-          "note": "Numbered, checksummed read of a demo file",
-          "note_tr": "Demo dosyasını numaralı ve sağlamalı okur"
-        },
-        {
-          "label": "scope-scan",
-          "command": "scope-scan",
-          "argv": [
-            "--project-root",
-            "demo-project",
-            "--pattern",
-            "TODO|FIXME|BUG",
-            "--ignore-case"
-          ],
-          "note": "Scan the demo project for TODO/FIXME/BUG markers",
-          "note_tr": "Demo projede TODO/FIXME/BUG işaretlerini tarar"
-        }
-      ]
+     "label": "load-skills --core",
+     "command": "load-skills",
+     "argv": [
+      "--core",
+      "--prompt",
+      "what is the latest python version and its release date"
+     ],
+     "note": "Core depth: a run-from-this-card brief — skill, 3-step core loop, first command, stop rule; zero file reading",
+     "note_tr": "Çekirdek derinlik: karttan-çalıştır brifingi — beceri, 3 adımlı çekirdek döngü, ilk komut, durma kuralı; sıfır dosya okuma"
     }
-  ]
+   ]
+  },
+  {
+   "title": "Question contract",
+   "title_tr": "Soru sözleşmesi",
+   "scenarios": [
+    {
+     "label": "qc-pin",
+     "command": "qc-pin",
+     "argv": [
+      "--question",
+      "Should we modernize the demo console's workspace model?",
+      "--decision",
+      "choose between sandbox isolation and shared state this week",
+      "--consumer",
+      "the console maintainer"
+     ],
+     "note": "Pin the question, the decision it informs and the consumer — the vague-term scan fires on 'modernize'",
+     "note_tr": "Soruyu, besleyeceği kararı ve okuyucuyu sabitle — 'modernize' belirsiz kelime taramasını tetikler"
+    },
+    {
+     "label": "qc-check (the gate)",
+     "command": "qc-check",
+     "argv": [],
+     "note": "READY or NEEDS_INPUT: never answer a question whose decision and consumer are unpinned",
+     "note_tr": "READY veya NEEDS_INPUT: kararı ve okuyucusu sabitlenmemiş soruyu asla cevaplama"
+    },
+    {
+     "label": "qc-assume",
+     "command": "qc-assume",
+     "argv": [
+      "--assumption",
+      "modernize means the run model, not the visual interface"
+     ],
+     "note": "Record the interpretation where the question stayed ambiguous — it lands in the answer's caveat",
+     "note_tr": "Sorunun belirsiz kaldığı yerdeki yorumu kaydet — cevabın uyarı notuna girer"
+    }
+   ]
+  },
+  {
+   "title": "Suite health",
+   "title_tr": "Paket sağlığı",
+   "scenarios": [
+    {
+     "label": "doctor",
+     "command": "doctor",
+     "argv": [],
+     "note": "Cross-host install health for all six hosts",
+     "note_tr": "Altı aracın kurulum sağlığını tek tabloda gösterir"
+    },
+    {
+     "label": "selfcheck",
+     "command": "selfcheck",
+     "argv": [
+      "--path",
+      "../suite"
+     ],
+     "note": "Structural self-test of the suite itself",
+     "note_tr": "Paketin kendi kendini yapısal testi"
+    }
+   ]
+  },
+  {
+   "title": "Research",
+   "title_tr": "Araştırma",
+   "scenarios": [
+    {
+     "label": "research-status",
+     "command": "research-status",
+     "argv": [],
+     "note": "Ledger snapshot: sources, claims, query budget",
+     "note_tr": "Defterin anlık görüntüsü: kaynaklar, iddialar, arama bütçesi"
+    },
+    {
+     "label": "research-gaps",
+     "command": "research-gaps",
+     "argv": [],
+     "note": "Open knowledge gaps and why they exist",
+     "note_tr": "Açık bilgi boşlukları ve neden var oldukları"
+    },
+    {
+     "label": "research-score",
+     "command": "research-score",
+     "argv": [],
+     "note": "Source quality scoring (tier, freshness, domain)",
+     "note_tr": "Kaynak kalite puanı (tür, güncellik, alan adı)"
+    },
+    {
+     "label": "research-pack",
+     "command": "research-pack",
+     "argv": [],
+     "note": "Render evidence_pack.md for synthesis",
+     "note_tr": "Kanıt raporunu evidence_pack.md olarak yazar"
+    },
+    {
+     "label": "research-log-query",
+     "command": "research-log-query",
+     "argv": [
+      "--query",
+      "claude code skills directory layout docs",
+      "--tool-used",
+      "console-scenario"
+     ],
+     "note": "Log a unique query against the budget",
+     "note_tr": "Bir aramayı bütçeye kaydeder"
+    },
+    {
+     "label": "research-add-source",
+     "command": "research-add-source",
+     "argv": [
+      "--url",
+      "https://code.visualstudio.com/docs/copilot/chat/agent-skills",
+      "--title",
+      "VS Code agent skills documentation",
+      "--publisher",
+      "Microsoft",
+      "--tier",
+      "PRIMARY",
+      "--excerpt",
+      "Agent Skills are folders with a SKILL.md file."
+     ],
+     "note": "Register a PRIMARY source with excerpt",
+     "note_tr": "Alıntılı birincil (PRIMARY) kaynak kaydeder"
+    },
+    {
+     "label": "research-add-claim",
+     "command": "research-add-claim",
+     "argv": [
+      "--statement",
+      "VS Code loads agent skills from a skills folder in the workspace",
+      "--source-id",
+      "S1",
+      "--quote",
+      "A skill is a folder with a SKILL.md file; name and description are required.",
+      "--entity",
+      "VS Code",
+      "--field",
+      "skills directory",
+      "--value",
+      "workspace skills folder",
+      "--confidence",
+      "MEDIUM",
+      "--allow-unverified-quote"
+     ],
+     "note": "Add a PROVISIONAL claim backed by source S1",
+     "note_tr": "S1 kaynağına dayalı geçici (PROVISIONAL) iddia ekler"
+    },
+    {
+     "label": "research-add-gap",
+     "command": "research-add-gap",
+     "argv": [
+      "--description",
+      "No public benchmark compares skill discovery latency across hosts",
+      "--entity",
+      "All hosts",
+      "--field",
+      "performance",
+      "--query-tried",
+      "agent skills discovery latency benchmark",
+      "--reason",
+      "NO_PUBLIC_SOURCE"
+     ],
+     "note": "Record a gap with reason NO_PUBLIC_SOURCE",
+     "note_tr": "Nedeni 'kaynak yok' olan bir bilgi boşluğu kaydeder"
+    },
+    {
+     "label": "research-resolve",
+     "command": "research-resolve",
+     "argv": [
+      "--entity",
+      "Cursor",
+      "--field",
+      "command surface",
+      "--winner-claim",
+      "C3",
+      "--reason",
+      "Primary Cursor docs describe .cursor/rules and generated commands."
+     ],
+     "note": "Resolve an entity/field to claim C3",
+     "note_tr": "Bir varlık/alan çelişkisini C3 lehine çözer"
+    },
+    {
+     "label": "fetch-url",
+     "command": "fetch-url",
+     "argv": [
+      "--url",
+      "https://agentskills.io/specification",
+      "--allow-network"
+     ],
+     "note": "Fetch and cache an https source (explicit opt-in)",
+     "note_tr": "Bir https kaynağını çeker ve önbelleğe alır (açık izinle)"
+    },
+    {
+     "label": "research-init",
+     "command": "research-init",
+     "argv": [
+      "--topic",
+      "Cross-host portability of agent skill suites",
+      "--sub-question",
+      "How should one SKILL.md serve every host?",
+      "--entity",
+      "Claude Code",
+      "--entity",
+      "Codex",
+      "--field",
+      "skills directory",
+      "--max-queries",
+      "8"
+     ],
+     "note": "Start a fresh research ledger (wipes sources, claims, gaps)",
+     "note_tr": "Yeni boş araştırma defteri açar (kaynak/iddia/boşlukları siler)",
+     "resets": true
+    }
+   ]
+  },
+  {
+   "title": "Spec",
+   "title_tr": "Spec",
+   "scenarios": [
+    {
+     "label": "spec-check",
+     "command": "spec-check",
+     "argv": [],
+     "note": "Spec health: criteria coverage and task links",
+     "note_tr": "Spec sağlığı: kriter kapsamı ve görev bağlantıları"
+    },
+    {
+     "label": "spec-criterion",
+     "command": "spec-criterion",
+     "argv": [
+      "--story-id",
+      "US1",
+      "--given",
+      "a seeded demo workspace",
+      "--when",
+      "wide-table runs with no arguments",
+      "--then",
+      "an entity by field matrix renders without errors"
+     ],
+     "note": "Add a Given/When/Then criterion to story US1",
+     "note_tr": "US1 hikâyesine Given/When/Then kriteri ekler"
+    },
+    {
+     "label": "spec-task",
+     "command": "spec-task",
+     "argv": [
+      "--task",
+      "Add a scenario test for wide-table rendering",
+      "--verifies",
+      "AC1"
+     ],
+     "note": "Add a task that verifies criterion AC1",
+     "note_tr": "AC1 kriterini doğrulayan bir görev ekler"
+    },
+    {
+     "label": "spec-new",
+     "command": "spec-new",
+     "argv": [
+      "--goal",
+      "Restart the spec from scratch via the console example scenarios",
+      "--story",
+      "As a developer I want example scenarios so I can explore commands fast",
+      "--non-goal",
+      "Covering every argument combination",
+      "--force"
+     ],
+     "note": "Restart the spec ledger (wipes stories, criteria, tasks)",
+     "note_tr": "Spec defterini sıfırdan açar (hikâye/kriter/görevleri siler)",
+     "resets": true
+    }
+   ]
+  },
+  {
+   "title": "Review & evidence",
+   "title_tr": "İnceleme ve kanıt",
+   "scenarios": [
+    {
+     "label": "review-report",
+     "command": "review-report",
+     "argv": [],
+     "note": "Mechanical verdict: FAIL while any BLOCKING finding is open (seed has MAJOR/MINOR → PASS_WITH_FINDINGS)",
+     "note_tr": "Mekanik karar: açık BLOCKING varsa FAIL (hazır veride MAJOR/MINOR var → PASS_WITH_FINDINGS)"
+    },
+    {
+     "label": "audit-report",
+     "command": "audit-report",
+     "argv": [],
+     "note": "Evidence-ledger integrity audit (claims vs quotes vs sources)",
+     "note_tr": "Kanıt defteri bütünlük denetimi (iddia–alıntı–kaynak eşleşmesi)"
+    },
+    {
+     "label": "verify-delivery",
+     "command": "verify-delivery",
+     "argv": [
+      "--artifact",
+      "artifacts/demo-report.md"
+     ],
+     "note": "Delivery gate: artifact present (L1) and spec tasks verified",
+     "note_tr": "Teslim kapısı: çıktı dosyası var (L1) ve spec görevleri doğrulanmış"
+    },
+    {
+     "label": "review-finding",
+     "command": "review-finding",
+     "argv": [
+      "--file",
+      "demo-project/src/app.py",
+      "--line",
+      "50",
+      "--severity",
+      "MINOR",
+      "--category",
+      "correctness",
+      "--description",
+      "Module uses sys.argv in __main__ without importing sys",
+      "--suggestion",
+      "Add import sys at the top of the module"
+     ],
+     "note": "Append a MINOR finding on the demo project",
+     "note_tr": "Demo projesine MINOR bir bulgu ekler"
+    },
+    {
+     "label": "review-init",
+     "command": "review-init",
+     "argv": [
+      "--title",
+      "Second pass review",
+      "--target",
+      "demo-project/src",
+      "--focus",
+      "maintainability",
+      "--force"
+     ],
+     "note": "Restart the review ledger (wipes findings)",
+     "note_tr": "İnceleme defterini sıfırdan açar (bulguları siler)",
+     "resets": true
+    }
+   ]
+  },
+  {
+   "title": "Knowledge",
+   "title_tr": "Bilgi tabanı",
+   "scenarios": [
+    {
+     "label": "kb-search",
+     "command": "kb-search",
+     "argv": [
+      "--query",
+      "skills"
+     ],
+     "note": "Deterministic offline keyword search",
+     "note_tr": "Çevrimdışı, deterministik anahtar kelime araması"
+    },
+    {
+     "label": "kb-add",
+     "command": "kb-add",
+     "argv": [
+      "--question",
+      "Which six hosts does install.py support?",
+      "--answer",
+      "claude, codex, zcode, cursor, opencode and a generic AGENTS.md mode.",
+      "--tag",
+      "install",
+      "--assumed"
+     ],
+     "note": "Capture a Q&A entry as an explicit assumption",
+     "note_tr": "Bir soru-cevabı 'varsayım' olarak kaydeder"
+    },
+    {
+     "label": "kb-export",
+     "command": "kb-export",
+     "argv": [],
+     "note": "Export the KB to KNOWLEDGE_BASE.md",
+     "note_tr": "Bilgi tabanını KNOWLEDGE_BASE.md olarak dışa aktarır"
+    }
+   ]
+  },
+  {
+   "title": "Data analysis",
+   "title_tr": "Veri analizi",
+   "scenarios": [
+    {
+     "label": "data-register",
+     "command": "data-register",
+     "argv": [
+      "--path",
+      "demo-project/README.md",
+      "--question",
+      "How many lines and words does the demo README have?"
+     ],
+     "note": "Pin the dataset first: path, size and SHA-256 go on the record",
+     "note_tr": "Önce veri setini sabitle: yol, boyut ve SHA-256 kayda geçer"
+    },
+    {
+     "label": "data-finding",
+     "command": "data-finding",
+     "argv": [
+      "--statement",
+      "The README mentions 7 names in backticks",
+      "--method",
+      "grep -o '`[^`]*`' demo-project/README.md | wc -l",
+      "--result",
+      "7 names"
+     ],
+     "note": "Log a number together with the exact command that produced it",
+     "note_tr": "Sayıyı üreten tam komutla birlikte kayda geçir"
+    },
+    {
+     "label": "data-gap",
+     "command": "data-gap",
+     "argv": [
+      "--description",
+      "A per-author word split is not computable from the README",
+      "--reason",
+      "NO_DATA: the file has no author column"
+     ],
+     "note": "Declare what the file cannot answer instead of guessing",
+     "note_tr": "Dosyanın cevaplayamadığını tahmin etmek yerine beyan et"
+    },
+    {
+     "label": "data-report",
+     "command": "data-report",
+     "argv": [
+      "--answer",
+      "The demo README has 8 lines and 52 words; a per-section split is not computable."
+     ],
+     "note": "Render ANALYSIS.md; numbers in the answer are linted against the findings",
+     "note_tr": "ANALYSIS.md üretir; cevaptaki sayılar bulgularla karşılanmak zorunda"
+    }
+   ]
+  },
+  {
+   "title": "Devil's advocate",
+   "title_tr": "Şeytanın avukatı",
+   "scenarios": [
+    {
+     "label": "devil-plan (archetype)",
+     "command": "devil-plan",
+     "argv": [
+      "--archetype",
+      "migrate"
+     ],
+     "note": "The attack plan for this kind of plan: a migration dies on rollback-path first, not on features",
+     "note_tr": "Bu plan türü için saldırı planı: bir migrasyon önce geri-dönüş yolunda ölür, özelliklerde değil"
+    },
+    {
+     "label": "devil-premortem",
+     "command": "devil-premortem",
+     "argv": [
+      "--failure-story",
+      "Twelve months on, the isolated sandbox console was abandoned: every click paid a cold start, and the seeded ledgers nobody could see made the demo useless",
+      "--cause",
+      "cold-start seconds were never measured before the decision",
+      "--cause",
+      "the seeded ledger history had no viewer in sandbox mode"
+     ],
+     "note": "The failure story, written before the challenges — assuming failure surfaces the doubts politeness withholds",
+     "note_tr": "İtirazlardan önce yazılan başarısızlık hikâyesi — başarısızlığı varsaymak, nezaketin sakladığı şüpheleri yüzeye çıkarır"
+    },
+    {
+     "label": "devil-outside (optimism bias)",
+     "command": "devil-outside",
+     "argv": [
+      "--reference-class",
+      "console workspace isolation attempts by small teams",
+      "--base-rate",
+      "35"
+     ],
+     "note": "The outside view: a bad base rate with no argued adjustment auto-opens a SERIOUS optimism-bias challenge",
+     "note_tr": "Dış görünüm: savunulmamış kötü temel oran, mekanik olarak SERIOUS iyimserlik-yanlılığı itirazı açar"
+    },
+    {
+     "label": "devil-consequence",
+     "command": "devil-consequence",
+     "argv": [
+      "--l1",
+      "each scenario run starts from an empty sandbox, so no ledger survives between clicks",
+      "--l2",
+      "users never see a filled ledger and conclude the suite produces nothing inspectable",
+      "--l3",
+      "the demo stops teaching, and the console loses its reason to exist"
+     ],
+     "note": "Second-order effects, three levels deep: the failures that surprise people are rarely first-order",
+     "note_tr": "İkinci derece etkiler, üç seviye derin: insanı şaşırtan başarısızlıklar nadiren birinci derecedir"
+    },
+    {
+     "label": "devil-challenge",
+     "command": "devil-challenge",
+     "argv": [
+      "--assumption",
+      "the shared workspace can be restored if isolation disappoints",
+      "--attack",
+      "Once scenario definitions depend on per-run state, wiring them back to a shared ledger is a manual rework of every scenario",
+      "--category",
+      "reversibility",
+      "--severity",
+      "SERIOUS",
+      "--defeater",
+      "a documented flag that switches the runner between shared and isolated modes"
+     ],
+     "note": "Attack a load-bearing assumption; every attack names what would defeat it",
+     "note_tr": "Yük taşıyan bir varsayıma saldır; her saldırı kendi yenilgisini neyin sağlayacağını söyler"
+    },
+    {
+     "label": "devil-rebuttal",
+     "command": "devil-rebuttal",
+     "argv": [
+      "--id",
+      "C1",
+      "--rebuttal",
+      "The seeded workspace deliberately pre-fills every ledger, so even a fresh isolated run starts from a realistic, inspectable state",
+      "--basis",
+      "evidence: seed_workspace.py pre-registers all ledgers before any run"
+     ],
+     "note": "Answer an open challenge with a basis; a sound rebuttal leaves the verdict",
+     "note_tr": "Açık bir itirazı temeliyle cevapla; sağlam cevap karardan çıkar"
+    },
+    {
+     "label": "devil-verdict",
+     "command": "devil-verdict",
+     "argv": [
+      "--kill-criterion",
+      "any scenario still reads state from a previous run after isolation"
+     ],
+     "note": "Mechanical gate: BLOCK while a FATAL stands; renders CHALLENGE.md with guards and kill criteria",
+     "note_tr": "Mekanik kapı: ayakta bir FATAL varken BLOCK; CHALLENGE.md guard ve kill kriterleriyle üretilir"
+    },
+    {
+     "label": "devil-open (TR)",
+     "command": "devil-open",
+     "argv": [
+      "--force",
+      "--claim",
+      "Konsolun paylaşımlı çalışma alanını her çalıştırmada izole kum havuzuna çevirelim",
+      "--steelman",
+      "İzole çalıştırmalar birbirinin defter durumunu bozamaz; her senaryo temiz başlangıçtan tekrar üretilebilir"
+     ],
+     "note": "Open a session on a new claim — the honest steelman comes first (resets the ledger)",
+     "note_tr": "Yeni bir iddiayla oturum aç — önce dürüst çelik-adam gelir (defteri sıfırlar)",
+     "resets": true
+    }
+   ]
+  },
+  {
+   "title": "Decision journal",
+   "title_tr": "Karar defteri",
+   "scenarios": [
+    {
+     "label": "journal-log",
+     "command": "journal-log",
+     "argv": [
+      "--decision",
+      "Keep the shared workspace and add per-run snapshots instead of sandboxes",
+      "--prediction",
+      "snapshot restore keeps every click under 300ms in the next month of use",
+      "--confidence",
+      "70",
+      "--review-by",
+      "2026-12-12",
+      "--mind-changer",
+      "any click measured above one second in daily use"
+     ],
+     "note": "Log the decision with its falsifiable prediction, confidence and review date",
+     "note_tr": "Kararı, çürütülebilir tahmini, güven düzeyi ve inceleme tarihiyle kaydet"
+    },
+    {
+     "label": "journal-resolve",
+     "command": "journal-resolve",
+     "argv": [
+      "--id",
+      "J1",
+      "--outcome",
+      "HIT",
+      "--lesson",
+      "the snapshot path avoided the cold-start tax entirely; measure latency before choosing isolation"
+     ],
+     "note": "Grade it against reality — HIT, MISS or PARTIAL, with the lesson you would act on",
+     "note_tr": "Gerçeğe göre notlandır — HIT, MISS veya PARTIAL, üzerinde eyleme geçilecek dersle"
+    },
+    {
+     "label": "journal-report (calibration)",
+     "command": "journal-report",
+     "argv": [],
+     "note": "Hit rate vs claimed confidence per band; overconfidence past 15 points is a flag, not a feeling",
+     "note_tr": "Bant bazında isabet oranı vs iddia edilen güven; 15 puanı aşan iyimserlik bayraktır, his değil"
+    }
+   ]
+  },
+  {
+   "title": "Advice & decisions",
+   "title_tr": "Tavsiye ve kararlar",
+   "scenarios": [
+    {
+     "label": "advise-intake",
+     "command": "advise-intake",
+     "argv": [
+      "--question",
+      "Should v3.1 add a security-audit skill for offline prompt-injection scanning?",
+      "--context",
+      "Planning the next release of the suite",
+      "--constraint",
+      "Keep every check offline and deterministic",
+      "--non-goal",
+      "Network scanning or external services",
+      "--mode",
+      "planning"
+     ],
+     "note": "Structured intake before advising (overwrites previous intake)",
+     "note_tr": "Tavsiye öncesi yapılandırılmış giriş (öncekini ezer)"
+    },
+    {
+     "label": "decision-score",
+     "command": "decision-score",
+     "argv": [
+      "--spec-file",
+      "decision-matrix.json"
+     ],
+     "note": "Weighted scoring of the seeded decision matrix",
+     "note_tr": "Hazır karar matrisinin tartılı puanlaması"
+    },
+    {
+     "label": "wide-table",
+     "command": "wide-table",
+     "argv": [],
+     "note": "Entity x field evidence matrix from the ledger",
+     "note_tr": "Defterden varlık × alan kanıt matrisi"
+    },
+    {
+     "label": "adr-new",
+     "command": "adr-new",
+     "argv": [
+      "--title",
+      "Adopt grouped example scenarios in the console",
+      "--dir",
+      "docs/adr",
+      "--owner",
+      "console-team"
+     ],
+     "note": "Write a new numbered ADR to docs/adr/",
+     "note_tr": "docs/adr/ altına yeni numaralı ADR yazar"
+    },
+    {
+     "label": "adr-check",
+     "command": "adr-check",
+     "argv": [
+      "--file",
+      "docs/adr/0001-use-a-single-shared-demo-workspace-for-the-test-console.md"
+     ],
+     "note": "Hygiene check: catches unfilled placeholders in the seeded ADR",
+     "note_tr": "Sağlık kontrolü: hazır ADR'deki boş kalan yerleri yakalar (bilerek hata verir)",
+     "expectFail": true
+    }
+   ]
+  },
+  {
+   "title": "Debug",
+   "title_tr": "Hata ayıklama",
+   "scenarios": [
+    {
+     "label": "debug-report",
+     "command": "debug-report",
+     "argv": [],
+     "note": "Hypothesis ledger and circuit-breaker state",
+     "note_tr": "Hipotez defteri ve sigorta (circuit-breaker) durumu"
+    },
+    {
+     "label": "debug-hypothesis",
+     "command": "debug-hypothesis",
+     "argv": [
+      "--symptom",
+      "kb-search returns no hits for a freshly added entry",
+      "--statement",
+      "The search index is cached and not refreshed after kb-add",
+      "--prediction",
+      "The new entry is found on the next kb-search run",
+      "--test-command",
+      "python3 workbench.py kb-search --query freshly",
+      "--status",
+      "PENDING",
+      "--target-file",
+      "demo-project/src/app.py"
+     ],
+     "note": "Add a falsifiable hypothesis with a prediction",
+     "note_tr": "Öngörülü, çürütülebilir bir hipotez ekler"
+    }
+   ]
+  },
+  {
+   "title": "Artifacts",
+   "title_tr": "Çıktılar",
+   "scenarios": [
+    {
+     "label": "artifact-list",
+     "command": "artifact-list",
+     "argv": [],
+     "note": "List artifact-studio templates",
+     "note_tr": "Hazır çıktı şablonlarını listeler"
+    },
+    {
+     "label": "artifact-new",
+     "command": "artifact-new",
+     "argv": [
+      "--type",
+      "technical-report",
+      "--title",
+      "Scenario coverage report",
+      "--output",
+      "artifacts/scenario-coverage.md",
+      "--force"
+     ],
+     "note": "Scaffold a technical report artifact",
+     "note_tr": "Teknik rapor çıktısı oluşturur"
+    }
+   ]
+  },
+  {
+   "title": "Handoff",
+   "title_tr": "Devir",
+   "scenarios": [
+    {
+     "label": "handoff-check",
+     "command": "handoff-check",
+     "argv": [],
+     "note": "Validate the seeded handoff pack (freshness, sections)",
+     "note_tr": "Hazır devir dosyasını doğrular (tazelik, bölümler)"
+    },
+    {
+     "label": "handoff-pack",
+     "command": "handoff-pack",
+     "argv": [
+      "--title",
+      "Scenario walkthrough session",
+      "--session-status",
+      "PARTIAL",
+      "--summary",
+      "Explored the example scenarios across every command group",
+      "--completed",
+      "Ran research, spec, review and knowledge scenarios",
+      "--next-step",
+      "Try the amber reset scenarios, then re-seed the workspace"
+     ],
+     "note": "Write a PARTIAL session handoff pack",
+     "note_tr": "PARTIAL durumunda bir devir dosyası yazar"
+    }
+   ]
+  },
+  {
+   "title": "Scope",
+   "title_tr": "Kapsam",
+   "scenarios": [
+    {
+     "label": "scope-read",
+     "command": "scope-read",
+     "argv": [
+      "--project-root",
+      "demo-project",
+      "--file",
+      "src/app.py"
+     ],
+     "note": "Numbered, checksummed read of a demo file",
+     "note_tr": "Demo dosyasını numaralı ve sağlamalı okur"
+    },
+    {
+     "label": "scope-scan",
+     "command": "scope-scan",
+     "argv": [
+      "--project-root",
+      "demo-project",
+      "--pattern",
+      "TODO|FIXME|BUG",
+      "--ignore-case"
+     ],
+     "note": "Scan the demo project for TODO/FIXME/BUG markers",
+     "note_tr": "Demo projede TODO/FIXME/BUG işaretlerini tarar"
+    }
+   ]
+  }
+ ]
 }

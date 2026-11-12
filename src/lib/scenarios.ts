@@ -27,6 +27,16 @@ export const SCENARIO_GROUPS: ScenarioGroup[] = [
     titleTr: "Beceri yönlendirme",
     scenarios: [
       { label: "load-skills (TR)", command: "load-skills", argv: ["--prompt", "DuckDB mi SQLite mi, eşzamanlı yazma konusunda hangisi daha iyi, karşılaştır"], note: "Route any prompt (TR/EN) to its skills; returns the brief (read order, first command, stop rule). Try --skill NAME or --list too", noteTr: "Herhangi bir prompt'u (TR/EN) becerilere yönlendirir; brief döner (okuma sırası, ilk komut, durma kuralı). --skill AD ve --list de dene" },
+      { label: "load-skills --core", command: "load-skills", argv: ["--core", "--prompt", "what is the latest python version and its release date"], note: "Core depth: a run-from-this-card brief — skill, 3-step core loop, first command, stop rule; zero file reading", noteTr: "Çekirdek derinlik: karttan-çalıştır brifingi — beceri, 3 adımlı çekirdek döngü, ilk komut, durma kuralı; sıfır dosya okuma" },
+    ],
+  },
+  {
+    title: "Question contract",
+    titleTr: "Soru sözleşmesi",
+    scenarios: [
+      { label: "qc-pin", command: "qc-pin", argv: ["--question", "Should we modernize the demo console's workspace model?", "--decision", "choose between sandbox isolation and shared state this week", "--consumer", "the console maintainer"], note: "Pin the question, the decision it informs and the consumer — the vague-term scan fires on 'modernize'", noteTr: "Soruyu, besleyeceği kararı ve okuyucuyu sabitle — 'modernize' belirsiz kelime taramasını tetikler" },
+      { label: "qc-check (the gate)", command: "qc-check", argv: [], note: "READY or NEEDS_INPUT: never answer a question whose decision and consumer are unpinned", noteTr: "READY veya NEEDS_INPUT: kararı ve okuyucusu sabitlenmemiş soruyu asla cevaplama" },
+      { label: "qc-assume", command: "qc-assume", argv: ["--assumption", "modernize means the run model, not the visual interface"], note: "Record the interpretation where the question stayed ambiguous — it lands in the answer's caveat", noteTr: "Sorunun belirsiz kaldığı yerdeki yorumu kaydet — cevabın uyarı notuna girer" },
     ],
   },
   {
@@ -98,10 +108,23 @@ export const SCENARIO_GROUPS: ScenarioGroup[] = [
     title: "Devil's advocate",
     titleTr: "Şeytanın avukatı",
     scenarios: [
+      { label: "devil-plan (archetype)", command: "devil-plan", argv: ["--archetype", "migrate"], note: "The attack plan for this kind of plan: a migration dies on rollback-path first, not on features", noteTr: "Bu plan türü için saldırı planı: bir migrasyon önce geri-dönüş yolunda ölür, özelliklerde değil" },
+      { label: "devil-premortem", command: "devil-premortem", argv: ["--failure-story", "Twelve months on, the isolated sandbox console was abandoned: every click paid a cold start, and the seeded ledgers nobody could see made the demo useless", "--cause", "cold-start seconds were never measured before the decision", "--cause", "the seeded ledger history had no viewer in sandbox mode"], note: "The failure story, written before the challenges — assuming failure surfaces the doubts politeness withholds", noteTr: "İtirazlardan önce yazılan başarısızlık hikâyesi — başarısızlığı varsaymak, nezaketin sakladığı şüpheleri yüzeye çıkarır" },
+      { label: "devil-outside (optimism bias)", command: "devil-outside", argv: ["--reference-class", "console workspace isolation attempts by small teams", "--base-rate", "35"], note: "The outside view: a bad base rate with no argued adjustment auto-opens a SERIOUS optimism-bias challenge", noteTr: "Dış görünüm: savunulmamış kötü temel oran, mekanik olarak SERIOUS iyimserlik-yanlılığı itirazı açar" },
+      { label: "devil-consequence", command: "devil-consequence", argv: ["--l1", "each scenario run starts from an empty sandbox, so no ledger survives between clicks", "--l2", "users never see a filled ledger and conclude the suite produces nothing inspectable", "--l3", "the demo stops teaching, and the console loses its reason to exist"], note: "Second-order effects, three levels deep: the failures that surprise people are rarely first-order", noteTr: "İkinci derece etkiler, üç seviye derin: insanı şaşırtan başarısızlıklar nadiren birinci derecedir" },
       { label: "devil-challenge", command: "devil-challenge", argv: ["--assumption", "the shared workspace can be restored if isolation disappoints", "--attack", "Once scenario definitions depend on per-run state, wiring them back to a shared ledger is a manual rework of every scenario", "--category", "reversibility", "--severity", "SERIOUS", "--defeater", "a documented flag that switches the runner between shared and isolated modes"], note: "Attack a load-bearing assumption; every attack names what would defeat it", noteTr: "Yük taşıyan bir varsayıma saldır; her saldırı kendi yenilgisini neyin sağlayacağını söyler" },
       { label: "devil-rebuttal", command: "devil-rebuttal", argv: ["--id", "C1", "--rebuttal", "The seeded workspace deliberately pre-fills every ledger, so even a fresh isolated run starts from a realistic, inspectable state", "--basis", "evidence: seed_workspace.py pre-registers all ledgers before any run"], note: "Answer an open challenge with a basis; a sound rebuttal leaves the verdict", noteTr: "Açık bir itirazı temeliyle cevapla; sağlam cevap karardan çıkar" },
       { label: "devil-verdict", command: "devil-verdict", argv: ["--kill-criterion", "any scenario still reads state from a previous run after isolation"], note: "Mechanical gate: BLOCK while a FATAL stands; renders CHALLENGE.md with guards and kill criteria", noteTr: "Mekanik kapı: ayakta bir FATAL varken BLOCK; CHALLENGE.md guard ve kill kriterleriyle üretilir" },
       { label: "devil-open (TR)", command: "devil-open", argv: ["--force", "--claim", "Konsolun paylaşımlı çalışma alanını her çalıştırmada izole kum havuzuna çevirelim", "--steelman", "İzole çalıştırmalar birbirinin defter durumunu bozamaz; her senaryo temiz başlangıçtan tekrar üretilebilir"], note: "Open a session on a new claim — the honest steelman comes first (resets the ledger)", noteTr: "Yeni bir iddiayla oturum aç — önce dürüst çelik-adam gelir (defteri sıfırlar)", resets: true },
+    ],
+  },
+  {
+    title: "Decision journal",
+    titleTr: "Karar defteri",
+    scenarios: [
+      { label: "journal-log", command: "journal-log", argv: ["--decision", "Keep the shared workspace and add per-run snapshots instead of sandboxes", "--prediction", "snapshot restore keeps every click under 300ms in the next month of use", "--confidence", "70", "--review-by", "2026-12-12", "--mind-changer", "any click measured above one second in daily use"], note: "Log the decision with its falsifiable prediction, confidence and review date", noteTr: "Kararı, çürütülebilir tahmini, güven düzeyi ve inceleme tarihiyle kaydet" },
+      { label: "journal-resolve", command: "journal-resolve", argv: ["--id", "J1", "--outcome", "HIT", "--lesson", "the snapshot path avoided the cold-start tax entirely; measure latency before choosing isolation"], note: "Grade it against reality — HIT, MISS or PARTIAL, with the lesson you would act on", noteTr: "Gerçeğe göre notlandır — HIT, MISS veya PARTIAL, üzerinde eyleme geçilecek dersle" },
+      { label: "journal-report (calibration)", command: "journal-report", argv: [], note: "Hit rate vs claimed confidence per band; overconfidence past 15 points is a flag, not a feeling", noteTr: "Bant bazında isabet oranı vs iddia edilen güven; 15 puanı aşan iyimserlik bayraktır, his değil" },
     ],
   },
   {
@@ -149,4 +172,4 @@ export const SCENARIO_GROUPS: ScenarioGroup[] = [
   },
 ]
 
-export const SCENARIO_COUNT = 47
+export const SCENARIO_COUNT = 58

@@ -81,6 +81,12 @@ Capabilities:
    - playbooks: playbook-list / playbook-show — five pre-composed skill
      chains (decide, investigate, build, launch, debug) with per-step
      gates and handoff rules; orchestration without a state machine
+13. v4.0: the suite grows from a skill collection into an advisory
+    system — depth-aware routing (core/compact/full with suggested_depth),
+    a red-team protocol stack (premortem, outside view, second-order
+    chains, archetype attack plans), a pre-flight question contract, a
+    decision journal with calibration scoring, and five playbooks that
+    compose the skills into end-to-end chains with gates.
 
 Network policy: the only command that can open a socket is `fetch-url`, and only
 with --allow-network. Every other command is offline and deterministic.
@@ -106,7 +112,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 
-VERSION = "3.8.0"
+VERSION = "4.0.0"
 DEFAULT_STATE_DIR = ".local-workbench"
 MAX_FILE_BYTES = 512 * 1024  # 512 KB cap for scoped local file reads
 MAX_SCAN_FILES = 200

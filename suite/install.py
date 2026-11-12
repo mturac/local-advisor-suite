@@ -36,7 +36,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 SUITE = "local-advisor-suite"
-VERSION = "3.8.0"
+VERSION = "4.0.0"
 SRC = Path(__file__).resolve().parent
 SKILLS_SRC = SRC / "skills"
 HOSTS = ("claude", "codex", "zcode", "cursor", "opencode", "generic")

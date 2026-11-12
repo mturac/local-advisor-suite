@@ -58,8 +58,8 @@ class WorkbenchTestCase(unittest.TestCase):
 
 
 class TestVersionAndContract(WorkbenchTestCase):
-    def test_version_is_3_8_0(self):
-        self.assertEqual(workbench.VERSION, "3.8.0")
+    def test_version_is_4_0_0(self):
+        self.assertEqual(workbench.VERSION, "4.0.0")
 
     def test_v21_subcommands_still_exist(self):
         """Every v2.1 subcommand must keep working with the same name (backward compatibility)."""

@@ -26,12 +26,14 @@ def main() -> int:
         for group in data["groups"]
         for s in group["scenarios"]
     ]
-    commands = [s["command"] for _, s in all_scenarios]
-    dupes = {c for c in commands if commands.count(c) > 1}
+    keys = [(s["command"], tuple(s["argv"])) for _, s in all_scenarios]
+    dupes = {k for k in keys if keys.count(k) > 1}
     if dupes:
-        print(f"DUPLICATE commands in scenarios.json: {sorted(dupes)}")
+        print(f"DUPLICATE scenarios in scenarios.json (same command AND argv): {sorted(dupes)}")
         return 1
-    print(f"{len(all_scenarios)} scenarios, {len(set(commands))} unique commands")
+    commands = [s["command"] for _, s in all_scenarios]
+    print(f"{len(all_scenarios)} scenarios, {len(set(commands))} unique commands "
+          f"(same command with different flags is intentional)")
 
     # --- fresh seeded workspace -------------------------------------------------
     if TEST_ROOT.exists():
