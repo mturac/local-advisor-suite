@@ -1,5 +1,56 @@
 # Changelog
 
+## 4.1.2 (2026-11-12)
+
+v4.1.1 command set and JSON contract preserved. This release makes the suite
+installable as a Claude Code **plugin** — and keeps every skill self-describing
+in that form — plus the decide-playbook demonstration that closed the Azure
+example's split.
+
+### Added: Claude Code plugin form (repo-root marketplace)
+
+- `.claude-plugin/marketplace.json` now exists at the **repository root**,
+  pointing at `./suite` as the plugin source. `/plugin marketplace add
+  <this-repo>` followed by `/plugin install
+  local-advisor-suite@local-advisor-suite` now resolves: the plugin manifest
+  (`suite/.claude-plugin/plugin.json`) and all 18 skills are found through it.
+  Previously the marketplace manifest only existed inside `suite/`, where
+  Claude Code never looks when the repository itself is added.
+- Every one of the 18 `SKILL.md` files now documents its runtime in one line:
+  `$WB` is `python3 scripts/workbench.py` relative to the skill's own
+  directory. A plugin install writes no host rules file (no CLAUDE.md), so
+  the skill body itself has to resolve the workbench path — now it does, in
+  every install form (project, global, plugin).
+- New tests: `test_repo_root_marketplace_resolves_plugin_chain` (root
+  manifest → plugin manifest → 18 skills) and
+  `test_every_skill_md_documents_the_runtime` (no skill may ship without the
+  runtime note). 169 tests total.
+
+### Added: the decide playbook run on the panel's split
+
+- The Azure example's `SPLIT_PANEL` was carried through the full chain, all
+  commands real: `decision-score` scored the two panel positions (accept-and-
+  measure 6.46 vs scale-out-now 5.77, margin 0.69, robustness moderate — and
+  the sensitivity block shows the verdict flips exactly when visitor-risk is
+  weighted 5+, which is the split the panel could not resolve); `devil-open`/
+  `devil-challenge`×2/`devil-premortem`/`devil-verdict` on the winning option
+  returned PROCEED_WITH_GUARDS with the finance seat's open challenge X2 as
+  guard C1; `journal-log` recorded J1 with a falsifiable prediction and
+  review date 2027-02-12; `adr-new` + placeholder fill + `adr-check` → PASS
+  (ADR-0001, reversibility R1, the kill criterion as reversal trigger). The
+  panel example doc now closes with this outcome so the chain is documented
+  end to end.
+
+### Changed
+
+- Root README refreshed: stale counts (125 tests, v3.0.0/v4.0.0 references,
+  15-skill console line) now match reality (169 tests, v4.1.2, 18 skills).
+- All 18 SKILL.md metadata versions bumped to 4.1.2 (the runtime note touched
+  every skill layer; per-skill version = suite version of its last change).
+- Suite README plugin section rewritten: root-marketplace install path, and
+  an explicit statement that the chain is domain-agnostic (Azure, AWS,
+  Shopware, pricing — the question changes, the discipline does not).
+
 ## 4.1.1 (2026-11-12)
 
 v4.1.0 command set and JSON contract preserved; a repair release for the

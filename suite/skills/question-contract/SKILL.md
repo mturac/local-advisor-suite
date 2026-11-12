@@ -5,10 +5,12 @@ license: MIT
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "3.6.0"
+  version: "4.1.2"
 ---
 
 # Question Contract
+
+*Runtime: `$WB` below is `python3 scripts/workbench.py`, resolved relative to this skill's own directory — an `install.py` install records the same path in the host's rules file (CLAUDE.md / AGENTS.md), and a plugin install carries this copy with it.*
 
 The most expensive failure in advisory work is not a wrong answer — it is a brilliant answer to the wrong question. Rework, wasted research, and decisions made on answers nobody asked for all trace back to the same root: nobody pinned what the question actually was. This skill makes that pin explicit and cheap: the question, the decision it informs, who consumes the answer, and the assumptions made where the question stayed vague.
 

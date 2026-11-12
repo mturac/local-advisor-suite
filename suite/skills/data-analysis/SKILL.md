@@ -5,10 +5,12 @@ license: MIT
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "3.2.0"
+  version: "4.1.2"
 ---
 
 # Data Analysis
+
+*Runtime: `$WB` below is `python3 scripts/workbench.py`, resolved relative to this skill's own directory — an `install.py` install records the same path in the host's rules file (CLAUDE.md / AGENTS.md), and a plugin install carries this copy with it.*
 
 Answer a question about a data file the user provides — with the dataset pinned by hash, every number logged with the command that produced it, and gaps declared instead of guessed.
 

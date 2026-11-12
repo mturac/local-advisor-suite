@@ -1,0 +1,13 @@
+{
+  "name": "local-advisor-suite",
+  "owner": {
+    "name": "Local Advisor Workbench"
+  },
+  "plugins": [
+    {
+      "name": "local-advisor-suite",
+      "source": "./suite",
+      "description": "18 provider-neutral advisory skills — deep research, evidence audit, advisory panel, decision review, devil's advocate, decision journal and more — backed by an offline workbench.py runtime. Domain-agnostic: any stack, any question, action-oriented."
+    }
+  ]
+}

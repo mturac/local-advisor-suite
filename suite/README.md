@@ -124,9 +124,11 @@ python3 install.py --project ~/code/my-app --uninstall
 
 ### Optional plugin installs
 
-- Claude Code: `/plugin marketplace add ./local-advisor-suite`, then `/plugin install local-advisor-suite@local-advisor-suite`. Plugin skills are invoked as `/local-advisor-suite:<skill>`.
+- Claude Code: `/plugin marketplace add <this-repo>` (the repo root carries `.claude-plugin/marketplace.json`; it points at `./suite`, where the plugin manifest and all 18 skills live), then `/plugin install local-advisor-suite@local-advisor-suite`. Plugin skills are invoked as `/local-advisor-suite:<skill>`. A plugin install writes no rules file — every `SKILL.md` documents its own `$WB` runtime path, so the skills stay self-contained.
 - Codex: `codex plugin marketplace add ./local-advisor-suite`. The manifest is `.codex-plugin/plugin.json`, the marketplace file `.agents/plugins/marketplace.json`.
 - ZCode: the repository root's flat `skills/<name>/SKILL.md` layout is a valid plugin source for a ZCode marketplace that accepts local directories.
+
+The skills are domain-agnostic by design: the same panel → decision → red-team → journal chain runs on an Azure architecture question, an AWS cost question, a Shopware migration or a pricing decision — the question changes, the discipline does not.
 
 ## Using the suite per host
 

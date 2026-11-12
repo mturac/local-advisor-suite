@@ -5,10 +5,12 @@ license: MIT
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "3.5.0"
+  version: "4.1.2"
 ---
 
 # Devil's Advocate
+
+*Runtime: `$WB` below is `python3 scripts/workbench.py`, resolved relative to this skill's own directory — an `install.py` install records the same path in the host's rules file (CLAUDE.md / AGENTS.md), and a plugin install carries this copy with it.*
 
 Argue the other side of the user's plan — systematically, on the record, and fairly. The plan gets an honest steelman, its own failure story written in advance, the base rate of everyone who tried the same thing, and severity-graded attacks on its load-bearing assumptions. The unanswered attacks decide the verdict mechanically. This is not "be negative": it is the cheapest point in time to discover the plan is wrong, and every protocol here exists because it catches a failure mode that generic skepticism misses.
 

@@ -5,10 +5,12 @@ license: MIT
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "3.0.0"
+  version: "4.1.2"
 ---
 
 # Knowledge Capture
+
+*Runtime: `$WB` below is `python3 scripts/workbench.py`, resolved relative to this skill's own directory — an `install.py` install records the same path in the host's rules file (CLAUDE.md / AGENTS.md), and a plugin install carries this copy with it.*
 
 The project's memory of hard-won answers: every entry is a question, an answer, and a source (or an explicit assumption marker). Search is offline and deterministic; nothing here is improvised.
 

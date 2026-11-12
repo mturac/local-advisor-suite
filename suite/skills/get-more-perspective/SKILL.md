@@ -5,10 +5,12 @@ license: MIT
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.1"
+  version: "4.1.2"
 ---
 
 # Get More Perspective
+
+*Runtime: `$WB` below is `python3 scripts/workbench.py`, resolved relative to this skill's own directory — an `install.py` install records the same path in the host's rules file (CLAUDE.md / AGENTS.md), and a plugin install carries this copy with it.*
 
 Convene a virtual advisory panel and make it argue properly. Five seats — Operator, Skeptic, Visionary, Customer Advocate, Finance — each speak independently through their own lens with fields their role mandates, the seats that cannot run on vibes (skeptic, finance) must cite evidence on the table first, and any seat can cross-examine any other. The synthesis is then mechanical: it counts stances and names the verdict, and it is forbidden from averaging disagreement into "consensus" — a split panel produces a map of the split, not a fake recommendation. A panel that always agrees is theater; this one is built so it cannot quietly become one.
 

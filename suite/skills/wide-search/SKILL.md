@@ -5,10 +5,12 @@ license: MIT
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "3.0.0"
+  version: "4.1.2"
 ---
 
 # Wide Search
+
+*Runtime: `$WB` below is `python3 scripts/workbench.py`, resolved relative to this skill's own directory — an `install.py` install records the same path in the host's rules file (CLAUDE.md / AGENTS.md), and a plugin install carries this copy with it.*
 
 Compare N entities across M fields in a matrix where every cell is either verified against an opened source or explicitly `n.a.` Nothing in the table comes from memory.
 

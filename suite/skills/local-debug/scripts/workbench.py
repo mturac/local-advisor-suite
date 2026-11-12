@@ -126,7 +126,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 
-VERSION = "4.1.1"
+VERSION = "4.1.2"
 DEFAULT_STATE_DIR = ".local-workbench"
 MAX_FILE_BYTES = 512 * 1024  # 512 KB cap for scoped local file reads
 MAX_SCAN_FILES = 200

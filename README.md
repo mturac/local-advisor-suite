@@ -1,6 +1,6 @@
 # Local Advisor Suite — Console
 
-**v4.0.0** · cross-host agent skill suite + a web console to drive every command from your browser.
+**v4.1.2** · cross-host agent skill suite + a web console to drive every command from your browser.
 
 > **Türkçe:** Bu depo iki şey içerir: **Local Advisor Suite** (çevrimdışı çalışan, 59 komutluk, 6 araca kurulabilen bir beceri paketi) ve onu **tarayıcıdan denemeni sağlayan web konsolu**. Kurulum yok, hesap yok: bir hikâye seç, *Çalıştır*'a bas, gerçek komutların gerçek çıktılarını gör. Arayüz **Türkçe ve İngilizce** — sağ üstteki TR/EN düğmesiyle değiştir.
 
@@ -8,7 +8,7 @@ This repository contains two things:
 
 | Path | What it is |
 | --- | --- |
-| `suite/` | **Local Advisor Suite v4.1.0** — the offline, vendor-neutral workbench: 64 commands, 18 skills, 5 playbooks, 167 tests, installer for 6 hosts (Claude Code, Codex, ZCode, Cursor, OpenCode, generic AGENTS.md) |
+| `suite/` | **Local Advisor Suite v4.1.2** — the offline, vendor-neutral workbench: 64 commands, 18 skills, 5 playbooks, 169 tests, installer for 6 hosts (Claude Code, Codex, ZCode, Cursor, OpenCode, generic AGENTS.md) |
 | root | **Web Console** — a bilingual (🇹🇷 TR / 🇬🇧 EN) Next.js 16 app that runs every workbench command against a seeded demo workspace, no setup required |
 
 ![Console](public/console.png)
@@ -41,12 +41,12 @@ On first run the workspace is empty — open the **Files / Dosyalar** tab and hi
 
 ```bash
 cd suite
-./run_tests.sh                          # 125 tests, zero dependencies
+./run_tests.sh                          # 169 tests, zero dependencies
 python3 install.py --project ~/myapp    # installs skills for 6 hosts
 python3 workbench.py doctor             # installation health check
 ```
 
-See `suite/README.md` for the full suite documentation, and `suite/CHANGELOG.md` for what changed in v3.0.0.
+See `suite/README.md` for the full suite documentation, and `suite/CHANGELOG.md` for what changed.
 
 ## Console tour
 
@@ -54,7 +54,7 @@ See `suite/README.md` for the full suite documentation, and `suite/CHANGELOG.md`
 | --- | --- | --- |
 | **Hikâyeler / Stories** | Baştan sona anlatılan senaryolar: soldan hikâyeyi seç, *Tümünü çalıştır*'a bas; her adımın ne yaptığını, komutunu ve "şu görünecek" kutusunu gör, sonunda gerçek bir dosyayla bitir | Guided end-to-end stories — each step explained in plain language with its exact command, a "you'll see" preview, and its real result; ends with a real artifact (evidence pack, handoff, root-cause report, ADR) |
 | **Komut Dene / Try Commands** | 64 senaryonun tamamı hazır argümanlarla, tek tıkla; istersen kendi argümanlarınla çalıştır | Sandbox for single commands: one-click examples for all 64 scenarios, auto-generated argument forms, raw JSON output |
-| **Beceriler / Skills** | 15 beceriyi gez, SKILL.md'leri oku | Browse the 15 bundled skills, read each `SKILL.md` and its bundled examples |
+| **Beceriler / Skills** | 18 beceriyi gez, SKILL.md'leri oku | Browse the 18 bundled skills, read each `SKILL.md` and its bundled examples |
 | **Sağlık / Health** | Tek tıkla `doctor` ve `selfcheck` | One-click `doctor` (per-check health table) and `selfcheck` (vendor-neutrality scan) |
 | **Dosyalar / Files** | Canlı defterleri ve üretilen dosyaları incele, tek tıkla sıfırla | Inspect live ledgers and generated artifacts, reset everything |
 | **Geçmiş / History** | Her çalıştırma SQLite'ta saklanır | Every run persisted in SQLite, expandable |
@@ -75,11 +75,11 @@ For single commands, the **one-click examples** cover all 64 scenarios with pre-
 ## Repository layout
 
 ```
-├── suite/                    # Local Advisor Suite v4.0.0 (self-contained)
+├── suite/                    # Local Advisor Suite v4.1.2 (self-contained)
 │   ├── workbench.py          # 47-command CLI (JSON in, JSON out)
 │   ├── install.py            # 6-host installer / uninstaller
 │   ├── skills/               # 18 skills with references/templates/examples
-│   ├── tests/                # 125 tests (run_tests.sh)
+│   ├── tests/                # 169 tests (run_tests.sh)
 │   └── references/ templates/ tools/
 ├── src/
 │   ├── app/                  # Next.js app router (single page + API routes)

@@ -187,3 +187,42 @@ does not exceed oppose — and that is the point. The verdict table counts
 stances mechanically precisely so nobody has to negotiate what "mostly
 agreed" means; changing this panel's verdict requires changing a seat's
 stance on the record, not the reader's impression of the mood.
+
+## 6. What happened next: the split went to decision-review
+
+The handoffs were taken, in order, with real commands — this is the
+`decide` playbook's tail operating on the panel's output:
+
+1. **`decision-score`** — the two panel positions became the two options
+   (A: keep single-instance, instrument first; B: scale out now), scored on
+   five criteria taken from the seats' own concerns. A won, 6.462 vs 5.769,
+   margin 0.692, robustness moderate. The sensitivity block is the split
+   speaking mechanically: **the verdict flips to B the moment visitor-risk
+   is weighted 5.1 instead of 3** — exactly the weight the skeptic would
+   assign if the cold-tail turns out large, and exactly the number nobody
+   has because the counter does not exist yet. The recommendation is honest
+   about what it hangs on.
+2. **`devil-advocate`** on the winning option — the finance seat's open
+   challenge X2 became SERIOUS challenge C1 (*measurement without a
+   pre-committed threshold measures nothing*), joined by C2 (*the plan's own
+   words limit the cache guarantee to warmed pages*). Premortem: the
+   counter exists, nobody actioned it, a maintenance window hits during a
+   campaign. Verdict: **PROCEED_WITH_GUARDS** — C1 and C2 become guards,
+   plus a pre-committed kill criterion (any visitor-facing 5xx burst of 2+
+   minutes coinciding with a restart outside a freeze window falsifies
+   keep-and-measure).
+3. **`journal-log`** — J1: the decision, a falsifiable prediction
+   (cache-miss requests under 1% across restart windows, no restart-
+   attributable 5xx burst over 2 minutes), confidence 70, review date
+   2027-02-12, and the mind-changer named.
+4. **`adr-new` + `adr-check`** — ADR-0001, reversibility R1 (scaling out
+   later is a config change), the finance dissent written in full as the
+   steelman counter-argument, the kill criterion as the reversal trigger.
+   `adr-check`: PASS.
+
+The panel refused to average its disagreement; the decision process scored
+it, the red team attacked the winner, the journal made the call falsifiable,
+and the ADR made it reversible. Five skills, one question, no step trusted
+to memory — and nothing in the chain is Azure-specific: the same seats,
+commands and gates run on an AWS migration, a Shopware upgrade or a pricing
+change.

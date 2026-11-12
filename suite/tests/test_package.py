@@ -164,8 +164,43 @@ class TestSharedLayer(unittest.TestCase):
             self.assertTrue(p.is_file(), f"missing {mf}")
             json.loads(p.read_text(encoding="utf-8"))  # must parse
         plugin = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
-        self.assertEqual(plugin["version"], "4.1.1")
+        self.assertEqual(plugin["version"], "4.1.2")
         self.assertEqual(plugin["skills"], "./skills/")
+
+    def test_repo_root_marketplace_resolves_plugin_chain(self):
+        """/plugin marketplace add <repo> needs .claude-plugin/marketplace.json at the
+        REPO ROOT; its plugin source must point at a directory that actually contains
+        a plugin manifest and every skill."""
+        repo_root = ROOT.parent
+        market = repo_root / ".claude-plugin" / "marketplace.json"
+        self.assertTrue(market.is_file(),
+                        "repo root has no .claude-plugin/marketplace.json — Claude Code "
+                        "cannot add this repository as a plugin marketplace")
+        data = json.loads(market.read_text(encoding="utf-8"))
+        entries = data.get("plugins", [])
+        self.assertTrue(entries, "root marketplace.json lists no plugins")
+        for entry in entries:
+            src = entry["source"].lstrip("./")
+            plugin_dir = repo_root / src
+            self.assertTrue((plugin_dir / ".claude-plugin" / "plugin.json").is_file(),
+                            f"marketplace source '{entry['source']}' has no plugin manifest")
+            manifest = json.loads((plugin_dir / ".claude-plugin" / "plugin.json")
+                                  .read_text(encoding="utf-8"))
+            self.assertEqual(manifest["name"], entry["name"],
+                             "marketplace entry name and plugin manifest name disagree")
+            skills_dir = plugin_dir / "skills"
+            skill_mds = sorted(skills_dir.glob("*/SKILL.md"))
+            self.assertGreaterEqual(len(skill_mds), 18,
+                                    "plugin ships fewer than the expected 18 skills")
+
+    def test_every_skill_md_documents_the_runtime(self):
+        """Every SKILL.md must tell the agent how to resolve $WB — the note is what
+        keeps plugin installs (no host rules file) self-contained."""
+        for skill_md in sorted((ROOT / "skills").glob("*/SKILL.md")):
+            text = skill_md.read_text(encoding="utf-8")
+            self.assertIn("scripts/workbench.py", text,
+                          f"{skill_md.parent.name} does not document its workbench runtime")
+
 
     def test_host_compatibility_covers_six_hosts(self):
         text = (ROOT / "references" / "host-compatibility.md").read_text(encoding="utf-8")
@@ -182,12 +217,12 @@ class TestVersionConsistency(unittest.TestCase):
     def test_versions_align_everywhere(self):
         import workbench
         import install
-        self.assertEqual(workbench.VERSION, "4.1.1")
-        self.assertEqual(install.VERSION, "4.1.1")
+        self.assertEqual(workbench.VERSION, "4.1.2")
+        self.assertEqual(install.VERSION, "4.1.2")
         gen = (ROOT / "tools" / "generate_shared.py").read_text(encoding="utf-8")
-        self.assertIn('VERSION = "4.1.1"', gen)
+        self.assertIn('VERSION = "4.1.2"', gen)
         plugin = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
-        self.assertEqual(plugin["version"], "4.1.1")
+        self.assertEqual(plugin["version"], "4.1.2")
         manifest_like = (ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8")
         # The advertised skill count must track the skills that actually ship,
         # and every skill directory must be in the generator registry — a skill
@@ -203,7 +238,7 @@ class TestVersionConsistency(unittest.TestCase):
             proc = subprocess.run([sys.executable, str(ROOT / script), "--version"],
                                   capture_output=True, text=True, timeout=60)
             self.assertEqual(proc.returncode, 0)
-            self.assertIn("4.1.1", proc.stdout + proc.stderr)
+            self.assertIn("4.1.2", proc.stdout + proc.stderr)
 
 
 class TestDocs(unittest.TestCase):
