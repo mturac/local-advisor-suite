@@ -1,5 +1,61 @@
 # Changelog
 
+## 4.1.0 (2026-11-12)
+
+v4.0.0 command set and JSON contract preserved; everything below is additive.
+The 18th skill arrives: `get-more-perspective` — the virtual advisory panel,
+built so it cannot collapse into five echoes of the question.
+
+### Added: get-more-perspective (the advisory panel)
+
+- `panel-open` — convene the board: a question, its context and a seat
+  roster. Default: the five-seat board (operator, skeptic, visionary,
+  customer-advocate, finance); `--roles` reshapes it with custom seats.
+  Below two seats the panel is refused as a monologue.
+- `panel-evidence` — table a quoted observation (verbatim, min 20 chars,
+  with source) before the seats that cannot run on vibes speak.
+  `--via tinyfish-search | tinyfish-fetch | fetch-url | conversation |
+  local-file` records how it was gathered; the TinyFish ladder
+  (search → fetch → table) is documented in
+  `references/tinyfish-evidence.md` with the suite's zero-vendor
+  `fetch-url` as the offline fallback.
+- `panel-voice` — one seat's independent opinion. Role-mandated fields are
+  enforced mechanically: the operator must bring an execution path, the
+  skeptic a named risk AND an early-warning trigger, the visionary a
+  concrete opportunity, the customer advocate a segment-specific impact,
+  the finance seat a digit-bearing anchor. The skeptic and finance seats
+  are additionally refused without cited evidence. Token-overlap check
+  refuses two seats reading the same speech (`DUPLICATE_VOICE`); a
+  conditional stance must name its observable condition; one seat speaks
+  once (`--force` revises on the record).
+- `panel-cross` — seat-to-seat cross-examination; unanswered challenges
+  stay OPEN in the report and force a WARN synthesis.
+- `panel-synth` — mechanical verdict: UNANIMOUS_SUPPORT /
+  SUPPORT_WITH_CONDITIONS / MAJORITY_SUPPORT_WITH_DISSENT / SPLIT_PANEL.
+  Manufactured agreement is refused by design: a split renders the map of
+  the split (no joint recommendation) and hands off to decision-review;
+  dissents print in full; a finance dissent is flagged and never buried
+  under a majority. Renders PANEL.md. Synthesis refuses an incomplete
+  board (PANEL_INCOMPLETE, exit 2).
+
+### Added: integration
+
+- SKILL_ROUTES card with TR/EN triggers ("uzmanlar ne düşünür",
+  "danışma paneli", "what would experts think", "advisory panel", ...).
+- The decide playbook routes through the panel between option scoring and
+  the red team: splits go back to decision-review, dissents go to
+  devil-advocate.
+- Skill layer: SKILL.md, `references/panel-roles.md`,
+  `references/tinyfish-evidence.md`, `references/synthesis-rules.md`,
+  `templates/panel-report.md`, `examples/pricing-decision.md`,
+  `agents/openai.yaml`.
+- 15 new workbench tests (TestGetMorePerspective); console: new scenario
+  group (6 scenarios, 64 total) and seeded panel ledgers in the demo
+  workspace.
+- `doctor` now version-checks every skill's workbench copy against the
+  runtime (runs on the shared generator's output).
+
+
 ## 4.0.0 (2026-11-12)
 
 v3.8.0 command set and JSON contract preserved; everything below is additive.

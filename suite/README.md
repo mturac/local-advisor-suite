@@ -1,6 +1,6 @@
-# local-advisor-suite 4.0.0
+# local-advisor-suite 4.1.0
 
-A provider-neutral advisory system — **17 skills + 5 playbooks** that run identically in **Claude Code, Codex, ZCode, Cursor, OpenCode, and any AGENTS.md-compatible agent**.
+A provider-neutral advisory system — **18 skills + 5 playbooks** that run identically in **Claude Code, Codex, ZCode, Cursor, OpenCode, and any AGENTS.md-compatible agent**.
 
 The suite depends on no search vendor, no API key, and no MCP server. When web access is needed, it uses only the search and fetch tools your host already provides. All ledger, scoring, audit and verification work is done by a single standard-library Python file (`workbench.py`) that runs offline and deterministically.
 
@@ -16,6 +16,7 @@ Built on the user's own `workbench.py` and `tools/generate_shared.py`. The v2.1 
 - **Proves before saying "done".** `delivery-verify` runs the real commands and reports the achieved level on the L0-L4 ladder.
 - **Argues back like a red team, not a grump.** `devil-advocate` runs the premortem (the failure story, written before the challenges), takes the outside view (reference class + base rate — a bad base rate with no argued adjustment auto-opens an optimism-bias challenge), attacks load-bearing assumptions in archetype order, maps second-order effects three levels deep, and lets the unanswered attacks decide the verdict mechanically.
 - **Scores its own advice.** `decision-journal` logs decisions with falsifiable predictions and confidences, grades them HIT/MISS/PARTIAL against reality, and reports calibration per confidence band — overconfidence is a flag, not a feeling.
+- **Convenes a real panel, not five echoes.** `get-more-perspective` seats Operator, Skeptic, Visionary, Customer Advocate and Finance at one board: each speaks independently through role-mandated fields (a skeptic without a named risk and trigger signal is refused at the door; finance without a digit-bearing anchor likewise; two seats may not read the same speech), the skeptic and finance seats must cite evidence on the table first — gathered with the TinyFish search/fetch pattern or the suite's own `fetch-url` — and the mechanical synthesis refuses to manufacture agreement: splits stay splits, dissents stay on the record, a finance dissent is never buried.
 - **Remembers honestly.** `knowledge-capture` stores sourced Q&A entries; assumptions are marked, never quoted as fact.
 - **No extra cost.** No paid services. The only command that can open a socket is `fetch-url`, and only with `--allow-network`.
 - **Works everywhere.** One installer, six hosts; `doctor` verifies any installation's health.
@@ -29,6 +30,7 @@ Built on the user's own `workbench.py` and `tools/generate_shared.py`. The v2.1 
 | `decision-review` | Option comparison, ADRs, reversibility (R0-R3), pre-mortem | `decision-score`, `adr-new`, `adr-check` |
 | `decision-journal` | Log decisions with falsifiable predictions; grade them against reality; calibration report | `journal-log`, `journal-resolve`, `journal-report` |
 | `devil-advocate` | Stress-test a plan: premortem, outside view, archetype attack plan, challenges, second-order chains, mechanical verdict | `devil-plan`, `devil-premortem`, `devil-outside`, `devil-challenge`, `devil-consequence`, `devil-rebuttal`, `devil-verdict` |
+| `get-more-perspective` | A virtual advisory panel on any decision or dilemma: five independent seats, evidence-mandated skeptic/finance voices, cross-examination, mechanical verdict that never manufactures agreement | `panel-open`, `panel-evidence`, `panel-voice`, `panel-cross`, `panel-synth` |
 | `local-debug` | A bug in a file you name; at most 2 hypotheses | `debug-hypothesis`, `scope-read --debug-scope`, `debug-report` |
 | `data-analysis` | A data file you name; every number traceable to a logged command | `data-register`, `data-finding`, `data-gap`, `data-report` |
 | `web-search` | Quick verified answers with 1-3 sources | host search/fetch tools + optional ledger |
@@ -73,7 +75,9 @@ The 16th skill (v3.6.0) is `question-contract` — the pre-flight layer that kil
 
 The 17th skill (v3.7.0) is `decision-journal` — the feedback loop that scores the advice, so the suite can tell you it was overconfident before you find out the hard way.
 
-v4.0.0 composes it all: five playbooks chain the skills end-to-end with gates.
+The 18th skill (v4.1.0) is `get-more-perspective` — the advisory panel. Five seats argue independently from role-mandated fields, the skeptic and finance seats must cite evidence tabled first (TinyFish search → fetch pattern, or the suite's zero-vendor `fetch-url`), seats cross-examine each other, and the synthesis is mechanical: UNANIMOUS_SUPPORT / SUPPORT_WITH_CONDITIONS / MAJORITY_SUPPORT_WITH_DISSENT / SPLIT_PANEL — a split is a valid answer, and manufacturing agreement is refused by design.
+
+v4.0.0 composes it all: five playbooks chain the skills end-to-end with gates (the decide playbook now routes through the panel between scoring and the red team).
 
 ## Installation
 
@@ -217,7 +221,7 @@ local-advisor-suite/
 ├── CLAUDE.template.md         # rules block for Claude Code
 ├── CURSOR_RULE.template.mdc   # always-on Cursor rule
 ├── CURSOR_COMMAND.template.md # per-skill Cursor command generator input
-├── skills/<17 skills>/        # SKILL.md, references/, templates/, examples/, agents/, scripts/
+├── skills/<18 skills>/        # SKILL.md, references/, templates/, examples/, agents/, scripts/
 ├── references/ templates/     # shared layer (generate_shared.py writes it)
 ├── .claude-plugin/ .codex-plugin/ .agents/plugins/   # plugin and marketplace manifests
 ├── tools/generate_shared.py   # generates shared files, skill copies; enforces frontmatter limits

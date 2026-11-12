@@ -1,0 +1,5 @@
+interface:
+  display_name: "Get More Perspective"
+  short_description: "Convene a virtual advisory panel — five independent seats with role-mandated fields and evidence-backed skeptic/finance voices; mechanical synthesis that never manufactures agreement"
+policy:
+  allow_implicit_invocation: true

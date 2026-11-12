@@ -8,7 +8,7 @@ This repository contains two things:
 
 | Path | What it is |
 | --- | --- |
-| `suite/` | **Local Advisor Suite v4.0.0** — the offline, vendor-neutral workbench: 59 commands, 17 skills, 5 playbooks, 152+ tests, installer for 6 hosts (Claude Code, Codex, ZCode, Cursor, OpenCode, generic AGENTS.md) |
+| `suite/` | **Local Advisor Suite v4.1.0** — the offline, vendor-neutral workbench: 64 commands, 18 skills, 5 playbooks, 167 tests, installer for 6 hosts (Claude Code, Codex, ZCode, Cursor, OpenCode, generic AGENTS.md) |
 | root | **Web Console** — a bilingual (🇹🇷 TR / 🇬🇧 EN) Next.js 16 app that runs every workbench command against a seeded demo workspace, no setup required |
 
 ![Console](public/console.png)
@@ -53,7 +53,7 @@ See `suite/README.md` for the full suite documentation, and `suite/CHANGELOG.md`
 | Tab | Ne yapar (TR) | What you can do (EN) |
 | --- | --- | --- |
 | **Hikâyeler / Stories** | Baştan sona anlatılan senaryolar: soldan hikâyeyi seç, *Tümünü çalıştır*'a bas; her adımın ne yaptığını, komutunu ve "şu görünecek" kutusunu gör, sonunda gerçek bir dosyayla bitir | Guided end-to-end stories — each step explained in plain language with its exact command, a "you'll see" preview, and its real result; ends with a real artifact (evidence pack, handoff, root-cause report, ADR) |
-| **Komut Dene / Try Commands** | 47 komutun tamamı hazır argümanlarla, tek tıkla; istersen kendi argümanlarınla çalıştır | Sandbox for single commands: one-click examples for all 47 commands, auto-generated argument forms, raw JSON output |
+| **Komut Dene / Try Commands** | 64 senaryonun tamamı hazır argümanlarla, tek tıkla; istersen kendi argümanlarınla çalıştır | Sandbox for single commands: one-click examples for all 64 scenarios, auto-generated argument forms, raw JSON output |
 | **Beceriler / Skills** | 15 beceriyi gez, SKILL.md'leri oku | Browse the 15 bundled skills, read each `SKILL.md` and its bundled examples |
 | **Sağlık / Health** | Tek tıkla `doctor` ve `selfcheck` | One-click `doctor` (per-check health table) and `selfcheck` (vendor-neutrality scan) |
 | **Dosyalar / Files** | Canlı defterleri ve üretilen dosyaları incele, tek tıkla sıfırla | Inspect live ledgers and generated artifacts, reset everything |
@@ -70,7 +70,7 @@ Four walkthrough stories ship today (all bilingual, all validated end to end):
 
 Every step sequence is validated end to end by `scripts/test_walkthroughs.py` (fresh seeded workspace, expected exit codes and statuses, deliverable files checked on disk — 36/36 passing), and the UI data (including the Turkish/English text for every step) is generated from the same `scripts/walkthroughs.json` via `scripts/gen_walkthroughs_ts.py`.
 
-For single commands, the **one-click examples** cover all 47 commands with pre-filled working arguments; amber chips (e.g. `research-init`, `spec-new`, `review-init`, `devil-open`) wipe their ledger first, and the demo data can be restored anytime with *Reset workspace*.
+For single commands, the **one-click examples** cover all 64 scenarios with pre-filled working arguments; amber chips (e.g. `research-init`, `spec-new`, `review-init`, `devil-open`) wipe their ledger first, and the demo data can be restored anytime with *Reset workspace*.
 
 ## Repository layout
 
@@ -78,7 +78,7 @@ For single commands, the **one-click examples** cover all 47 commands with pre-f
 ├── suite/                    # Local Advisor Suite v4.0.0 (self-contained)
 │   ├── workbench.py          # 47-command CLI (JSON in, JSON out)
 │   ├── install.py            # 6-host installer / uninstaller
-│   ├── skills/               # 17 skills with references/templates/examples
+│   ├── skills/               # 18 skills with references/templates/examples
 │   ├── tests/                # 125 tests (run_tests.sh)
 │   └── references/ templates/ tools/
 ├── src/
@@ -92,7 +92,7 @@ For single commands, the **one-click examples** cover all 47 commands with pre-f
 │   ├── walkthroughs.json      # guided end-to-end flows (single source of truth)
 │   ├── test_walkthroughs.py   # validates every flow against a fresh seed
 │   ├── gen_walkthroughs_ts.py # walkthroughs.json → src/lib/walkthroughs.ts
-│   ├── scenarios.json         # one-command examples for all 43 commands
+│   ├── scenarios.json         # one-command examples for all 64 scenarios
 │   ├── test_scenarios.py      # validates every scenario against a fresh seed
 │   └── gen_scenarios_ts.py    # scenarios.json → src/lib/scenarios.ts
 ├── prisma/schema.prisma      # RunLog model (run history)

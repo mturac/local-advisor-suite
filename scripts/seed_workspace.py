@@ -332,6 +332,74 @@ def seed():
                       "isolation is a folder wipe that costs milliseconds",
         "--basis", "constraint: commands run in-process against --state-dir"))
 
+    # ---- get-more-perspective panel --------------------------------------
+    step("panel-open", lambda: wb(
+        "panel-open",
+        "--question", "Should we raise the demo console's Pro plan price from 29 to 39 dollars",
+        "--context", "42 paying customers, 3 competitors at 25-35, churn 3 percent monthly, "
+                     "no price change in 2 years"))
+    step("panel-evidence EV1", lambda: wb(
+        "panel-evidence",
+        "--via", "tinyfish-fetch",
+        "--source-url", "https://competitor.example.com/pricing",
+        "--quote", "Competitor X Pro tier: 34 per seat per month, billed yearly, includes SSO",
+        "--label", "EV1"))
+    step("panel-evidence EV2", lambda: wb(
+        "panel-evidence",
+        "--via", "conversation",
+        "--quote", "Finance: monthly churn has been 3 percent for two years, concentrated in "
+                   "single-seat accounts",
+        "--label", "EV2"))
+    step("panel-voice operator", lambda: wb(
+        "panel-voice", "--role", "operator", "--stance", "support",
+        "--path", "Draft the pricing page copy and in-app notice; run the rollout behind a "
+                  "10 percent canary for two weeks",
+        "--confidence", "70",
+        "--reasoning", "The change is one config flag plus copy; support tooling already "
+                       "handles plan amounts and no migration is needed until renewal"))
+    step("panel-voice skeptic", lambda: wb(
+        "panel-voice", "--role", "skeptic", "--stance", "oppose",
+        "--risk", "Price-sensitive segment churns at renewal; the 3 percent baseline hides a "
+                  "top-20-accounts concentration",
+        "--trigger", "Two canary accounts request export of their data within the first week "
+                     "of the announcement",
+        "--evidence", "EV1", "--confidence", "65",
+        "--reasoning", "The biggest accounts sit in the exact band this raise hits; the "
+                       "reference class for ten-dollar raises shows churn spiking at the "
+                       "first renewal cycle, and no cohort data argues ours differs"))
+    step("panel-voice visionary", lambda: wb(
+        "panel-voice", "--role", "visionary", "--stance", "support",
+        "--opportunity", "The higher tier funds the roadmap customers actually ask for: "
+                         "SSO, audit log and the API",
+        "--confidence", "75",
+        "--reasoning", "Pricing signals seriousness; the raise funds the enterprise-leaning "
+                       "roadmap and repositions the product one bracket up, attracting "
+                       "larger accounts rather than repelling them"))
+    step("panel-voice customer-advocate", lambda: wb(
+        "panel-voice", "--role", "customer-advocate", "--stance", "conditional",
+        "--impact", "Freelancer segment sees a 34 percent jump at renewal; agencies with 5+ "
+                    "seats barely notice",
+        "--condition", "Existing customers keep their current price for 12 months and only "
+                       "new signups pay 39",
+        "--confidence", "60",
+        "--reasoning", "The freelancer segment matches the competitor we would undercut by "
+                       "leaving; grandfathering converts the raise into an acquisition-only "
+                       "change and removes the loyalty penalty"))
+    step("panel-voice finance", lambda: wb(
+        "panel-voice", "--role", "finance", "--stance", "support",
+        "--number", "At 29 with 42 customers MRR is 1218; at 39 with 15 percent churn it is "
+                    "1390, breakeven at 12 percent churn",
+        "--evidence", "EV1,EV2", "--confidence", "80",
+        "--reasoning", "Churn tolerance is wide: revenue stays flat up to a 25 percent "
+                       "customer loss at 39 dollars, and the competitor at 34 confirms "
+                       "headroom; the raise is revenue-positive short of catastrophic churn"))
+    step("panel-cross operator->skeptic", lambda: wb(
+        "panel-cross", "--from-role", "operator", "--to-role", "skeptic",
+        "--challenge", "The canary rollout catches the churn signal before it spreads; your "
+                       "trigger is observable in week one",
+        "--response", "The canary measures announcement shock, not renewal-cycle churn; "
+                      "renewals land 30 days later"))
+
     # ---- advisory, decision, debug, adr, artifact, handoff ---------------
     step("advise-intake", lambda: wb(
         "advise-intake",

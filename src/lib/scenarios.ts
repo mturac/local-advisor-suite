@@ -119,6 +119,18 @@ export const SCENARIO_GROUPS: ScenarioGroup[] = [
     ],
   },
   {
+    title: "Get More Perspective",
+    titleTr: "Farklı Bakış Açıları",
+    scenarios: [
+      { label: "load-skills → panel (TR)", command: "load-skills", argv: ["--prompt", "uzmanlar ne düşünür: fiyatlandırmayı değiştirmeli miyiz, danışma paneli kur"], note: "Route a perspectives ask to the panel skill; returns the brief with the read order and first command", noteTr: "Perspektif talebini panel becerisine yönlendirir; okuma sırası ve ilk komutla brief döner" },
+      { label: "panel-voice (skeptic, evidence-mandated)", command: "panel-voice", argv: ["--role", "skeptic", "--stance", "oppose", "--force", "--risk", "The canary measures announcement shock only; renewal-cycle churn stays invisible until month two", "--trigger", "Renewal-day downgrades exceed 5 percent in the first billing cycle after the raise", "--evidence", "EV1", "--confidence", "60", "--reasoning", "Revising the risk after the operator's challenge: the canary cannot see renewal churn, so the watch must move to the first billing cycle after the raise lands"], note: "A seat revises its opinion with --force; role-mandated fields (risk + trigger + evidence) are enforced", noteTr: "Bir koltuk görüşünü --force ile revize eder; role zorunlu alanlar (risk + tetik + kanıt) denetlenir" },
+      { label: "panel-evidence (table a quote)", command: "panel-evidence", argv: ["--via", "fetch-url", "--source-url", "https://status.example.com/incidents/2026-pricing", "--quote", "Incident report: pricing page showed mixed prices for 40 minutes during the last change", "--label", "EV3"], note: "Table a verbatim quote with its source; the skeptic and finance seats must cite labels like this before speaking", noteTr: "Kaynağıyla birebir alıntıyı masaya koyar; skeptic ve finance koltukları konuşmadan önce böyle etiketler atıf almalı" },
+      { label: "panel-cross (open challenge)", command: "panel-cross", argv: ["--from-role", "finance", "--to-role", "customer-advocate", "--challenge", "Grandfathering for 12 months delays the revenue effect by four renewal cycles; does your condition survive contact with the budget"], note: "One seat challenges another; leave --response off and the challenge stays OPEN in the report", noteTr: "Bir koltuk diğerini sorgular; --response verilmezse itiraz raporda OPEN olarak kalır" },
+      { label: "panel-synth", command: "panel-synth", argv: [], note: "Mechanical verdict — UNANIMOUS / CONDITIONS / MAJORITY_WITH_DISSENT / SPLIT; manufactured agreement is refused and a finance dissent is never buried. Renders PANEL.md", noteTr: "Mekanik karar — oybirliği / koşullu / çoğunluk-itirazlı / bölünmüş; yapay uzlaşı reddedilir, finance itirazı asla gömülmez. PANEL.md üretir", resets: true },
+      { label: "panel-open (reconvene)", command: "panel-open", argv: ["--force", "--question", "Should the console ship usage-based pricing instead of seats", "--context", "Panel round two: same competitor set, plus metering telemetry from the last quarter"], note: "Reconvene the board with --force (wipes opinions, evidence and cross-examinations); --roles reshapes the seats", noteTr: "Panelden --force ile yeniden toplanır (görüş, kanıt ve sorgular silinir); --roles koltukları yeniden kurar", resets: true },
+    ],
+  },
+  {
     title: "Decision journal",
     titleTr: "Karar defteri",
     scenarios: [
@@ -172,4 +184,4 @@ export const SCENARIO_GROUPS: ScenarioGroup[] = [
   },
 ]
 
-export const SCENARIO_COUNT = 58
+export const SCENARIO_COUNT = 64

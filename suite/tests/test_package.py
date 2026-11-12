@@ -1,4 +1,4 @@
-"""Package consistency tests: 17 skills, frontmatter contracts, generated-file drift, docs."""
+"""Package consistency tests: 18 skills, frontmatter contracts, generated-file drift, docs."""
 import json
 import re
 import subprocess
@@ -13,7 +13,7 @@ EXPECTED_SKILLS = {
     "local-advisor", "decision-review", "local-debug", "web-search", "deep-research",
     "wide-search", "evidence-audit", "delivery-verify", "artifact-studio", "session-handoff",
     "spec-builder", "code-review", "knowledge-capture", "data-analysis", "devil-advocate",
-    "question-contract", "decision-journal",
+    "question-contract", "decision-journal", "get-more-perspective",
 }
 
 FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.S)
@@ -33,7 +33,7 @@ def frontmatter(text):
 
 
 class TestSkillLayer(unittest.TestCase):
-    def test_17_skills_present(self):
+    def test_18_skills_present(self):
         found = {p.parent.name for p in (ROOT / "skills").glob("*/SKILL.md")}
         self.assertEqual(found, EXPECTED_SKILLS, f"skill set mismatch: {found ^ EXPECTED_SKILLS}")
 
@@ -87,6 +87,8 @@ class TestSkillLayer(unittest.TestCase):
                            "second-order-effects.md", "falsification.md"},
             "question-contract": {"contract-fields.md", "vague-terms.md"},
             "decision-journal": {"journal-discipline.md", "calibration.md"},
+            "get-more-perspective": {"panel-roles.md", "tinyfish-evidence.md",
+                                    "synthesis-rules.md"},
         }
         for skill, refs in required.items():
             for ref in refs:
@@ -108,6 +110,7 @@ class TestSkillLayer(unittest.TestCase):
             ("devil-advocate", "challenge-report.md"),
             ("question-contract", "question-contract.md"),
             ("decision-journal", "decision-entry.md"),
+            ("get-more-perspective", "panel-report.md"),
         ]
         for skill, tpl in pairs:
             self.assertTrue((ROOT / "skills" / skill / "templates" / tpl).is_file(),
@@ -161,7 +164,7 @@ class TestSharedLayer(unittest.TestCase):
             self.assertTrue(p.is_file(), f"missing {mf}")
             json.loads(p.read_text(encoding="utf-8"))  # must parse
         plugin = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
-        self.assertEqual(plugin["version"], "4.0.0")
+        self.assertEqual(plugin["version"], "4.1.0")
         self.assertEqual(plugin["skills"], "./skills/")
 
     def test_host_compatibility_covers_six_hosts(self):
@@ -179,12 +182,12 @@ class TestVersionConsistency(unittest.TestCase):
     def test_versions_align_everywhere(self):
         import workbench
         import install
-        self.assertEqual(workbench.VERSION, "4.0.0")
-        self.assertEqual(install.VERSION, "4.0.0")
+        self.assertEqual(workbench.VERSION, "4.1.0")
+        self.assertEqual(install.VERSION, "4.1.0")
         gen = (ROOT / "tools" / "generate_shared.py").read_text(encoding="utf-8")
-        self.assertIn('VERSION = "4.0.0"', gen)
+        self.assertIn('VERSION = "4.1.0"', gen)
         plugin = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
-        self.assertEqual(plugin["version"], "4.0.0")
+        self.assertEqual(plugin["version"], "4.1.0")
         manifest_like = (ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8")
         self.assertIn("17", manifest_like)
 
@@ -193,7 +196,7 @@ class TestVersionConsistency(unittest.TestCase):
             proc = subprocess.run([sys.executable, str(ROOT / script), "--version"],
                                   capture_output=True, text=True, timeout=60)
             self.assertEqual(proc.returncode, 0)
-            self.assertIn("4.0.0", proc.stdout + proc.stderr)
+            self.assertIn("4.1.0", proc.stdout + proc.stderr)
 
 
 class TestDocs(unittest.TestCase):

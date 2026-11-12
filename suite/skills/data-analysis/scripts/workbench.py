@@ -87,6 +87,20 @@ Capabilities:
     chains, archetype attack plans), a pre-flight question contract, a
     decision journal with calibration scoring, and five playbooks that
     compose the skills into end-to-end chains with gates.
+14. v4.1 additions (additive only):
+   - get-more-perspective advisory panel: panel-open (convene the board —
+     five default seats or a custom roster), panel-evidence (quoted
+     observations on the table, gathered via the TinyFish search/fetch
+     pattern or the suite's own fetch-url; the skeptic and finance
+     seats may not speak without them), panel-voice (independent,
+     role-mandated opinions — a skeptic without a named risk and trigger
+     signal is refused at the door, finance without a digit-bearing
+     anchor likewise, and two seats may not read the same speech),
+     panel-cross (seat-to-seat challenges that stay OPEN until answered),
+     panel-synth (mechanical verdict: UNANIMOUS_SUPPORT /
+     SUPPORT_WITH_CONDITIONS / MAJORITY_SUPPORT_WITH_DISSENT /
+     SPLIT_PANEL — manufactured agreement is forbidden, a split stays a
+     split, and a finance dissent is never buried under a majority).
 
 Network policy: the only command that can open a socket is `fetch-url`, and only
 with --allow-network. Every other command is offline and deterministic.
@@ -112,7 +126,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 
-VERSION = "4.0.0"
+VERSION = "4.1.0"
 DEFAULT_STATE_DIR = ".local-workbench"
 MAX_FILE_BYTES = 512 * 1024  # 512 KB cap for scoped local file reads
 MAX_SCAN_FILES = 200
@@ -3576,6 +3590,515 @@ def cmd_journal_report(args: argparse.Namespace) -> Dict[str, Any]:
     }
 
 
+# ---------------------------------------------------- get-more-perspective
+# The virtual advisory panel. Five default seats — operator, skeptic,
+# visionary, customer-advocate, finance — each speaking independently
+# through its own lens with role-mandated fields. Evidence comes first
+# for the seats that cannot run on vibes (skeptic, finance). The
+# synthesis is mechanical and forbidden from manufacturing agreement:
+# splits stay splits, dissents stay on the record, and a finance
+# dissent is never buried under a majority.
+
+PANEL_LEDGER_NAME = "panel_ledger.json"
+PANEL_REPORT_NAME = "PANEL.md"
+
+PANEL_STANCES = ("support", "oppose", "conditional")
+PANEL_EVIDENCE_VIA = ("tinyfish-search", "tinyfish-fetch", "fetch-url",
+                      "conversation", "local-file")
+PANEL_EVIDENCE_URL_REQUIRED = ("tinyfish-search", "tinyfish-fetch", "fetch-url")
+
+PANEL_ROLE_LENS = {
+    "operator": "execution and delivery — can this ship with the people, time and tooling that exist",
+    "skeptic": "risk and failure modes — what breaks first, and which signal says so early",
+    "visionary": "opportunity and upside — what this makes possible that nothing else on the table does",
+    "customer-advocate": "user impact — whose life changes, in which direction, by how much",
+    "finance": "the numbers — cost, revenue, payback; arithmetic needs an anchor",
+}
+
+# Role-mandated voice fields: flag -> (what it demands, min length)
+PANEL_ROLE_FIELDS: Dict[str, Dict[str, Tuple[str, int]]] = {
+    "operator": {"path": ("the first concrete execution step, with an owner in mind", 20)},
+    "skeptic": {
+        "risk": ("the named risk, specific enough that someone could check it", 20),
+        "trigger": ("the early-warning signal that the risk is materializing", 20),
+    },
+    "visionary": {"opportunity": ("the concrete upside this creates, not a mood", 20)},
+    "customer-advocate": {"impact": ("whose life changes and how — a segment, not 'users'", 20)},
+    "finance": {"number": ("the numeric anchor this stance rests on (must contain a digit)", 15)},
+}
+
+PANEL_EVIDENCE_MANDATORY_ROLES = ("skeptic", "finance")
+
+_PANEL_TR_MAP = str.maketrans("çÇğĞıİöÖşŞüÜâÂîÎûÛ", "cCgGiIoOsSuUaAiIuU")
+
+
+def _load_panel_ledger(state_dir: Path) -> Tuple[Path, Dict[str, Any]]:
+    ensure_state_dir(state_dir)
+    path = state_dir / PANEL_LEDGER_NAME
+    if not path.exists():
+        raise WorkbenchError(
+            "PANEL_NO_SESSION",
+            "No advisory panel is convened. Start one: panel-open --question \"...\" "
+            "--context \"...\" (default: the five-seat board; --roles to reshape it).",
+        )
+    return path, load_json(path, {})
+
+
+def _panel_role_norm(name: str) -> str:
+    slug = re.sub(r"[^a-z0-9-]+", "-", name.strip().lower().translate(_PANEL_TR_MAP)).strip("-")
+    return slug
+
+
+def _panel_tokens(text: str) -> set:
+    return {w for w in re.findall(r"[a-zçğıöşüâîû0-9]+", text.lower()) if len(w) > 3}
+
+
+def _voice_overlap(a: str, b: str) -> float:
+    """Jaccard overlap of the meaningful tokens of two opinions — the
+    independence check. Two seats reading the same speech is theater."""
+    ta, tb = _panel_tokens(a), _panel_tokens(b)
+    if not ta or not tb:
+        return 0.0
+    return len(ta & tb) / len(ta | tb)
+
+
+def cmd_panel_open(args: argparse.Namespace) -> Dict[str, Any]:
+    state_dir = ensure_state_dir(Path(args.state_dir))
+    path = state_dir / PANEL_LEDGER_NAME
+    question = args.question.strip()
+    context = args.context.strip()
+    if len(question) < 20:
+        raise WorkbenchError("QUESTION_TOO_SHORT",
+                             "State the question for the panel in at least 20 characters — "
+                             "a panel convened on a vague question returns five vague answers.")
+    if len(context) < 20:
+        raise WorkbenchError("CONTEXT_TOO_SHORT",
+                             "Give the panel its context in at least 20 characters — the options "
+                             "on the table, the constraints, what is already decided.")
+    if path.exists() and not args.force:
+        raise WorkbenchError("PANEL_SESSION_EXISTS",
+                             f"{path} already holds a convened panel. Pass --force to reconvene "
+                             "(opinions, evidence and cross-examinations are wiped).")
+    raw = [r for r in (role.strip() for role in args.roles.split(",")) if r]
+    if len(raw) < 2:
+        raise WorkbenchError("PANEL_TOO_SMALL",
+                             "A panel needs at least two seats — below that it is a monologue.")
+    roles: List[Dict[str, Any]] = []
+    seen = set()
+    for r in raw:
+        slug = _panel_role_norm(r)
+        if not slug:
+            continue
+        if slug in seen:
+            raise WorkbenchError("DUPLICATE_ROLE",
+                                 f"Seat '{slug}' appears twice in the roster — one seat, one voice.")
+        seen.add(slug)
+        known = slug in PANEL_ROLE_LENS
+        roles.append({
+            "name": slug,
+            "lens": PANEL_ROLE_LENS[slug] if known else
+                   f"custom seat — '{r.strip()}' as the convenor named it; keep its lens consistent",
+            "custom": not known,
+        })
+    if not roles:
+        raise WorkbenchError("PANEL_TOO_SMALL", "No usable seat names in --roles.")
+    ledger = {
+        "question": question,
+        "context": context,
+        "roles": roles,
+        "voices": [],
+        "evidence": [],
+        "cross_examinations": [],
+        "status": "OPEN",
+        "verdict": None,
+        "created_at": utc_now_iso(),
+        "updated_at": utc_now_iso(),
+    }
+    save_json(path, ledger)
+    return {
+        "status": "OK",
+        "question": question,
+        "panel": [{"seat": r["name"], "lens": r["lens"]} for r in roles],
+        "seat_count": len(roles),
+        "next": "Gather evidence before the skeptic and finance seats speak "
+                "(panel-evidence), then panel-voice --role ... for every seat.",
+    }
+
+
+def cmd_panel_evidence(args: argparse.Namespace) -> Dict[str, Any]:
+    path, ledger = _load_panel_ledger(Path(args.state_dir))
+    if ledger.get("status") != "OPEN":
+        raise WorkbenchError("PANEL_CLOSED",
+                             "This panel already has a synthesis. Reconvene (panel-open --force) "
+                             "to table new evidence.")
+    quote = args.quote.strip()
+    if len(quote) < 20:
+        raise WorkbenchError("QUOTE_TOO_SHORT",
+                             "Quote the observation in at least 20 characters — verbatim, not "
+                             "paraphrased; the panel argues about what was actually seen.")
+    source_url = (args.source_url or "").strip()
+    via = args.via
+    if via in PANEL_EVIDENCE_URL_REQUIRED and not source_url:
+        raise WorkbenchError("SOURCE_URL_REQUIRED",
+                             f"Evidence gathered via '{via}' must name the URL it came from.")
+    if source_url:
+        parsed = urllib.parse.urlparse(source_url if "://" in source_url else f"https://{source_url}")
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+            raise WorkbenchError("BAD_SOURCE_URL",
+                                 f"'{source_url}' is not an http(s) URL evidence can be checked at.")
+    existing = {e["label"] for e in ledger["evidence"]}
+    label = (args.label or "").strip() or f"EV{len(ledger['evidence']) + 1}"
+    if label in existing:
+        raise WorkbenchError("EVIDENCE_LABEL_EXISTS",
+                             f"Evidence label '{label}' is already on the table.")
+    entry = {
+        "label": label,
+        "quote": quote,
+        "source_url": source_url or None,
+        "via": via,
+        "note": (args.note or "").strip() or None,
+        "recorded_at": utc_now_iso(),
+    }
+    ledger["evidence"].append(entry)
+    ledger["updated_at"] = utc_now_iso()
+    save_json(path, ledger)
+    return {
+        "status": "OK",
+        "evidence": entry,
+        "evidence_count": len(ledger["evidence"]),
+        "next": "panel-voice --role ... --evidence " + label,
+    }
+
+
+def cmd_panel_voice(args: argparse.Namespace) -> Dict[str, Any]:
+    path, ledger = _load_panel_ledger(Path(args.state_dir))
+    if ledger.get("status") != "OPEN":
+        raise WorkbenchError("PANEL_CLOSED",
+                             "This panel already has a synthesis. Reconvene (panel-open --force) "
+                             "before seating new opinions.")
+    role = _panel_role_norm(args.role)
+    roster = {r["name"]: r for r in ledger["roles"]}
+    if role not in roster:
+        raise WorkbenchError("PANEL_NO_SUCH_ROLE",
+                             f"There is no '{role}' seat at this panel. Seats convened: "
+                             f"{', '.join(roster)}.", {"seats": sorted(roster)})
+    prior = next((v for v in ledger["voices"] if v["role"] == role), None)
+    if prior and not args.force:
+        raise WorkbenchError("ROLE_ALREADY_SPOKE",
+                             f"The '{role}' seat has already spoken. Pass --force to replace its "
+                             "opinion (a seat speaks once; revisions are on the record).")
+    stance = args.stance
+    reasoning = args.reasoning.strip()
+    if len(reasoning) < 80:
+        raise WorkbenchError("REASONING_TOO_SHORT",
+                             "Deliver this seat's reasoning in at least 80 characters — shorter "
+                             "than that is a mood, not an opinion the panel can weigh.")
+    condition = (args.condition or "").strip()
+    if stance == "conditional" and len(condition) < 20:
+        raise WorkbenchError("CONDITION_REQUIRED",
+                             "A conditional stance must name its condition (min 20 chars): on "
+                             "what observable state does support flip to oppose?")
+    if stance != "conditional":
+        condition = ""
+    confidence = args.confidence
+    if not 0 <= confidence <= 100:
+        raise WorkbenchError("CONFIDENCE_RANGE", "Confidence is 0-100.")
+    # Independence: two seats may not read the same speech.
+    for v in ledger["voices"]:
+        if v["role"] != role:
+            overlap = _voice_overlap(v["reasoning"], reasoning)
+            if overlap > 0.8:
+                raise WorkbenchError(
+                    "DUPLICATE_VOICE",
+                    f"This opinion is near-identical to the '{v['role']}' seat's — two seats "
+                    "reading the same speech is theater, not perspective. Argue from this "
+                    "seat's own lens.",
+                    {"collides_with": v["role"], "overlap": round(overlap, 2)},
+                )
+    # Role-mandated fields: each built-in seat must bring its own artifact.
+    role_fields: Dict[str, str] = {}
+    for flag, (demand, min_len) in PANEL_ROLE_FIELDS.get(role, {}).items():
+        value = (getattr(args, flag) or "").strip()
+        if len(value) < min_len:
+            raise WorkbenchError(
+                f"{flag.upper()}_REQUIRED",
+                f"The '{role}' seat must bring {demand} (min {min_len} chars) — this field is "
+                "what makes the seat itself rather than a costume.",
+            )
+        if flag == "number" and not re.search(r"\d", value):
+            raise WorkbenchError("NUMBER_NEEDS_DIGIT",
+                                 "The finance seat's anchor must contain at least one digit — "
+                                 "'significant cost' is not a number.")
+        role_fields[flag] = value
+    # Evidence mandate: skeptic and finance do not run on vibes.
+    evidence_labels = [e.strip() for e in (args.evidence or "").split(",") if e.strip()]
+    if role in PANEL_EVIDENCE_MANDATORY_ROLES and not evidence_labels:
+        raise WorkbenchError("EVIDENCE_REQUIRED_FOR_ROLE",
+                             f"The '{role}' seat may not speak without evidence on the table — "
+                             "table it first (panel-evidence), then cite it (--evidence EV1,...).")
+    known_labels = {e["label"] for e in ledger["evidence"]}
+    for lbl in evidence_labels:
+        if lbl not in known_labels:
+            raise WorkbenchError("UNKNOWN_EVIDENCE",
+                                 f"Evidence '{lbl}' is not on the table. Recorded: "
+                                 f"{', '.join(sorted(known_labels)) or 'none yet'}.")
+    voice = {
+        "id": f"V{len(ledger['voices']) + 1}",
+        "role": role,
+        "stance": stance,
+        "reasoning": reasoning,
+        "condition": condition or None,
+        "confidence": confidence,
+        "role_fields": role_fields,
+        "evidence": evidence_labels,
+        "recorded_at": utc_now_iso(),
+    }
+    if prior:
+        ledger["voices"] = [v if v["role"] != role else voice for v in ledger["voices"]]
+    else:
+        ledger["voices"].append(voice)
+    ledger["updated_at"] = utc_now_iso()
+    save_json(path, ledger)
+    spoken = {v["role"] for v in ledger["voices"]}
+    missing = [r for r in roster if r not in spoken]
+    return {
+        "status": "OK",
+        "voice": voice,
+        "coverage": f"{len(spoken)}/{len(roster)} seats have spoken",
+        "awaiting": missing,
+        "next": "panel-synth" if not missing else f"panel-voice --role {missing[0]} ...",
+    }
+
+
+def cmd_panel_cross(args: argparse.Namespace) -> Dict[str, Any]:
+    path, ledger = _load_panel_ledger(Path(args.state_dir))
+    if ledger.get("status") != "OPEN":
+        raise WorkbenchError("PANEL_CLOSED",
+                             "This panel already has a synthesis. Reconvene (panel-open --force) "
+                             "before new cross-examination.")
+    frm = _panel_role_norm(args.from_role)
+    to = _panel_role_norm(args.to_role)
+    roster = {r["name"] for r in ledger["roles"]}
+    for slug in (frm, to):
+        if slug not in roster:
+            raise WorkbenchError("PANEL_NO_SUCH_ROLE",
+                                 f"There is no '{slug}' seat at this panel. Seats convened: "
+                                 f"{', '.join(sorted(roster))}.")
+    if frm == to:
+        raise WorkbenchError("CROSS_SELF",
+                             "A seat cannot cross-examine itself — that is called deliberation.")
+    spoken = {v["role"] for v in ledger["voices"]}
+    if frm not in spoken or to not in spoken:
+        raise WorkbenchError("VOICE_MISSING",
+                             "Both seats must have spoken before one can challenge the other "
+                             "(panel-voice).", {"spoken": sorted(spoken)})
+    challenge = args.challenge.strip()
+    if len(challenge) < 20:
+        raise WorkbenchError("CHALLENGE_TOO_SHORT",
+                             "State the challenge in at least 20 characters — what exactly in "
+                             "the other seat's opinion does not hold?")
+    response = (args.response or "").strip()
+    if args.response is not None and len(response) < 20:
+        raise WorkbenchError("RESPONSE_TOO_SHORT",
+                             "A response shorter than 20 characters is a shrug — answer it or "
+                             "leave it open.")
+    cross = {
+        "id": f"X{len(ledger['cross_examinations']) + 1}",
+        "from": frm,
+        "to": to,
+        "challenge": challenge,
+        "response": response or None,
+        "resolved": bool(response),
+        "recorded_at": utc_now_iso(),
+    }
+    ledger["cross_examinations"].append(cross)
+    ledger["updated_at"] = utc_now_iso()
+    save_json(path, ledger)
+    return {
+        "status": "OK",
+        "cross": cross,
+        "open_challenges": [c["id"] for c in ledger["cross_examinations"] if not c["resolved"]],
+        "next": "panel-synth when every seat has spoken",
+    }
+
+
+def _panel_verdict(voices: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Mechanical synthesis: count the stances, name the verdict, forbid
+    manufactured agreement. A split stays a split — averaging opposing
+    opinions into 'consensus' is how panels launder disagreement."""
+    stances = [v["stance"] for v in voices]
+    support = stances.count("support")
+    oppose = stances.count("oppose")
+    conditional = stances.count("conditional")
+    finance_voice = next((v for v in voices if v["role"] == "finance"), None)
+    finance_dissent = bool(finance_voice and finance_voice["stance"] == "oppose")
+    if oppose == 0 and conditional == 0:
+        verdict = "UNANIMOUS_SUPPORT"
+    elif oppose == 0:
+        verdict = "SUPPORT_WITH_CONDITIONS"
+    elif support > oppose:
+        verdict = "MAJORITY_SUPPORT_WITH_DISSENT"
+    else:
+        verdict = "SPLIT_PANEL"
+    return {
+        "verdict": verdict,
+        "support": support,
+        "oppose": oppose,
+        "conditional": conditional,
+        "finance_dissent": finance_dissent,
+    }
+
+
+def _render_panel_report(ledger: Dict[str, Any], synth: Dict[str, Any]) -> str:
+    lines: List[str] = []
+    lines.append(f"# Panel Report: {ledger['question']}")
+    lines.append("")
+    lines.append(f"**Context**: {ledger['context']}")
+    lines.append("")
+    lines.append("## The panel")
+    lines.append("")
+    lines.append("| Seat | Lens | Spoke |")
+    lines.append("|------|------|-------|")
+    spoken = {v["role"] for v in ledger["voices"]}
+    for r in ledger["roles"]:
+        lines.append(f"| {r['name']} | {r['lens']} | {'yes' if r['name'] in spoken else 'NO'} |")
+    lines.append("")
+    if ledger["evidence"]:
+        lines.append("## Evidence on the table")
+        lines.append("")
+        for e in ledger["evidence"]:
+            src = e["source_url"] or "(from conversation)"
+            lines.append(f"- **{e['label']}** [{e['via']}] \"{e['quote']}\" — {src}")
+            if e.get("note"):
+                lines.append(f"  - note: {e['note']}")
+        lines.append("")
+    lines.append("## Independent opinions")
+    lines.append("")
+    for v in ledger["voices"]:
+        lines.append(f"### {v['role']} — {v['stance'].upper()} (confidence {v['confidence']})")
+        lines.append("")
+        for flag, value in (v.get("role_fields") or {}).items():
+            lines.append(f"- **{flag}**: {value}")
+        if v.get("condition"):
+            lines.append(f"- **condition**: {v['condition']}")
+        if v.get("evidence"):
+            lines.append(f"- **evidence**: {', '.join(v['evidence'])}")
+        lines.append("")
+        lines.append(v["reasoning"])
+        lines.append("")
+    if ledger["cross_examinations"]:
+        lines.append("## Cross-examination")
+        lines.append("")
+        for c in ledger["cross_examinations"]:
+            lines.append(f"- **{c['id']}** {c['from']} → {c['to']}: {c['challenge']}")
+            if c.get("response"):
+                lines.append(f"  - {c['to']} answers: {c['response']}")
+            else:
+                lines.append(f"  - **OPEN** — {c['to']} has not answered this challenge.")
+        lines.append("")
+    lines.append("## Where the panel stands")
+    lines.append("")
+    lines.append(f"{synth['support']} support · {synth['conditional']} conditional · "
+                 f"{synth['oppose']} oppose")
+    lines.append("")
+    lines.append(f"## Panel verdict: {synth['verdict']}")
+    lines.append("")
+    if synth["verdict"] == "UNANIMOUS_SUPPORT":
+        lines.append("Every seat supports. The joint recommendation is the question's proposal "
+                     "with each seat's role_fields as its execution checklist.")
+    elif synth["verdict"] == "SUPPORT_WITH_CONDITIONS":
+        lines.append("The panel supports **only under the named conditions** — the conditions "
+                     "are the recommendation; treat them as gates, not footnotes.")
+    elif synth["verdict"] == "MAJORITY_SUPPORT_WITH_DISSENT":
+        lines.append("A majority supports, but the dissent below is part of the record, not "
+                     "a rounding error — carry it to whoever signs off.")
+    else:
+        lines.append("**The panel does not agree, and this report refuses to average the "
+                     "disagreement into a recommendation.** What follows is the map of the "
+                     "split; resolving it needs a decision process (decision-review), not a "
+                     "vote.")
+    lines.append("")
+    if synth["finance_dissent"] and synth["verdict"] != "SPLIT_PANEL":
+        lines.append("### The finance seat dissents")
+        lines.append("")
+        lines.append("The numbers seat opposes — this is never buried under a majority. Its "
+                     "full opinion is above; the arithmetic must be answered before the "
+                     "recommendation is acted on.")
+        lines.append("")
+    dissents = [v for v in ledger["voices"] if v["stance"] == "oppose"]
+    if dissents:
+        lines.append("### Dissent on the record")
+        lines.append("")
+        for v in dissents:
+            lines.append(f"- **{v['role']}** opposes: {v['reasoning']}")
+        lines.append("")
+    conditions = [v for v in ledger["voices"] if v.get("condition")]
+    if conditions:
+        lines.append("### Conditions named")
+        lines.append("")
+        for v in conditions:
+            lines.append(f"- **{v['role']}**: {v['condition']}")
+        lines.append("")
+    if synth.get("unsourced"):
+        lines.append("### Unbacked claims")
+        lines.append("")
+        for u in synth["unsourced"]:
+            lines.append(f"- {u}")
+        lines.append("")
+    open_crosses = [c for c in ledger["cross_examinations"] if not c["resolved"]]
+    if open_crosses:
+        lines.append("### Unanswered challenges")
+        lines.append("")
+        for c in open_crosses:
+            lines.append(f"- {c['id']}: {c['from']} → {c['to']} — {c['challenge']}")
+        lines.append("")
+    lines.append("## Handoffs")
+    lines.append("")
+    lines.append("- A dissent that must be answered before acting → `devil-advocate` "
+                 "(turn the dissent's strongest point into a challenge with a defeater).")
+    lines.append("- A split panel → `decision-review` (score the positions and decide).")
+    lines.append("- The final call → `decision-journal` (log it with a falsifiable prediction).")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def cmd_panel_synth(args: argparse.Namespace) -> Dict[str, Any]:
+    path, ledger = _load_panel_ledger(Path(args.state_dir))
+    if ledger.get("status") != "OPEN" and not args.force:
+        raise WorkbenchError("PANEL_ALREADY_SYNTHESIZED",
+                             "This panel already has a synthesis (see " + PANEL_REPORT_NAME +
+                             "). Pass --force to re-render it.")
+    roster = [r["name"] for r in ledger["roles"]]
+    spoken = {v["role"] for v in ledger["voices"]}
+    missing = [r for r in roster if r not in spoken]
+    if missing:
+        raise WorkbenchError("PANEL_INCOMPLETE",
+                             f"Every seat must speak before synthesis. Awaiting: "
+                             f"{', '.join(missing)}.", {"awaiting": missing})
+    synth = _panel_verdict(ledger["voices"])
+    unsourced = []
+    for v in ledger["voices"]:
+        if v["role"] in PANEL_EVIDENCE_MANDATORY_ROLES and not v.get("evidence"):
+            unsourced.append(f"the '{v['role']}' seat cites no evidence")
+    synth["unsourced"] = unsourced
+    open_crosses = [c for c in ledger["cross_examinations"] if not c["resolved"]]
+    status = "PASS" if (synth["verdict"] == "UNANIMOUS_SUPPORT" and not unsourced
+                        and not open_crosses) else "WARN"
+    report_path = Path(args.state_dir) / PANEL_REPORT_NAME
+    report_path.write_text(_render_panel_report(ledger, synth), encoding="utf-8")
+    ledger["verdict"] = synth
+    ledger["status"] = "CLOSED"
+    ledger["updated_at"] = utc_now_iso()
+    save_json(path, ledger)
+    result: Dict[str, Any] = dict(synth)
+    result["status"] = status
+    result["report"] = str(report_path)
+    result["open_challenges"] = [c["id"] for c in open_crosses]
+    result["next"] = ("Carry the dissent to devil-advocate, or the split to decision-review; "
+                      "log the final call in decision-journal.")
+    return result
+
+
 # ------------------------------------------------------------ playbooks
 # Orchestration without a state machine: pre-composed skill chains for the
 # recurring work shapes. Each step names the skill, what it contributes, and
@@ -3595,6 +4118,10 @@ PLAYBOOKS: Dict[str, Dict[str, Any]] = {
             {"skill": "wide-search",
              "does": "optional: comparison table when option facts are thin (every cell sourced or a declared gap)",
              "gate": "no ? cells left in the matrix feeding the decision"},
+            {"skill": "get-more-perspective",
+             "does": "convene the advisory panel on the leading option: five independent lenses, evidence-mandated skeptic and finance seats, cross-examination",
+             "gate": "panel-synth verdict recorded — a split goes back to decision-review, a dissent goes to devil-advocate"},
+
             {"skill": "devil-advocate",
              "does": "attack the WINNER: plan, premortem, outside view, challenges, consequences",
              "gate": "verdict is not BLOCK — open SERIOUS challenges become guards on record"},
@@ -4118,6 +4645,25 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
         "first_command": "journal-log --decision ... --prediction ... --confidence N --review-by YYYY-MM-DD",
         "stop_rule": "resolve on evidence, not on hope; an overdue OPEN entry is a debt to reality",
         "also_consider": ["decision-review", "devil-advocate"],
+    },
+    "get-more-perspective": {
+        "wants": "A panel of independent expert perspectives on a decision, strategy or dilemma",
+        "wants_tr": "Bir karar, strateji veya ikilem üzerine bağımsız uzman bakış açılarından panel",
+        "core": "1) Convene the panel — five default seats or a custom roster. 2) Evidence first for the skeptic and finance seats (they may not speak without it). 3) Every seat speaks independently through its own lens — role-mandated fields, no duplicate speeches. 4) panel-synth decides mechanically: unanimous / conditions / majority-with-dissent / split — a split stays a split.",
+        "triggers": ["perspective", "perspectives", "panel of experts", "advisory panel",
+                     "virtual board", "board of advisors", "what would experts",
+                     "different viewpoints", "points of view", "other perspectives",
+                     "run it by a board", "second opinion from experts", "steelman both",
+                     "perspektif", "bakış açısı", "farklı açıdan", "değişik açıdan",
+                     "danışma paneli", "uzmanlar ne düşünür", "uzmanlara sor", "kurul",
+                     "heyet topla", "gözünden bak", "bir de şu açıdan"],
+        "read": ["SKILL.md", "references/panel-roles.md", "references/synthesis-rules.md",
+                 "references/tinyfish-evidence.md"],
+        "template": "templates/panel-report.md",
+        "first_command": "panel-open --question \"...\" --context \"...\"",
+        "stop_rule": "the synthesis is forbidden from manufacturing agreement — a split verdict is a valid answer, not a failed panel",
+        "also_consider": ["devil-advocate", "decision-review", "question-contract",
+                          "decision-journal"],
     },
 }
 
@@ -4892,6 +5438,57 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--l2", required=True, help="What that causes (min 15 chars)")
     p.add_argument("--l3", help="What that causes in turn (optional; min 15 chars if present)")
     p.set_defaults(func=cmd_devil_consequence)
+
+    p = sub.add_parser("panel-open",
+                       help="Convene the advisory panel: the question, its context, and the seat roster (default: the five-seat board)")
+    p.add_argument("--question", required=True, help="The decision, strategy or dilemma before the panel (min 20 chars)")
+    p.add_argument("--context", required=True,
+                   help="The options on the table, constraints, what is already decided (min 20 chars)")
+    p.add_argument("--roles", default="operator,skeptic,visionary,customer-advocate,finance",
+                   help="Comma-separated seats. Built-ins: operator, skeptic, visionary, "
+                        "customer-advocate, finance. Custom names allowed (lens is the convenor's to keep)")
+    p.add_argument("--force", action="store_true", help="Reconvene (wipes opinions, evidence, cross-examinations)")
+    p.set_defaults(func=cmd_panel_open)
+
+    p = sub.add_parser("panel-evidence",
+                       help="Table a quoted observation the panel can argue about (TinyFish search/fetch pattern, fetch-url, conversation or local file)")
+    p.add_argument("--quote", required=True, help="The observation, verbatim (min 20 chars)")
+    p.add_argument("--source-url", help="Where it was seen (required for tinyfish-*/fetch-url evidence)")
+    p.add_argument("--via", default="conversation", choices=PANEL_EVIDENCE_VIA,
+                   help="How this evidence was gathered")
+    p.add_argument("--label", help="Short label to cite it by (default EV1, EV2, ...)")
+    p.add_argument("--note", help="Optional caveat or reading note")
+    p.set_defaults(func=cmd_panel_evidence)
+
+    p = sub.add_parser("panel-voice",
+                       help="One seat's independent opinion — role-mandated fields enforced, duplicate speeches refused")
+    p.add_argument("--role", required=True, help="The seat speaking (as convened)")
+    p.add_argument("--stance", required=True, choices=PANEL_STANCES)
+    p.add_argument("--reasoning", required=True, help="This seat's own argument (min 80 chars)")
+    p.add_argument("--condition", help="Required for conditional stance: the observable state support depends on (min 20 chars)")
+    p.add_argument("--confidence", type=int, default=60, help="0-100")
+    p.add_argument("--path", help="[operator] the first concrete execution step (min 20 chars)")
+    p.add_argument("--risk", help="[skeptic] the named risk (min 20 chars)")
+    p.add_argument("--trigger", help="[skeptic] the early-warning signal (min 20 chars)")
+    p.add_argument("--opportunity", help="[visionary] the concrete upside (min 20 chars)")
+    p.add_argument("--impact", help="[customer-advocate] whose life changes and how (min 20 chars)")
+    p.add_argument("--number", help="[finance] the numeric anchor, must contain a digit (min 15 chars)")
+    p.add_argument("--evidence", help="Comma-separated evidence labels to cite (EV1,EV2); required for skeptic and finance")
+    p.add_argument("--force", action="store_true", help="Replace this seat's earlier opinion")
+    p.set_defaults(func=cmd_panel_voice)
+
+    p = sub.add_parser("panel-cross",
+                       help="One seat challenges another's opinion; unanswered challenges stay OPEN in the report")
+    p.add_argument("--from-role", required=True, dest="from_role", help="The challenging seat")
+    p.add_argument("--to-role", required=True, dest="to_role", help="The seat challenged")
+    p.add_argument("--challenge", required=True, help="What exactly in the other seat's opinion does not hold (min 20 chars)")
+    p.add_argument("--response", help="The challenged seat's answer (min 20 chars; omit to leave it OPEN)")
+    p.set_defaults(func=cmd_panel_cross)
+
+    p = sub.add_parser("panel-synth",
+                       help="Mechanical synthesis: UNANIMOUS_SUPPORT / SUPPORT_WITH_CONDITIONS / MAJORITY_SUPPORT_WITH_DISSENT / SPLIT_PANEL — manufactured agreement is forbidden")
+    p.add_argument("--force", action="store_true", help="Re-render the synthesis of a closed panel")
+    p.set_defaults(func=cmd_panel_synth)
 
     p = sub.add_parser("qc-pin",
                        help="Pin the question contract: the question, the decision it informs, the consumer, the budget")

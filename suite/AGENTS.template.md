@@ -31,6 +31,7 @@ you cannot run the command:
 | A bug, failing test or stack trace in a named file | `local-debug` | `$WB debug-hypothesis --symptom ... --target-file ... --repro ...` |
 | Analyze a data file the user provides, with traceable numbers | `data-analysis` | `$WB data-register --path FILE --question ...` |
 | Stress-test a plan before committing — the adversarial second opinion | `devil-advocate` | `$WB devil-open --claim "..." --steelman "..."` |
+| A panel of independent expert perspectives on a decision or dilemma — the advisory board | `get-more-perspective` | `$WB panel-open --question "..." --context "..."` |
 | Pin what the question actually is, before research or building | `question-contract` | `$WB qc-pin --question "..." --decision "what it informs"` |
 | Track a decision and its prediction; grade it later; read the calibration report | `decision-journal` | `$WB journal-log --decision ... --prediction ... --confidence N --review-by YYYY-MM-DD` |
 | The whole chain for a recurring shape (decide / investigate / build / launch / debug) | workbench playbooks | `$WB playbook-list` then `$WB playbook-show --name ...` |

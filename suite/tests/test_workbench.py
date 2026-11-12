@@ -58,8 +58,8 @@ class WorkbenchTestCase(unittest.TestCase):
 
 
 class TestVersionAndContract(WorkbenchTestCase):
-    def test_version_is_4_0_0(self):
-        self.assertEqual(workbench.VERSION, "4.0.0")
+    def test_version_is_4_1_0(self):
+        self.assertEqual(workbench.VERSION, "4.1.0")
 
     def test_v21_subcommands_still_exist(self):
         """Every v2.1 subcommand must keep working with the same name (backward compatibility)."""
@@ -1327,7 +1327,7 @@ class TestLoadSkills(WorkbenchTestCase):
     def test_list_dumps_every_route_with_triggers(self):
         data = self.ok("load-skills", "--list")
         routes = data["routes"]
-        self.assertEqual(len(routes), 17)
+        self.assertEqual(len(routes), 18)
         by_skill = {r["skill"]: r for r in routes}
         self.assertTrue(by_skill["local-advisor"]["fallback"])
         self.assertFalse(by_skill["deep-research"]["fallback"])
@@ -1348,6 +1348,258 @@ class TestLoadSkills(WorkbenchTestCase):
         b = self.ok("load-skills", "--prompt", p)
         self.assertEqual([r["brief"]["skill"] for r in a["routed"]],
                          [r["brief"]["skill"] for r in b["routed"]])
+
+
+class TestGetMorePerspective(WorkbenchTestCase):
+    """The advisory panel: convene -> evidence -> independent role-bound voices
+    -> cross-examination -> mechanical synthesis that never manufactures
+    agreement."""
+
+    QUESTION = "Should we raise the Pro plan price from 29 to 39 dollars"
+    CONTEXT = ("42 paying customers, 3 competitors at 25-35, churn currently "
+               "3 percent monthly, no price change in 2 years")
+
+    def _open(self, roles=None):
+        args = ["panel-open", "--question", self.QUESTION, "--context", self.CONTEXT]
+        if roles:
+            args += ["--roles", roles]
+        return self.ok(*args)
+
+    def _evidence(self):
+        return self.ok(
+            "panel-evidence",
+            "--via", "tinyfish-fetch",
+            "--source-url", "https://competitor.example.com/pricing",
+            "--quote", "Competitor X Pro tier: 34 per seat per month, billed yearly, includes SSO",
+            "--label", "EV1",
+        )
+
+    def _voice(self, role, stance="support", evidence=None, **kw):
+        args = ["panel-voice", "--role", role, "--stance", stance]
+        if evidence:
+            args += ["--evidence", evidence]
+        role_flags = {
+            "operator": ("--path", "Draft the pricing page copy and in-app notice; "
+                                   "run the rollout behind a 10 percent canary for two weeks"),
+            "skeptic": ("--risk", "Price-sensitive segment churns at renewal; the baseline "
+                                  "hides a top-20-accounts concentration"),
+            "visionary": ("--opportunity", "The higher tier funds the roadmap customers "
+                                           "actually ask for: SSO, audit log and the API"),
+            "customer-advocate": ("--impact", "Freelancer segment sees a 34 percent jump at "
+                                              "renewal; agencies with 5+ seats barely notice"),
+            "finance": ("--number", "At 29 with 42 customers MRR is 1218; at 39 with 15 percent "
+                                    "churn it is 1390, breakeven at 12 percent churn"),
+        }
+        if role in role_flags:
+            flag, value = role_flags[role]
+            args += [flag, value]
+        if role == "skeptic":
+            args += ["--trigger", "Two canary accounts request export of their data "
+                                  "within the first week of the announcement"]
+        args += ["--reasoning", kw.get("reasoning", self._reasoning(role))]
+        for extra in ("condition", "confidence"):
+            if kw.get(extra) is not None:
+                args += [f"--{extra}", str(kw[extra])]
+        return self.ok(*args)
+
+    def _reasoning(self, role):
+        return {
+            "operator": "The change is one config flag plus copy; support tooling already "
+                        "handles plan amounts and no migration is needed until renewal",
+            "skeptic": "The biggest accounts sit in the exact band this raise hits; the "
+                       "reference class for such raises shows churn spiking at the first "
+                       "renewal cycle, and we have no cohort data to argue ours differs",
+            "visionary": "Pricing signals seriousness; the raise funds the enterprise-leaning "
+                         "roadmap and repositions the product one bracket up, which attracts "
+                         "larger accounts rather than repelling them",
+            "customer-advocate": "The freelancer segment matches the competitor we would "
+                                 "undercut by leaving; grandfathering converts the raise into "
+                                 "an acquisition-only change and removes the loyalty penalty",
+            "finance": "Churn tolerance is wide: revenue stays flat up to a 25 percent "
+                       "customer loss at 39 dollars, and the competitor at 34 confirms "
+                       "headroom; the raise is revenue-positive short of catastrophic churn",
+            "legal": "The pricing change must reach existing customers before their renewal "
+                     "date under consumer protection rules in our top two markets",
+        }[role]
+
+    def _full_board(self, skeptic="oppose", finance="support",
+                    customer="conditional", operator="support", visionary="support"):
+        self._open()
+        self._evidence()
+        self._voice("operator", stance=operator)
+        self._voice("skeptic", stance=skeptic, evidence="EV1", confidence=65)
+        self._voice("visionary", stance=visionary)
+        self._voice("customer-advocate", stance=customer,
+                    condition="Existing customers keep their current price for 12 months "
+                              "and only new signups pay 39")
+        self._voice("finance", stance=finance, evidence="EV1", confidence=80)
+
+    def test_majority_support_with_dissent_and_report(self):
+        self._full_board()
+        self.ok("panel-cross", "--from-role", "operator", "--to-role", "skeptic",
+                "--challenge", "The canary rollout catches the churn signal before it "
+                               "spreads; your trigger is observable in week one",
+                "--response", "The canary measures announcement shock, not renewal-cycle "
+                              "churn; renewals land 30 days later")
+        data = self.ok("panel-synth")
+        self.assertEqual(data["verdict"], "MAJORITY_SUPPORT_WITH_DISSENT")
+        self.assertEqual(data["status"], "WARN")
+        self.assertEqual(data["support"], 3)
+        self.assertEqual(data["oppose"], 1)
+        self.assertEqual(data["conditional"], 1)
+        self.assertFalse(data["finance_dissent"])
+        report = Path(data["report"])
+        self.assertTrue(report.is_file())
+        text = report.read_text(encoding="utf-8")
+        self.assertIn("## Panel verdict: MAJORITY_SUPPORT_WITH_DISSENT", text)
+        self.assertIn("### Dissent on the record", text)
+        self.assertIn("**EV1** [tinyfish-fetch]", text)
+        self.assertIn("skeptic answers:", text)
+        self.assertNotIn("**OPEN**", text)
+        self.assertIn("### Conditions named", text)
+
+    def test_unanimous_support_passes(self):
+        self._full_board(skeptic="support", customer="support")
+        data = self.ok("panel-synth")
+        self.assertEqual(data["verdict"], "UNANIMOUS_SUPPORT")
+        self.assertEqual(data["status"], "PASS")
+
+    def test_split_panel_refuses_a_fake_recommendation(self):
+        self._full_board(operator="oppose", visionary="oppose",
+                         skeptic="oppose", finance="support", customer="support")
+        data = self.ok("panel-synth")
+        self.assertEqual(data["verdict"], "SPLIT_PANEL")
+        text = Path(data["report"]).read_text(encoding="utf-8")
+        self.assertIn("refuses to average", text)
+        self.assertIn("decision-review", text)
+
+    def test_finance_dissent_is_never_buried(self):
+        self._full_board(finance="oppose", skeptic="support")
+        data = self.ok("panel-synth")
+        # 3 support, 1 conditional, 1 oppose (finance): majority with dissent.
+        self.assertTrue(data["finance_dissent"])
+        text = Path(data["report"]).read_text(encoding="utf-8")
+        self.assertIn("### The finance seat dissents", text)
+
+    def test_role_mandated_fields_are_enforced(self):
+        self._open()
+        data = self.err("panel-voice", "--role", "operator", "--stance", "support",
+                        "--reasoning", "An operator opinion without any execution path at "
+                                       "all, long enough to pass the length check easily")
+        self.assertEqual(data["error_code"], "PATH_REQUIRED")
+        data = self.err("panel-voice", "--role", "skeptic", "--stance", "support",
+                        "--risk", "a named risk that is long enough for the check",
+                        "--reasoning", "A skeptic opinion with a risk but no trigger signal "
+                                       "whatsoever, long enough to pass the length check")
+        self.assertEqual(data["error_code"], "TRIGGER_REQUIRED")
+
+    def test_finance_needs_a_digit_and_evidence(self):
+        self._open()
+        self._evidence()
+        data = self.err("panel-voice", "--role", "finance", "--stance", "support",
+                        "--number", "significant cost increase expected overall",
+                        "--evidence", "EV1",
+                        "--reasoning", "A finance opinion whose anchor contains no digit "
+                                       "at all, long enough to pass the length check")
+        self.assertEqual(data["error_code"], "NUMBER_NEEDS_DIGIT")
+        data = self.err("panel-voice", "--role", "finance", "--stance", "support",
+                        "--number", "12 percent churn breakeven against 1218 MRR today",
+                        "--reasoning", "A finance opinion with a proper numeric anchor but "
+                                       "no evidence cited at all, long enough to pass checks")
+        self.assertEqual(data["error_code"], "EVIDENCE_REQUIRED_FOR_ROLE")
+        data = self.err("panel-voice", "--role", "finance", "--stance", "support",
+                        "--number", "12 percent churn breakeven against 1218 MRR today",
+                        "--evidence", "EV9",
+                        "--reasoning", "A finance opinion citing an evidence label that was "
+                                       "never tabled, long enough to pass the length check")
+        self.assertEqual(data["error_code"], "UNKNOWN_EVIDENCE")
+
+    def test_two_seats_may_not_read_the_same_speech(self):
+        self._open()
+        speech = ("The purple elephant dances quietly across the frozen lake while "
+                  "merchants count their coins and the village sleeps")
+        self.ok("panel-voice", "--role", "operator", "--stance", "support",
+                "--path", "a first concrete execution step owned by the platform team",
+                "--reasoning", speech)
+        data = self.err("panel-voice", "--role", "visionary", "--stance", "support",
+                        "--opportunity", "the purple elephant across the frozen lake tour",
+                        "--reasoning", speech)
+        self.assertEqual(data["error_code"], "DUPLICATE_VOICE")
+
+    def test_conditional_stance_requires_a_condition(self):
+        self._open()
+        data = self.err("panel-voice", "--role", "visionary", "--stance", "conditional",
+                        "--opportunity", "the concrete upside this creates for the roadmap",
+                        "--reasoning", "A conditional opinion that refuses to name the "
+                                       "observable condition it hangs upon, long enough")
+        self.assertEqual(data["error_code"], "CONDITION_REQUIRED")
+
+    def test_synth_refuses_incomplete_panels(self):
+        self._open()
+        self._voice("operator")
+        data = self.err("panel-synth")
+        self.assertEqual(data["error_code"], "PANEL_INCOMPLETE")
+
+    def test_open_validations(self):
+        data = self.err("panel-open", "--question", "raise the price?",
+                        "--context", self.CONTEXT)
+        self.assertEqual(data["error_code"], "QUESTION_TOO_SHORT")
+        self._open()
+        data = self.err("panel-open", "--question", "A completely different second question",
+                        "--context", "A completely different context statement for it")
+        self.assertEqual(data["error_code"], "PANEL_SESSION_EXISTS")
+
+    def test_panel_too_small(self):
+        data = self.err("panel-open", "--question", self.QUESTION,
+                        "--context", self.CONTEXT, "--roles", "operator")
+        self.assertEqual(data["error_code"], "PANEL_TOO_SMALL")
+
+    def test_custom_seats_speak_and_synthesize(self):
+        self._open(roles="operator,skeptic,legal")
+        self._evidence()
+        self._voice("operator")
+        self._voice("skeptic", stance="support", evidence="EV1")
+        data = self.ok("panel-voice", "--role", "legal", "--stance", "support",
+                       "--reasoning", self._reasoning("legal"))
+        self.assertTrue(data["voice"]["role_fields"] == {})
+        synth = self.ok("panel-synth")
+        self.assertEqual(synth["verdict"], "UNANIMOUS_SUPPORT")
+
+    def test_open_cross_challenges_warn_the_synthesis(self):
+        self._full_board()
+        self.ok("panel-cross", "--from-role", "finance", "--to-role", "customer-advocate",
+                "--challenge", "Grandfathering for 12 months delays the revenue effect by "
+                               "four renewal cycles; does your condition survive the budget")
+        data = self.ok("panel-synth")
+        self.assertEqual(data["open_challenges"], ["X1"])
+        text = Path(data["report"]).read_text(encoding="utf-8")
+        self.assertIn("**OPEN** — customer-advocate has not answered", text)
+
+    def test_voice_replacement_and_double_speaking(self):
+        self._open()
+        self._voice("operator")
+        data = self.err("panel-voice", "--role", "operator", "--stance", "oppose",
+                        "--path", "halt the rollout until cohort churn data exists",
+                        "--reasoning", "The operator seat wants to change its earlier "
+                                       "stance without the force flag being passed")
+        self.assertEqual(data["error_code"], "ROLE_ALREADY_SPOKE")
+        data = self.ok("panel-voice", "--role", "operator", "--stance", "oppose",
+                       "--path", "halt the rollout until cohort churn data exists",
+                       "--reasoning", "The operator seat formally revises its earlier "
+                                      "stance: the canary cannot answer renewal churn",
+                       "--force")
+        self.assertEqual(data["voice"]["stance"], "oppose")
+
+    def test_routing_and_brief(self):
+        data = self.ok("load-skills", "--prompt",
+                       "uzmanlar ne düşünür: fiyatlandırmayı değiştirmeli miyiz, danışma paneli kur")
+        skills = [r["brief"]["skill"] for r in data["routed"]]
+        self.assertIn("get-more-perspective", skills)
+        data = self.ok("load-skills", "--skill", "get-more-perspective")
+        brief = data["routed"][0]
+        self.assertIn("panel-open", brief["first_command"])
+        self.assertIn("synthesis-rules.md", " ".join(brief["read_in_order"]))
+        self.assertIn("panel-open", data["brief_text"])
 
 
 if __name__ == "__main__":
