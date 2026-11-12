@@ -1,11 +1,11 @@
 ---
 name: deep-research
 description: Multi-step research with a local evidence ledger; decomposes the topic into sub-questions, enforces a query budget, registers every opened source with a hash, verifies claims against verbatim quotes, scores sources 0-5, detects and resolves contradictions, records knowledge gaps and audits the final report; use for any question needing several sources and a synthesis.
-license: MIT
+license: Apache-2.0
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.2"
+  version: "4.1.3"
 ---
 
 # Deep Research

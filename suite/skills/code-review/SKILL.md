@@ -1,11 +1,11 @@
 ---
 name: code-review
 description: Structured, severity-graded review of files, diffs or PRs the user names; records every finding with location, category and suggestion in a ledger, and renders a report whose verdict is FAIL while any BLOCKING finding is open; use when asked to review code, a pull request, a diff or specific files before merge.
-license: MIT
+license: Apache-2.0
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.2"
+  version: "4.1.3"
 ---
 
 # Code Review

@@ -1,11 +1,11 @@
 ---
 name: local-advisor
 description: Senior technical advisor for architecture, design, planning and trade-off questions that answers from the conversation without scanning files; use when the user asks what to do, how to structure a system, whether an approach is sound, or requests a design review before any code is written.
-license: MIT
+license: Apache-2.0
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.2"
+  version: "4.1.3"
 ---
 
 # Local Advisor

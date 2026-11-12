@@ -1,6 +1,6 @@
 # Local Advisor Suite — Console
 
-**v4.1.2** · cross-host agent skill suite + a web console to drive every command from your browser.
+**v4.1.3** · cross-host agent skill suite + a web console to drive every command from your browser.
 
 > **Türkçe:** Bu depo iki şey içerir: **Local Advisor Suite** (çevrimdışı çalışan, 59 komutluk, 6 araca kurulabilen bir beceri paketi) ve onu **tarayıcıdan denemeni sağlayan web konsolu**. Kurulum yok, hesap yok: bir hikâye seç, *Çalıştır*'a bas, gerçek komutların gerçek çıktılarını gör. Arayüz **Türkçe ve İngilizce** — sağ üstteki TR/EN düğmesiyle değiştir.
 
@@ -8,7 +8,7 @@ This repository contains two things:
 
 | Path | What it is |
 | --- | --- |
-| `suite/` | **Local Advisor Suite v4.1.2** — the offline, vendor-neutral workbench: 64 commands, 18 skills, 5 playbooks, 169 tests, installer for 6 hosts (Claude Code, Codex, ZCode, Cursor, OpenCode, generic AGENTS.md) |
+| `suite/` | **Local Advisor Suite v4.1.3** — the offline, vendor-neutral workbench: 64 commands, 18 skills, 5 playbooks, 169 tests, installer for 6 hosts (Claude Code, Codex, ZCode, Cursor, OpenCode, generic AGENTS.md) |
 | root | **Web Console** — a bilingual (🇹🇷 TR / 🇬🇧 EN) Next.js 16 app that runs every workbench command against a seeded demo workspace, no setup required |
 
 ![Console](public/console.png)
@@ -75,7 +75,7 @@ For single commands, the **one-click examples** cover all 64 scenarios with pre-
 ## Repository layout
 
 ```
-├── suite/                    # Local Advisor Suite v4.1.2 (self-contained)
+├── suite/                    # Local Advisor Suite v4.1.3 (self-contained)
 │   ├── workbench.py          # 47-command CLI (JSON in, JSON out)
 │   ├── install.py            # 6-host installer / uninstaller
 │   ├── skills/               # 18 skills with references/templates/examples
@@ -107,4 +107,4 @@ For single commands, the **one-click examples** cover all 64 scenarios with pre-
 
 ## License
 
-MIT — see `suite/LICENSE`.
+Apache-2.0 — see `suite/LICENSE`.

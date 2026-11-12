@@ -1,11 +1,11 @@
 ---
 name: local-debug
 description: Scoped root-cause debugging for a bug in a file the user names; records the case, reads only the declared target files inside the project root, tests at most 2 hypotheses with predictions before editing, and writes a root-cause report or an escalation brief; use for failing tests, stack traces and reproducible errors.
-license: MIT
+license: Apache-2.0
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.2"
+  version: "4.1.3"
 ---
 
 # Local Debug

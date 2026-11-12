@@ -164,7 +164,7 @@ class TestSharedLayer(unittest.TestCase):
             self.assertTrue(p.is_file(), f"missing {mf}")
             json.loads(p.read_text(encoding="utf-8"))  # must parse
         plugin = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
-        self.assertEqual(plugin["version"], "4.1.2")
+        self.assertEqual(plugin["version"], "4.1.3")
         self.assertEqual(plugin["skills"], "./skills/")
 
     def test_repo_root_marketplace_resolves_plugin_chain(self):
@@ -217,12 +217,12 @@ class TestVersionConsistency(unittest.TestCase):
     def test_versions_align_everywhere(self):
         import workbench
         import install
-        self.assertEqual(workbench.VERSION, "4.1.2")
-        self.assertEqual(install.VERSION, "4.1.2")
+        self.assertEqual(workbench.VERSION, "4.1.3")
+        self.assertEqual(install.VERSION, "4.1.3")
         gen = (ROOT / "tools" / "generate_shared.py").read_text(encoding="utf-8")
-        self.assertIn('VERSION = "4.1.2"', gen)
+        self.assertIn('VERSION = "4.1.3"', gen)
         plugin = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
-        self.assertEqual(plugin["version"], "4.1.2")
+        self.assertEqual(plugin["version"], "4.1.3")
         manifest_like = (ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8")
         # The advertised skill count must track the skills that actually ship,
         # and every skill directory must be in the generator registry — a skill
@@ -238,7 +238,7 @@ class TestVersionConsistency(unittest.TestCase):
             proc = subprocess.run([sys.executable, str(ROOT / script), "--version"],
                                   capture_output=True, text=True, timeout=60)
             self.assertEqual(proc.returncode, 0)
-            self.assertIn("4.1.2", proc.stdout + proc.stderr)
+            self.assertIn("4.1.3", proc.stdout + proc.stderr)
 
 
 class TestDocs(unittest.TestCase):

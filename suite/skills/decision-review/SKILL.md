@@ -1,11 +1,11 @@
 ---
 name: decision-review
 description: Structured decision making with a weighted criteria matrix, hard-constraint disqualification, sensitivity analysis, reversibility classes R0-R3, pre-mortem and numbered ADRs; use when the user must choose between named options, wants a trade-off matrix, asks for an ADR, or wants to check a recorded decision.
-license: MIT
+license: Apache-2.0
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.2"
+  version: "4.1.3"
 ---
 
 # Decision Review

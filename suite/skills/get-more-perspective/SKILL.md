@@ -1,11 +1,11 @@
 ---
 name: get-more-perspective
 description: Convene a virtual advisory panel for any decision, strategy or dilemma — five default seats, Operator (execution), Skeptic (risk), Visionary (opportunity), Customer Advocate (user impact), Finance (the numbers), plus custom seats. Each seat delivers an independent, lens-bound opinion with role-mandated fields (a skeptic without a named risk and trigger is refused, finance without a digit-bearing anchor likewise, two seats may not read the same speech), optionally backed by evidence gathered with the TinyFish search/fetch pattern or the suite's fetch-url. The mechanical synthesis builds the joint recommendation — UNANIMOUS_SUPPORT / SUPPORT_WITH_CONDITIONS / MAJORITY_SUPPORT_WITH_DISSENT / SPLIT_PANEL — manufactured agreement is forbidden: splits stay splits, dissents stay visible. Use for what would experts think, different perspectives, board of advisors, panel of experts, danışma paneli, uzmanlar ne düşünür, farklı bakış açıları, kurul topla, gözünden bak.
-license: MIT
+license: Apache-2.0
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.2"
+  version: "4.1.3"
 ---
 
 # Get More Perspective

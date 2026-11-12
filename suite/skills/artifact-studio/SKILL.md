@@ -1,11 +1,11 @@
 ---
 name: artifact-studio
 description: Instantiates deliverable templates — technical reports, executive summaries, ADRs, presentation outlines, data schemas and postmortems — with enforced structure and placeholder tracking; use when the user asks for a structured document skeleton they will fill in, or to see which artifact types exist.
-license: MIT
+license: Apache-2.0
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.2"
+  version: "4.1.3"
 ---
 
 # Artifact Studio

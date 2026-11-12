@@ -1,11 +1,11 @@
 ---
 name: session-handoff
 description: Packs session state into a validated handoff document so the next session, agent or human resumes without loss; includes git HEAD, verification level, decisions, open questions and resume instructions, then validates the file before relying on it; use when ending a session, switching between Claude Code, Codex, ZCode, Cursor or OpenCode, or resuming someone else's work.
-license: MIT
+license: Apache-2.0
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.2"
+  version: "4.1.3"
 ---
 
 # Session Handoff

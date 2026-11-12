@@ -1,11 +1,11 @@
 ---
 name: question-contract
 description: Pin what the question actually is before spending tokens on it — the question restated, the decision it informs, who consumes the answer, what is already decided and what is genuinely open; a deterministic vague-term scan names the word that makes the answer unjudgeable and the one clarifying question that would change it most; a READY/NEEDS_INPUT gate blocks answering without a decision and consumer; ambiguities proceed as recorded assumptions stated in the answer's caveat; use for clarify the request, before you start, what do you actually need, scope it, soruyu netleştir, tam olarak ne istiyorsun.
-license: MIT
+license: Apache-2.0
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.2"
+  version: "4.1.3"
 ---
 
 # Question Contract

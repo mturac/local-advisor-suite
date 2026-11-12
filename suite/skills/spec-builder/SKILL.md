@@ -1,11 +1,11 @@
 ---
 name: spec-builder
 description: Turns a request into a testable specification; records the goal and user stories, adds Given/When/Then acceptance criteria, breaks work into tasks that must each verify at least one criterion, and validates coverage before implementation starts; use when the user describes something to build, wants requirements made testable, or asks for acceptance criteria or a task breakdown.
-license: MIT
+license: Apache-2.0
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.2"
+  version: "4.1.3"
 ---
 
 # Spec Builder

@@ -1,5 +1,24 @@
 # Changelog
 
+## 4.1.3 (2026-11-12)
+
+v4.1.2 command set and JSON contract preserved. This release changes the
+distribution license from MIT to **Apache License 2.0** and re-ships the
+plugin package under the new terms.
+
+### Changed: license MIT → Apache-2.0
+
+- `suite/LICENSE` now carries the canonical Apache License 2.0 text
+  (verbatim from apache.org, appendix included).
+- `suite/.claude-plugin/plugin.json` reports `"license": "Apache-2.0"`.
+- All 18 `SKILL.md` frontmatters now declare `license: Apache-2.0`.
+- The distribution zip is re-cut as `local-advisor-suite-v4.1.3.zip`;
+  anyone who grabbed v4.1.2 received MIT terms, and this version draws the
+  line cleanly.
+- Why Apache-2.0: it keeps everything MIT offered but adds an explicit
+  patent grant and patent-retaliation clause — the safer default for a
+  skill runtime other people will embed, fork and redistribute.
+
 ## 4.1.2 (2026-11-12)
 
 v4.1.1 command set and JSON contract preserved. This release makes the suite

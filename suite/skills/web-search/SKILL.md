@@ -1,11 +1,11 @@
 ---
 name: web-search
 description: Fast, source-verified answers to single factual questions using the host's own search and fetch tools; opens every cited page, quotes it verbatim in a small ledger, and answers with 1-3 inline citations; use for versions, prices, limits, dates, API behavior and other lookups that need a current, checkable source.
-license: MIT
+license: Apache-2.0
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.2"
+  version: "4.1.3"
 ---
 
 # Web Search

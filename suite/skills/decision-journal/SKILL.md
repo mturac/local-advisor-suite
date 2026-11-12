@@ -1,11 +1,11 @@
 ---
 name: decision-journal
 description: The feedback loop the advisory stack was missing — log decisions with falsifiable predictions, confidences and review dates; resolve them HIT/MISS/PARTIAL against reality with the lesson attached; read the calibration report (hit rate vs claimed confidence per band) that flags overconfidence mechanically; an unresolved entry past its review date is listed as a debt to reality; use for track this decision, log the prediction, how good were our calls, were we right, calibration, karar defteri, tahminler ne kadar tuttu.
-license: MIT
+license: Apache-2.0
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.2"
+  version: "4.1.3"
 ---
 
 # Decision Journal

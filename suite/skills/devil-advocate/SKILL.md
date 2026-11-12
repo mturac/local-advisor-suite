@@ -1,11 +1,11 @@
 ---
 name: devil-advocate
 description: Adversarial stress-test of a plan, decision or spec before commitment — steelman the plan honestly, run the premortem (write the failure story before it happens), take the outside view (reference class + base rate, with an automatic optimism-bias challenge), attack load-bearing assumptions in archetype order with severity-graded challenges that each name their defeater, map second-order effects three levels deep, answer what can be answered, and let the unanswered attacks decide a mechanical verdict (BLOCK / PROCEED_WITH_GUARDS / PROCEED) with guards and pre-committed kill criteria; use for devil's advocate, what could go wrong, poke holes, second opinion, premortem, şeytanın avukatı, stres testi.
-license: MIT
+license: Apache-2.0
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.2"
+  version: "4.1.3"
 ---
 
 # Devil's Advocate

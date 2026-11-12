@@ -1,11 +1,11 @@
 ---
 name: evidence-audit
 description: Audits a draft report against the research ledger before delivery; flags unregistered links, generic anchors, claims whose numbers are absent from the cited source, overclaim language, stale currentness, undated evidence and single-source reliance; use before delivering any researched document or when asked to check someone else's draft.
-license: MIT
+license: Apache-2.0
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.2"
+  version: "4.1.3"
 ---
 
 # Evidence Audit

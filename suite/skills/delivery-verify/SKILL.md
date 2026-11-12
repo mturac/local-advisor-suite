@@ -1,11 +1,11 @@
 ---
 name: delivery-verify
 description: Proves delivery with observable evidence on an L0-L4 ladder before any "done" claim; runs the real commands, records exit codes and durations, snapshots git HEAD, and reports the achieved level with allowed wording per level; use before claiming work is finished, fixed or tested.
-license: MIT
+license: Apache-2.0
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.2"
+  version: "4.1.3"
 ---
 
 # Delivery Verify

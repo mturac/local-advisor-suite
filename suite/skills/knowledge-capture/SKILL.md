@@ -1,11 +1,11 @@
 ---
 name: knowledge-capture
 description: Saves reusable project knowledge as sourced question-and-answer entries with tags, retrieves it later with deterministic offline search, and exports a browsable knowledge base; use to record hard-won answers and decisions during or after research and debugging, and to look them up before re-researching.
-license: MIT
+license: Apache-2.0
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.2"
+  version: "4.1.3"
 ---
 
 # Knowledge Capture

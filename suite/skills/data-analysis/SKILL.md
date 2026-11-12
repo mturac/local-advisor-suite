@@ -1,11 +1,11 @@
 ---
 name: data-analysis
 description: Grounded analysis of a data file the user names (CSV, TSV, JSON, logs); registers the dataset with a SHA-256 content hash, logs every number as a finding that carries the exact command or formula which produced it, declares gaps instead of guessing, and renders a report whose figures all trace to the ledger; use for analyze this file, dataset questions, row counts, trends and summaries.
-license: MIT
+license: Apache-2.0
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.2"
+  version: "4.1.3"
 ---
 
 # Data Analysis

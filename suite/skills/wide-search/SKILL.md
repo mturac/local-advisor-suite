@@ -1,11 +1,11 @@
 ---
 name: wide-search
 description: Entity-by-field comparison tables where every cell is backed by a verified claim with a citation and missing facts are explicit n.a. gaps; use when the user wants to compare several products, tools, libraries or vendors across the same attributes and demands a trustworthy matrix.
-license: MIT
+license: Apache-2.0
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.2"
+  version: "4.1.3"
 ---
 
 # Wide Search
