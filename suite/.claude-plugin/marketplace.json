@@ -8,7 +8,7 @@
     {
       "name": "local-advisor-suite",
       "source": "./",
-      "description": "17 provider-neutral skills backed by an offline workbench.py runtime."
+      "description": "18 provider-neutral skills backed by an offline workbench.py runtime."
     }
   ]
 }

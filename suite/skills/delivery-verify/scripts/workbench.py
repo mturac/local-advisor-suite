@@ -126,7 +126,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 
-VERSION = "4.1.0"
+VERSION = "4.1.1"
 DEFAULT_STATE_DIR = ".local-workbench"
 MAX_FILE_BYTES = 512 * 1024  # 512 KB cap for scoped local file reads
 MAX_SCAN_FILES = 200
@@ -3967,7 +3967,12 @@ def _render_panel_report(ledger: Dict[str, Any], synth: Dict[str, Any]) -> str:
         lines.append("## Evidence on the table")
         lines.append("")
         for e in ledger["evidence"]:
-            src = e["source_url"] or "(from conversation)"
+            if e["source_url"]:
+                src = e["source_url"]
+            elif e["via"] == "local-file":
+                src = "(from a local file — see note)" if e.get("note") else "(from a local file)"
+            else:
+                src = "(from conversation)"
             lines.append(f"- **{e['label']}** [{e['via']}] \"{e['quote']}\" — {src}")
             if e.get("note"):
                 lines.append(f"  - note: {e['note']}")

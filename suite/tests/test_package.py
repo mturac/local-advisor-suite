@@ -164,7 +164,7 @@ class TestSharedLayer(unittest.TestCase):
             self.assertTrue(p.is_file(), f"missing {mf}")
             json.loads(p.read_text(encoding="utf-8"))  # must parse
         plugin = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
-        self.assertEqual(plugin["version"], "4.1.0")
+        self.assertEqual(plugin["version"], "4.1.1")
         self.assertEqual(plugin["skills"], "./skills/")
 
     def test_host_compatibility_covers_six_hosts(self):
@@ -182,21 +182,28 @@ class TestVersionConsistency(unittest.TestCase):
     def test_versions_align_everywhere(self):
         import workbench
         import install
-        self.assertEqual(workbench.VERSION, "4.1.0")
-        self.assertEqual(install.VERSION, "4.1.0")
+        self.assertEqual(workbench.VERSION, "4.1.1")
+        self.assertEqual(install.VERSION, "4.1.1")
         gen = (ROOT / "tools" / "generate_shared.py").read_text(encoding="utf-8")
-        self.assertIn('VERSION = "4.1.0"', gen)
+        self.assertIn('VERSION = "4.1.1"', gen)
         plugin = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
-        self.assertEqual(plugin["version"], "4.1.0")
+        self.assertEqual(plugin["version"], "4.1.1")
         manifest_like = (ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8")
-        self.assertIn("17", manifest_like)
+        # The advertised skill count must track the skills that actually ship,
+        # and every skill directory must be in the generator registry — a skill
+        # missing from SKILL_INTERFACES drifts silently (no workbench resync).
+        skill_dirs = sorted(d.name for d in (ROOT / "skills").iterdir() if (d / "SKILL.md").is_file())
+        self.assertIn(f'"{len(skill_dirs)} provider-neutral skills', manifest_like)
+        gen = (ROOT / "tools" / "generate_shared.py").read_text(encoding="utf-8")
+        for name in skill_dirs:
+            self.assertIn(f'"{name}":', gen, f"skills/{name} missing from SKILL_INTERFACES")
 
     def test_cli_versions(self):
         for script in ("workbench.py", "install.py"):
             proc = subprocess.run([sys.executable, str(ROOT / script), "--version"],
                                   capture_output=True, text=True, timeout=60)
             self.assertEqual(proc.returncode, 0)
-            self.assertIn("4.1.0", proc.stdout + proc.stderr)
+            self.assertIn("4.1.1", proc.stdout + proc.stderr)
 
 
 class TestDocs(unittest.TestCase):

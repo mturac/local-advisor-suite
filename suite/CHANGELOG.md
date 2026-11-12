@@ -1,5 +1,42 @@
 # Changelog
 
+## 4.1.1 (2026-11-12)
+
+v4.1.0 command set and JSON contract preserved; a repair release for the
+panel's first real-world run, which surfaced two latent defects and one
+documentation gap.
+
+### Fixed: panel evidence attribution in PANEL.md
+
+- Local-file evidence rendered as "(from conversation)" in the report's
+  evidence table — the attribution now follows the `via` field: local-file
+  entries print "(from a local file — see note)" (or "(from a local file)"
+  when no note), conversation entries keep their label, URL-backed entries
+  keep their URL.
+
+### Fixed: get-more-perspective was missing from the generator registry
+
+- `SKILL_INTERFACES` in `tools/generate_shared.py` still had 17 entries
+  after v4.1.0 added the 18th skill, so `generate_shared.py` never
+  refreshed `skills/get-more-perspective/scripts/workbench.py` (its copy
+  was created manually in v4.1.0 and would have drifted from the root
+  workbench on every future edit). The registry now carries all 18 skills;
+  `test_versions_align_everywhere` derives the expected skill count from
+  the `skills/` directory and fails on any skill missing from the
+  registry, so this class of drift cannot ship silently again. The
+  marketplace manifest description follows the real count (18).
+
+### Added: second worked example for get-more-perspective
+
+- `examples/azure-cms-single-instance.md` — an architecture question
+  (single-instance production Umbraco vs scale-out) run through the panel
+  with local-file evidence quoted verbatim from an attached plan document,
+  including quotes in the document's own language. Complements
+  `pricing-decision.md` by demonstrating the paths it does not: document
+  evidence instead of web evidence, a `SPLIT_PANEL` verdict with the
+  finance dissent flagged, and an unanswered cross-examination that stays
+  OPEN and forces the WARN status.
+
 ## 4.1.0 (2026-11-12)
 
 v4.0.0 command set and JSON contract preserved; everything below is additive.

@@ -5,7 +5,7 @@ license: MIT
 compatibility: claude-code, codex, zcode, cursor, opencode
 metadata:
   suite: local-advisor-suite
-  version: "4.1.0"
+  version: "4.1.1"
 ---
 
 # Get More Perspective
