@@ -25,7 +25,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS_DIR = ROOT / "skills"
-VERSION = "3.7.0"
+VERSION = "3.8.0"
 
 
 def write_file(path: Path, content: str) -> None:

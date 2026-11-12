@@ -77,6 +77,10 @@ Capabilities:
      review date; resolved HIT / MISS / PARTIAL against reality with the
      lesson; calibration report per confidence band with an
      overconfidence verdict and overdue-entry tracking)
+12. v3.8 additions (additive only):
+   - playbooks: playbook-list / playbook-show — five pre-composed skill
+     chains (decide, investigate, build, launch, debug) with per-step
+     gates and handoff rules; orchestration without a state machine
 
 Network policy: the only command that can open a socket is `fetch-url`, and only
 with --allow-network. Every other command is offline and deterministic.
@@ -102,7 +106,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 
-VERSION = "3.7.0"
+VERSION = "3.8.0"
 DEFAULT_STATE_DIR = ".local-workbench"
 MAX_FILE_BYTES = 512 * 1024  # 512 KB cap for scoped local file reads
 MAX_SCAN_FILES = 200
@@ -3566,6 +3570,180 @@ def cmd_journal_report(args: argparse.Namespace) -> Dict[str, Any]:
     }
 
 
+# ------------------------------------------------------------ playbooks
+# Orchestration without a state machine: pre-composed skill chains for the
+# recurring work shapes. Each step names the skill, what it contributes, and
+# the gate that must pass before the next step starts. Deterministic — the
+# same playbook always renders the same chain.
+
+PLAYBOOKS: Dict[str, Dict[str, Any]] = {
+    "decide": {
+        "purpose": "Options on the table, a commitment to make — from vague ask to journaled decision",
+        "steps": [
+            {"skill": "question-contract",
+             "does": "pin the question, the decision it informs, the consumer, decided vs open",
+             "gate": "qc-check returns READY — never compare options for an unpinned question"},
+            {"skill": "decision-review",
+             "does": "score the 2-3 real options on 3-5 weighted criteria; name the reversibility class",
+             "gate": "the winning option is known and the flip criterion is named"},
+            {"skill": "wide-search",
+             "does": "optional: comparison table when option facts are thin (every cell sourced or a declared gap)",
+             "gate": "no ? cells left in the matrix feeding the decision"},
+            {"skill": "devil-advocate",
+             "does": "attack the WINNER: plan, premortem, outside view, challenges, consequences",
+             "gate": "verdict is not BLOCK — open SERIOUS challenges become guards on record"},
+            {"skill": "decision-journal",
+             "does": "log the decision with its falsifiable prediction, confidence and review date",
+             "gate": "the entry exists and its mind-changer is named"},
+            {"skill": "artifact-studio",
+             "does": "write the ADR: options, decision, guards as rollback triggers, kill criteria",
+             "gate": "adr-check passes on the written ADR"},
+        ],
+    },
+    "investigate": {
+        "purpose": "A question that needs evidence, not opinion — from topic to cited synthesis",
+        "steps": [
+            {"skill": "question-contract",
+             "does": "pin the question and the decision it informs; budget the queries",
+             "gate": "qc-check returns READY"},
+            {"skill": "web-search",
+             "does": "the whole playbook if the question is one fact needing 1-3 sources",
+             "gate": "one authoritative page opened and quoted verbatim — else escalate down"},
+            {"skill": "deep-research",
+             "does": "sub-questions, ledger, sources, claims with quotes, contradictions, gaps",
+             "gate": "query budget respected; gaps declared instead of silently narrowed"},
+            {"skill": "evidence-audit",
+             "does": "every claim in the draft maps to an opened source with a quote",
+             "gate": "audit-report PASS — deliver nothing on FAIL"},
+            {"skill": "artifact-studio",
+             "does": "the report: answer first, evidence behind, gaps stated",
+             "gate": "report reads answer-first for the named consumer"},
+            {"skill": "knowledge-capture",
+             "does": "save the reusable Q&A so this research is never done twice",
+             "gate": "kb-search finds the entry on the obvious keywords"},
+        ],
+    },
+    "build": {
+        "purpose": "Make a thing — from request to delivered, verified work",
+        "steps": [
+            {"skill": "question-contract",
+             "does": "pin the goal, non-goals and the consumer of the result",
+             "gate": "qc-check READY — non-goals exist (a build without non-goals grows until it dies)"},
+            {"skill": "spec-builder",
+             "does": "stories into Given/When/Then criteria; tasks that verify criteria",
+             "gate": "spec-check PASS before any implementation"},
+            {"skill": "local-debug",
+             "does": "when stuck: repro, one falsifiable hypothesis at a time",
+             "gate": "two falsified hypotheses → stop, debug-report, ask for what is missing"},
+            {"skill": "code-review",
+             "does": "the diff: findings with locations, severities, fixes",
+             "gate": "no open BLOCKING finding — the verdict is mechanical"},
+            {"skill": "delivery-verify",
+             "does": "prove it works at the level the claim requires",
+             "gate": "'done' is never said above the observed level"},
+            {"skill": "knowledge-capture",
+             "does": "save the decisions and gotchas the next builder needs",
+             "gate": "kb-search hits on the obvious keywords"},
+        ],
+    },
+    "launch": {
+        "purpose": "Put something in front of real users — with the failure story written first",
+        "steps": [
+            {"skill": "question-contract",
+             "does": "pin the launch question, the success metric and the audience",
+             "gate": "qc-check READY"},
+            {"skill": "delivery-verify",
+             "does": "prove the thing works before anyone argues about launching it",
+             "gate": "verification at the level the launch claim implies"},
+            {"skill": "devil-advocate",
+             "does": "archetype launch: premortem (day-three screenshot), outside view, demand evidence",
+             "gate": "verdict is not BLOCK; guards and kill criteria on record"},
+            {"skill": "decision-journal",
+             "does": "log the adoption prediction with confidence and the review date",
+             "gate": "kill criteria double as the review trigger — dated and owned"},
+            {"skill": "artifact-studio",
+             "does": "the announcement: what it is, for whom, what changes for them",
+             "gate": "reads in 60 seconds by the named audience"},
+            {"skill": "knowledge-capture",
+             "does": "post-launch: what the first users actually did vs the prediction",
+             "gate": "the journal entry gets resolved on evidence, on its date"},
+        ],
+    },
+    "debug": {
+        "purpose": "Something is broken — from symptom to fixed, proven, and learned-from",
+        "steps": [
+            {"skill": "local-debug",
+             "does": "smallest repro, the named file only, one falsifiable hypothesis at a time",
+             "gate": "root cause found within two hypotheses, or debug-report escalates"},
+            {"skill": "code-review",
+             "does": "the fix diff: does it fix the cause or paint over the symptom",
+             "gate": "no open BLOCKING finding on the fix"},
+            {"skill": "delivery-verify",
+             "does": "prove the fix: the original repro now passes at the right level",
+             "gate": "observed evidence, not 'should work now'"},
+            {"skill": "knowledge-capture",
+             "does": "root cause as Q&A: the symptom phrased the way the next person will hit it",
+             "gate": "kb-search hits on the symptom keywords"},
+            {"skill": "decision-journal",
+             "does": "if the root cause implies a process decision (not just a bug): log it",
+             "gate": "prediction + review date exist, or the step is honestly skipped"},
+        ],
+    },
+}
+
+
+def cmd_playbook_list(args: argparse.Namespace) -> Dict[str, Any]:
+    return {
+        "status": "OK",
+        "playbooks": [
+            {"name": name, "purpose": pb["purpose"],
+             "steps": [s["skill"] for s in pb["steps"]]}
+            for name, pb in sorted(PLAYBOOKS.items())
+        ],
+        "next": "playbook-show --name NAME renders the chain with gates and handoffs.",
+    }
+
+
+def cmd_playbook_show(args: argparse.Namespace) -> Dict[str, Any]:
+    pb = PLAYBOOKS.get(args.name)
+    if pb is None:
+        raise WorkbenchError("UNKNOWN_PLAYBOOK",
+                             f"Unknown playbook '{args.name}'.",
+                             {"known": sorted(PLAYBOOKS)})
+    lines: List[str] = [
+        f"# Playbook: {args.name}",
+        "",
+        pb["purpose"],
+        "",
+        "Run the steps in order. A gate that fails stops the chain — fix the gate or "
+        "explicitly record why you are skipping the step; a skipped gate silently is "
+        "the difference between a pipeline and a vibe.",
+        "",
+    ]
+    for i, step in enumerate(pb["steps"], 1):
+        lines.append(f"## {i}. {step['skill']}")
+        lines.append(f"- Does: {step['does']}")
+        lines.append(f"- Gate: {step['gate']}")
+        lines.append("")
+    lines.append("## Handoffs that make the chain work")
+    lines.append("")
+    lines.append("- The contract is every step's intake: no step re-asks what qc-pin settled.")
+    lines.append("- Guards and kill criteria from devil-advocate land in the ADR's rollback triggers.")
+    lines.append("- The journal closes the loop: the prediction written at launch is the lesson read later.")
+    return {
+        "status": "OK",
+        "name": args.name,
+        "purpose": pb["purpose"],
+        "steps": pb["steps"],
+        "handoffs": [
+            "the contract is every step's intake",
+            "guards and kill criteria land in the ADR rollback triggers",
+            "the journal prediction closes the loop",
+        ],
+        "rendered": "\n".join(lines),
+    }
+
+
 # ------------------------------------------------------ question-contract
 # Pin the question before spending tokens on it: the decision it informs,
 # who consumes the answer, what is already decided and what is genuinely
@@ -4758,6 +4936,14 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("journal-report",
                        help="Calibration report: hit rate vs claimed confidence per band, overdue entries")
     p.set_defaults(func=cmd_journal_report)
+
+    p = sub.add_parser("playbook-list", help="List the pre-composed skill chains: decide, investigate, build, launch, debug")
+    p.set_defaults(func=cmd_playbook_list)
+
+    p = sub.add_parser("playbook-show", help="Render a playbook: ordered steps, what each skill contributes, the gate before the next step")
+    p.add_argument("--name", required=True, choices=sorted(PLAYBOOKS),
+                   help="The playbook to render: decide, investigate, build, launch or debug")
+    p.set_defaults(func=cmd_playbook_show)
 
     p = sub.add_parser("load-skills",
                        help="Route a prompt to the skills it needs and emit their loading brief")

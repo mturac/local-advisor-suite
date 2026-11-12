@@ -1,5 +1,27 @@
 # Changelog
 
+## 3.8.0 (2026-11-12)
+
+v3.7.0 command set and JSON contract preserved; everything below is additive.
+
+### Added: playbooks — orchestration without a state machine
+
+Seventeen skills only help if the agent knows which chain to walk. Five
+pre-composed playbooks — **decide, investigate, build, launch, debug** —
+each render as an ordered step list where every step names its skill, what
+it contributes, and the **gate** that must pass before the next step starts
+(qc-check READY, spec-check PASS, no open BLOCKING finding, verdict not
+BLOCK, ...). Handoff rules are part of the render: the contract is every
+step's intake, devil-advocate guards land in the ADR's rollback triggers,
+and the journal closes the loop.
+
+- **`playbook-list`** — the five chains, one line each.
+- **`playbook-show --name NAME`** — the full render: steps, gates, handoffs.
+- Deterministic and stateless: no new ledger, no hidden ordering — the same
+  playbook always renders the same chain, and the gates live in the skills
+  that own them.
+
+
 ## 3.7.0 (2026-11-12)
 
 v3.6.0 command set and JSON contract preserved; everything below is additive.

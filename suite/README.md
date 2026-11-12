@@ -30,6 +30,20 @@ Built on the user's own `workbench.py` and `tools/generate_shared.py`. The v2.1 
 | `devil-advocate` | Stress-test a plan before committing: steelman, challenges, rebuttals, verdict | `devil-open`, `devil-challenge`, `devil-rebuttal`, `devil-verdict` |
 | `question-contract` | Pin the question, the decision it informs and the consumer before work starts; vague-term scan | `qc-pin`, `qc-check`, `qc-assume` |
 | `decision-journal` | Log decisions with falsifiable predictions; grade them against reality; calibration report | `journal-log`, `journal-resolve`, `journal-report` |
+
+## Playbooks: the chains
+
+Skills compose, and the composition is written down. `playbook-list` shows the
+five pre-composed chains; `playbook-show --name decide` renders the full
+sequence — every step names the skill, what it contributes, and the **gate**
+that must pass before the next step starts:
+
+- **decide** — options on the table: contract → score → attack the winner → journal → ADR
+- **investigate** — evidence, not opinion: contract → research → audit → report → capture
+- **build** — request to verified delivery: contract → spec → (debug) → review → verify → capture
+- **launch** — in front of real users: verify → premortem → journal the prediction → announce
+- **debug** — symptom to lesson: repro → fix review → prove → capture → (journal)
+
 | `web-search` | Quick verified answers with 1-3 sources | host search/fetch tools + optional ledger |
 | `deep-research` | Multi-step research: decomposition, ledger, scoring, contradictions, gaps, synthesis | `research-*`, `audit-report` |
 | `wide-search` | Entity x field tables; every cell bound to a verified URL | `research-init --mode wide-matrix`, `wide-table --strict` |

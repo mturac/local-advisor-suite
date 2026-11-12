@@ -58,8 +58,8 @@ class WorkbenchTestCase(unittest.TestCase):
 
 
 class TestVersionAndContract(WorkbenchTestCase):
-    def test_version_is_3_7_0(self):
-        self.assertEqual(workbench.VERSION, "3.7.0")
+    def test_version_is_3_8_0(self):
+        self.assertEqual(workbench.VERSION, "3.8.0")
 
     def test_v21_subcommands_still_exist(self):
         """Every v2.1 subcommand must keep working with the same name (backward compatibility)."""
@@ -1151,6 +1151,40 @@ class TestDecisionJournal(WorkbenchTestCase):
                        "keep a karar defteri: track this decision and how good our calls were")
         top = data["routed"][0]
         self.assertEqual(top["brief"]["skill"], "decision-journal")
+
+
+class TestPlaybooks(WorkbenchTestCase):
+    """Orchestration: pre-composed chains with gates."""
+
+    def test_list_shows_five_playbooks(self):
+        data = self.ok("playbook-list")
+        names = [p["name"] for p in data["playbooks"]]
+        self.assertEqual(names, sorted(names))
+        self.assertIn("decide", names)
+        self.assertIn("investigate", names)
+        self.assertIn("build", names)
+        self.assertIn("launch", names)
+        self.assertIn("debug", names)
+
+    def test_show_renders_steps_with_gates(self):
+        data = self.ok("playbook-show", "--name", "decide")
+        self.assertEqual(data["name"], "decide")
+        skills = [s["skill"] for s in data["steps"]]
+        self.assertEqual(skills[0], "question-contract")   # pin before compare
+        self.assertIn("devil-advocate", skills)            # attack the winner
+        self.assertIn("decision-journal", skills)          # close the loop
+        self.assertTrue(all(s["gate"] for s in data["steps"]))
+        self.assertIn("## Handoffs", data["rendered"])
+        self.assertIn("Gate:", data["rendered"])
+
+    def test_every_playbook_step_is_a_real_skill(self):
+        for name in workbench.PLAYBOOKS:
+            for step in workbench.PLAYBOOKS[name]["steps"]:
+                self.assertIn(step["skill"], workbench.SKILL_ROUTES,
+                              f"{name} references unknown skill {step['skill']}")
+
+    def test_unknown_playbook_is_rejected(self):
+        self.nonzero("playbook-show", "--name", "nope")
 
 
 class TestLoadSkills(WorkbenchTestCase):

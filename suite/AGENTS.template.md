@@ -33,6 +33,7 @@ you cannot run the command:
 | Stress-test a plan before committing — the adversarial second opinion | `devil-advocate` | `$WB devil-open --claim "..." --steelman "..."` |
 | Pin what the question actually is, before research or building | `question-contract` | `$WB qc-pin --question "..." --decision "what it informs"` |
 | Track a decision and its prediction; grade it later; read the calibration report | `decision-journal` | `$WB journal-log --decision ... --prediction ... --confidence N --review-by YYYY-MM-DD` |
+| The whole chain for a recurring shape (decide / investigate / build / launch / debug) | workbench playbooks | `$WB playbook-list` then `$WB playbook-show --name ...` |
 | One factual answer that needs 1-3 sources (version, price, limit, date) | `web-search` | host search tool |
 | Research with several sources and a synthesis | `deep-research` | `$WB research-init --topic ... --sub-question ...` |
 | Compare many entities across the same fields, as a table | `wide-search` | `$WB research-init --mode wide-matrix --entity ... --field ...` |

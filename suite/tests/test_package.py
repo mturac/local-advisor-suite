@@ -161,7 +161,7 @@ class TestSharedLayer(unittest.TestCase):
             self.assertTrue(p.is_file(), f"missing {mf}")
             json.loads(p.read_text(encoding="utf-8"))  # must parse
         plugin = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
-        self.assertEqual(plugin["version"], "3.7.0")
+        self.assertEqual(plugin["version"], "3.8.0")
         self.assertEqual(plugin["skills"], "./skills/")
 
     def test_host_compatibility_covers_six_hosts(self):
@@ -179,12 +179,12 @@ class TestVersionConsistency(unittest.TestCase):
     def test_versions_align_everywhere(self):
         import workbench
         import install
-        self.assertEqual(workbench.VERSION, "3.7.0")
-        self.assertEqual(install.VERSION, "3.7.0")
+        self.assertEqual(workbench.VERSION, "3.8.0")
+        self.assertEqual(install.VERSION, "3.8.0")
         gen = (ROOT / "tools" / "generate_shared.py").read_text(encoding="utf-8")
-        self.assertIn('VERSION = "3.7.0"', gen)
+        self.assertIn('VERSION = "3.8.0"', gen)
         plugin = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
-        self.assertEqual(plugin["version"], "3.7.0")
+        self.assertEqual(plugin["version"], "3.8.0")
         manifest_like = (ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8")
         self.assertIn("17", manifest_like)
 
@@ -193,7 +193,7 @@ class TestVersionConsistency(unittest.TestCase):
             proc = subprocess.run([sys.executable, str(ROOT / script), "--version"],
                                   capture_output=True, text=True, timeout=60)
             self.assertEqual(proc.returncode, 0)
-            self.assertIn("3.7.0", proc.stdout + proc.stderr)
+            self.assertIn("3.8.0", proc.stdout + proc.stderr)
 
 
 class TestDocs(unittest.TestCase):
