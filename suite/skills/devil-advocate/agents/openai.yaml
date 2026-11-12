@@ -1,0 +1,5 @@
+interface:
+  display_name: "Devil's Advocate"
+  short_description: "Adversarial stress-test of a plan: steelman, severity-graded challenges with defeaters, rebuttals, mechanical verdict"
+policy:
+  allow_implicit_invocation: true

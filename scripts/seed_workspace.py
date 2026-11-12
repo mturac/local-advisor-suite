@@ -306,6 +306,32 @@ def seed():
         "--description", "A per-section word split is not computable from the README",
         "--reason", "AMBIGUOUS_DEFINITION: section boundaries are not machine-marked"))
 
+    # ---- devil's advocate -------------------------------------------------
+    step("devil-open", lambda: wb(
+        "devil-open",
+        "--claim", "Replace the demo console's shared workspace with an isolated sandbox per run",
+        "--steelman", "Isolated runs cannot contaminate each other's ledger state, "
+                      "so every scenario is reproducible from a clean start"))
+    step("devil-challenge #1", lambda: wb(
+        "devil-challenge",
+        "--assumption", "an empty ledger on every run is acceptable",
+        "--attack", "Ledger history is what makes the console instructive; a fresh sandbox "
+                    "shows empty state on every click, so users never see a filled ledger",
+        "--category", "second-order-effect", "--severity", "SERIOUS",
+        "--defeater", "a side-by-side view that shows the seeded ledgers next to the fresh run"))
+    step("devil-challenge #2 (FATAL)", lambda: wb(
+        "devil-challenge",
+        "--assumption", "isolated sandboxes cost nothing extra",
+        "--attack", "Cold-starting a sandbox per command adds seconds to every click and an "
+                    "ops dependency the console does not have today",
+        "--category", "cost-complexity", "--severity", "FATAL",
+        "--defeater", "a warm pool that serves any command in under 500ms"))
+    step("devil-rebuttal", lambda: wb(
+        "devil-rebuttal", "--id", "C2",
+        "--rebuttal", "The console runs commands against local directories, not containers; "
+                      "isolation is a folder wipe that costs milliseconds",
+        "--basis", "constraint: commands run in-process against --state-dir"))
+
     # ---- advisory, decision, debug, adr, artifact, handoff ---------------
     step("advise-intake", lambda: wb(
         "advise-intake",

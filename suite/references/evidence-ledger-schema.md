@@ -193,3 +193,52 @@ Every entry is sourced (`source_url` or `source_id` validated against the resear
 ```
 
 Lifecycle: `data-register` (pins the dataset by path + size + SHA-256; one dataset per ledger; switching requires `--force` and resets findings) -> `data-finding` (statement + re-runnable method + result; refuses when the file drifted from its hash) -> `data-gap` (what could not be computed, and why) -> `data-report` (renders ANALYSIS.md; numbers in the answer that no finding supports are rejected with `UNLEDGERED_NUMBERS` unless `--allow-unverified-numbers` publishes them visibly marked UNVERIFIED).
+
+## 8. Devil's Advocate Ledger (`devil_ledger.json`, v3.3)
+
+```json
+{
+  "claim": "Split the monolith into microservices this quarter to speed up deploys",
+  "steelman": "Independent deploys end the release train: each team ships daily, failures stay inside one service, and the org already runs containers in production",
+  "status": "DECIDED",
+  "challenges": [
+    {
+      "id": "C1",
+      "assumption": "each team ships daily once split",
+      "attack": "Deploy frequency is currently limited by review capacity, not by the release train; splitting adds coordination overhead that makes daily deploys less likely, not more",
+      "category": "second-order-effect",
+      "severity": "SERIOUS",
+      "defeater": "deploy frequency per team rises within 6 weeks of each split",
+      "status": "OPEN",
+      "rebuttal": null,
+      "rebuttal_basis": null,
+      "created_at": "..."
+    },
+    {
+      "id": "C4",
+      "assumption": "the quarter timeline holds",
+      "attack": "The estimate assumes zero migration of the reporting layer, which reads all 9 shared tables directly",
+      "category": "unfounded-assumption",
+      "severity": "MINOR",
+      "defeater": "reporting reads confirmed via a single view during migration",
+      "status": "ANSWERED",
+      "rebuttal": "The reporting layer already goes through a nightly export view; checked the code before answering",
+      "rebuttal_basis": "evidence: grep of the reporting repo, zero direct table references",
+      "answered_at": "...",
+      "created_at": "..."
+    }
+  ],
+  "verdict": {
+    "verdict": "PROCEED_WITH_GUARDS",
+    "open_counts": {"FATAL": 0, "SERIOUS": 1, "MINOR": 0},
+    "answered_count": 1,
+    "guards": [{"challenge": "C1", "guard": "each team ships daily once split", "watch": "deploy frequency per team rises within 6 weeks of each split"}],
+    "kill_criteria": ["per-team deploy frequency not above baseline 6 weeks after each split"],
+    "decided_at": "..."
+  },
+  "created_at": "...",
+  "updated_at": "..."
+}
+```
+
+Lifecycle: `devil-open` (claim + honest steelman, min 30 chars; one session per ledger, restarting requires `--force` and wipes challenges) -> `devil-challenge` (assumption + attack + category + severity + defeater; an attack with no defeater is rejected) -> `devil-rebuttal` (answers an OPEN challenge with a basis; ANSWERED challenges leave the verdict) -> `devil-verdict` (mechanical gate: BLOCK while an open FATAL stands — JSON status FAIL, exit 2; PROCEED_WITH_GUARDS while an open SERIOUS stands — WARN; PROCEED when all answered — PASS; requires >= 1 observable kill criterion; renders CHALLENGE.md). Categories: unfounded-assumption, missing-evidence, second-order-effect, alternative-explanation, cost-complexity, reversibility, timing, external-risk.

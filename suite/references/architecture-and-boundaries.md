@@ -38,3 +38,10 @@
 - What the file cannot answer is declared as a gap (`data-gap` with a reason), never guessed or interpolated.
 - `data-report` lints the answer against the findings (`UNLEDGERED_NUMBERS`) and refuses to render numbers no finding supports; the `--allow-unverified-numbers` escape hatch publishes them visibly marked UNVERIFIED.
 - Findings computed on content that no longer matches the registered hash are refused (`DATASET_DRIFT`) until the dataset is re-registered and the affected findings redone.
+
+## 8. Adversarial Challenge Discipline (v3.3)
+- A plan under stress-test gets its best case stated honestly first (`devil-open` steelman, min 30 chars) — an attack on a strawman is refused by design.
+- Every challenge (`devil-challenge`) names the load-bearing assumption it attacks, what specifically breaks, its category, its severity (FATAL / SERIOUS / MINOR) and its defeater — the observation that would prove the attack wrong. An attack with no defeater is rejected: it is dogma, not criticism.
+- A sound rebuttal (`devil-rebuttal`) answers the argument and names its basis (evidence, experience, constraint); it removes the challenge from the verdict. Rebuttals that wave at the argument are worse than silence and are visibly recorded either way.
+- The verdict (`devil-verdict`) is mechanical: BLOCK while any FATAL challenge stands (exit 2), PROCEED_WITH_GUARDS while any SERIOUS one does, PROCEED only when every attack is answered. No verdict is computed without pre-committed, observable kill criteria.
+- Guards and kill criteria survive the session: they belong in the ADR rollback trigger or the spec's acceptance criteria, so the challenge remains checkable after enthusiasm returns.

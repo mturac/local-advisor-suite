@@ -53,6 +53,10 @@ CATEGORIES = {
     "data-finding": "Data",
     "data-gap": "Data",
     "data-report": "Data",
+    "devil-open": "Challenge",
+    "devil-challenge": "Challenge",
+    "devil-rebuttal": "Challenge",
+    "devil-verdict": "Challenge",
 }
 
 

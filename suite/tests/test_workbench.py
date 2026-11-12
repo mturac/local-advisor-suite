@@ -58,8 +58,8 @@ class WorkbenchTestCase(unittest.TestCase):
 
 
 class TestVersionAndContract(WorkbenchTestCase):
-    def test_version_is_3_2_0(self):
-        self.assertEqual(workbench.VERSION, "3.2.0")
+    def test_version_is_3_3_0(self):
+        self.assertEqual(workbench.VERSION, "3.3.0")
 
     def test_v21_subcommands_still_exist(self):
         """Every v2.1 subcommand must keep working with the same name (backward compatibility)."""
@@ -743,6 +743,140 @@ class TestDataAnalysis(WorkbenchTestCase):
         self.assertEqual(data["error_code"], "FILE_NOT_FOUND")
 
 
+class TestDevilAdvocate(WorkbenchTestCase):
+    """The challenge ledger: open -> challenges with defeaters -> rebuttals -> mechanical verdict."""
+
+    def _open(self):
+        return self.ok(
+            "devil-open",
+            "--claim", "Split the monolith into microservices this quarter to speed up deploys",
+            "--steelman", "Independent deploys end the release train: each team ships daily "
+                         "and failures stay inside one service",
+        )
+
+    def _challenge(self, severity="SERIOUS", category="unfounded-assumption", **kw):
+        args = [
+            "devil-challenge",
+            "--assumption", kw.get("assumption", "the team can operate 12+ services"),
+            "--attack", kw.get("attack", "There is one on-call rotation; the plan creates a "
+                                          "dozen failure surfaces with no staffing for them"),
+            "--category", category,
+            "--severity", severity,
+            "--defeater", kw.get("defeater", "an approved headcount plan naming a second rotation"),
+        ]
+        return self.ok(*args)
+
+    def test_full_lifecycle_block_then_guards_then_proceed(self):
+        self._open()
+        c1 = self._challenge(severity="SERIOUS", category="second-order-effect",
+                             assumption="each team ships daily once split",
+                             attack="Deploy frequency is limited by review capacity, not the "
+                                    "release train; splitting adds coordination overhead",
+                             defeater="per-team deploy frequency rises within 6 weeks of each split")
+        self.assertEqual(c1["challenge"]["id"], "C1")
+        c2 = self._challenge(severity="FATAL", category="cost-complexity")
+        self.assertEqual(c2["challenge"]["id"], "C2")
+        self.assertEqual(c2["open_counts"], {"FATAL": 1, "SERIOUS": 1, "MINOR": 0})
+
+        # A standing FATAL blocks the plan: verdict FAILs, exit code 2.
+        blocked = self.nonzero("devil-verdict",
+                               "--kill-criterion", "per-team deploys stay at baseline 6 weeks after a split")
+        self.assertEqual(blocked["status"], "FAIL")
+        self.assertEqual(blocked["verdict"], "BLOCK")
+
+        # Answer the FATAL: the verdict softens to PROCEED_WITH_GUARDS over the open SERIOUS.
+        self.ok("devil-rebuttal", "--id", "C2",
+                "--rebuttal", "The ops headcount plan was approved last week; a second rotation "
+                              "starts before the first split",
+                "--basis", "evidence: the approved hiring plan")
+        guarded = self.ok("devil-verdict", "--force",
+                          "--kill-criterion", "per-team deploys stay at baseline 6 weeks after a split")
+        self.assertEqual(guarded["status"], "WARN")
+        self.assertEqual(guarded["verdict"], "PROCEED_WITH_GUARDS")
+        self.assertEqual(len(guarded["guards"]), 1)
+        self.assertEqual(guarded["guards"][0]["challenge"], "C1")
+
+        # Answer the SERIOUS too: PROCEED, and the report records the dialogue.
+        self.ok("devil-rebuttal", "--id", "C1",
+                "--rebuttal", "Review capacity data from the last quarter shows reviews complete "
+                              "in hours; the release train, not reviews, is the constraint")
+        passed = self.ok("devil-verdict", "--force",
+                         "--kill-criterion", "per-team deploys stay at baseline 6 weeks after a split")
+        self.assertEqual(passed["status"], "PASS")
+        self.assertEqual(passed["verdict"], "PROCEED")
+        self.assertEqual(passed["answered_count"], 2)
+
+        report = Path(passed["report"])
+        self.assertTrue(report.is_file())
+        text = report.read_text(encoding="utf-8")
+        self.assertIn("## Verdict: PROCEED", text)
+        self.assertIn("## The steelman", text)
+        self.assertIn("## Answered challenges", text)
+        self.assertIn("## Kill criteria", text)
+        self.assertIn("an approved headcount plan", text)  # C2's defeater is visible
+
+    def test_open_requires_an_honest_steelman(self):
+        data = self.err("devil-open",
+                        "--claim", "Rewrite everything in Rust for performance",
+                        "--steelman", "it is fast")
+        self.assertEqual(data["error_code"], "STEELMAN_TOO_SHORT")
+
+    def test_open_refuses_to_clobber_an_existing_session(self):
+        self._open()
+        data = self.err("devil-open",
+                        "--claim", "A second, unrelated plan under attack",
+                        "--steelman", "A completely different best case stated honestly")
+        self.assertEqual(data["error_code"], "DEVIL_SESSION_EXISTS")
+        self.ok("devil-open", "--claim", "A second, unrelated plan under attack",
+                "--steelman", "A completely different best case stated honestly", "--force")
+
+    def test_challenge_requires_an_open_session(self):
+        data = self.err("devil-challenge",
+                        "--assumption", "the plan is well understood",
+                        "--attack", "Nobody has stated what happens when the migration fails halfway",
+                        "--defeater", "a written rollback runbook exists")
+        self.assertEqual(data["error_code"], "NO_DEVIL_SESSION")
+
+    def test_challenge_requires_a_defeater(self):
+        self._open()
+        data = self.err("devil-challenge",
+                        "--assumption", "the team ships daily",
+                        "--attack", "Deploy frequency is limited by review capacity, not tooling",
+                        "--defeater", "none")
+        self.assertEqual(data["error_code"], "DEFEATER_TOO_SHORT")
+
+    def test_rebuttal_rejects_unknown_and_already_answered(self):
+        self._open()
+        self._challenge()
+        data = self.err("devil-rebuttal", "--id", "C9",
+                        "--rebuttal", "This answers an attack that does not exist")
+        self.assertEqual(data["error_code"], "UNKNOWN_CHALLENGE")
+        self.assertEqual(data["details"]["known"], ["C1"])
+        self.ok("devil-rebuttal", "--id", "C1",
+                "--rebuttal", "The rotation was staffed in the last planning cycle")
+        data = self.err("devil-rebuttal", "--id", "C1",
+                        "--rebuttal", "Answering the same challenge twice should not work")
+        self.assertEqual(data["error_code"], "CHALLENGE_ANSWERED")
+
+    def test_verdict_requires_challenges_and_kill_criteria(self):
+        self._open()
+        data = self.err("devil-verdict", "--kill-criterion", "a signal that would falsify the plan")
+        self.assertEqual(data["error_code"], "CHALLENGE_FIRST")
+        self._challenge()
+        data = self.err("devil-verdict")
+        self.assertEqual(data["error_code"], "KILL_CRITERIA_REQUIRED")
+        data = self.err("devil-verdict", "--kill-criterion", "soon")
+        self.assertEqual(data["error_code"], "KILL_CRITERION_TOO_SHORT")
+
+    def test_report_refuses_overwrite_without_force(self):
+        self._open()
+        self._challenge()
+        self.ok("devil-verdict", "--kill-criterion", "a signal that would falsify the plan")
+        data = self.err("devil-verdict", "--kill-criterion", "a signal that would falsify the plan")
+        self.assertEqual(data["error_code"], "FILE_EXISTS")
+        self.ok("devil-verdict", "--force", "--kill-criterion", "a signal that would falsify the plan")
+
+
 class TestLoadSkills(WorkbenchTestCase):
     """Prompt → skill routing + the context brief (deterministic, TR and EN)."""
 
@@ -785,6 +919,33 @@ class TestLoadSkills(WorkbenchTestCase):
         self.assertEqual(top["brief"]["skill"], "data-analysis")
         self.assertGreaterEqual(top["score"], 2)
 
+    def test_routes_turkish_devils_advocate_prompt(self):
+        data = self.ok("load-skills",
+                       "--prompt", "bu plana şeytanın avukatlığını yap, nereden yanılabiliriz?")
+        top = data["routed"][0]
+        self.assertEqual(top["brief"]["skill"], "devil-advocate")
+        self.assertGreaterEqual(top["score"], 2)
+        self.assertEqual(data["confidences"]["devil-advocate"], "HIGH")
+        self.assertIn("challenge-discipline.md", " ".join(top["brief"]["read_in_order"]))
+        self.assertIn("devil-open", top["brief"]["first_command"])
+
+    def test_routes_english_stress_test_prompt(self):
+        data = self.ok("load-skills",
+                       "--prompt", "Play devil's advocate on this migration plan — what could go wrong?")
+        top = data["routed"][0]
+        self.assertEqual(top["brief"]["skill"], "devil-advocate")
+        self.assertGreaterEqual(top["score"], 2)
+
+    def test_compact_brief_is_one_line_per_skill(self):
+        full = self.ok("load-skills", "--prompt", "research the topic with multiple sources please")
+        compact = self.ok("load-skills", "--compact",
+                          "--prompt", "research the topic with multiple sources please")
+        self.assertTrue(compact["compact"])
+        self.assertIn("# Skill brief (compact)", compact["brief_text"])
+        self.assertNotIn("**Read in order**", compact["brief_text"])
+        self.assertIn("first:", compact["brief_text"])
+        self.assertLess(len(compact["brief_text"]), len(full["brief_text"]))
+
     def test_no_match_falls_back_to_local_advisor_with_reason(self):
         data = self.ok("load-skills", "--prompt", "bana bu konuda genel bir şey söyler misin acaba")
         self.assertIsNone(data["routed"][0].get("score"))
@@ -811,11 +972,12 @@ class TestLoadSkills(WorkbenchTestCase):
     def test_list_dumps_every_route_with_triggers(self):
         data = self.ok("load-skills", "--list")
         routes = data["routes"]
-        self.assertEqual(len(routes), 14)
+        self.assertEqual(len(routes), 15)
         by_skill = {r["skill"]: r for r in routes}
         self.assertTrue(by_skill["local-advisor"]["fallback"])
         self.assertFalse(by_skill["deep-research"]["fallback"])
         self.assertTrue(any("araştır" in t for t in by_skill["deep-research"]["triggers"]))
+        self.assertTrue(any("şeytanın avukat" in t for t in by_skill["devil-advocate"]["triggers"]))
 
     def test_unknown_skill_is_structured_error(self):
         data = self.err("load-skills", "--skill", "nope")

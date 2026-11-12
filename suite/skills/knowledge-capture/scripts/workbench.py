@@ -74,7 +74,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 
-VERSION = "3.2.0"
+VERSION = "3.3.0"
 DEFAULT_STATE_DIR = ".local-workbench"
 MAX_FILE_BYTES = 512 * 1024  # 512 KB cap for scoped local file reads
 MAX_SCAN_FILES = 200
@@ -1997,6 +1997,19 @@ REVIEW_LEDGER_NAME = "review_ledger.json"
 KB_LEDGER_NAME = "kb_ledger.json"
 DATA_LEDGER_NAME = "data_ledger.json"
 MAX_DATASET_BYTES = 64 * 1024 * 1024  # 64 MB cap for dataset hashing
+DEVIL_LEDGER_NAME = "devil_ledger.json"
+
+DEVIL_SEVERITIES = ("FATAL", "SERIOUS", "MINOR")
+DEVIL_CATEGORIES = (
+    "unfounded-assumption",      # the plan rests on a belief nobody verified
+    "missing-evidence",          # a load-bearing claim has no source or measurement
+    "second-order-effect",       # the immediate effect is fine; the follow-on is not
+    "alternative-explanation",   # the same observations support a different conclusion
+    "cost-complexity",           # the plan is possible but costs more than claimed
+    "reversibility",             # once done, undoing it is slow, expensive or impossible
+    "timing",                    # right plan, wrong moment (too early / too late)
+    "external-risk",             # success depends on a party or event outside your control
+)
 
 REVIEW_SEVERITIES = ("BLOCKING", "MAJOR", "MINOR", "INFO")
 REVIEW_CATEGORIES = ("correctness", "security", "performance", "maintainability", "tests", "style")
@@ -2681,6 +2694,267 @@ def cmd_data_report(args: argparse.Namespace) -> Dict[str, Any]:
     }
 
 
+# ------------------------------------------------------------ devil-advocate
+# The adversarial second opinion: steelman the plan fairly, attack its
+# load-bearing assumptions with severities, answer what can be answered,
+# and let the unanswered attacks decide the verdict mechanically.
+# BLOCK while a FATAL challenge stands — overconfidence has no exit hatch.
+
+
+def _load_devil_ledger(state_dir: Path) -> Tuple[Path, Dict[str, Any]]:
+    ensure_state_dir(state_dir)
+    path = state_dir / DEVIL_LEDGER_NAME
+    if not path.exists():
+        raise WorkbenchError(
+            "NO_DEVIL_SESSION",
+            "No devil's advocate session is open. Start one: devil-open --claim \"the plan in "
+            "one sentence\" --steelman \"its best case, stated honestly\".",
+        )
+    return path, load_json(path, {})
+
+
+def cmd_devil_open(args: argparse.Namespace) -> Dict[str, Any]:
+    state_dir = ensure_state_dir(Path(args.state_dir))
+    path = state_dir / DEVIL_LEDGER_NAME
+    claim = args.claim.strip()
+    steelman = args.steelman.strip()
+    if len(claim) < 20:
+        raise WorkbenchError("CLAIM_TOO_SHORT",
+                             "State the claim under attack in at least 20 characters.")
+    if len(steelman) < 30:
+        raise WorkbenchError(
+            "STEELMAN_TOO_SHORT",
+            "State the plan's best case honestly in at least 30 characters — an attack on a "
+            "strawman is worthless, and the steelman is what makes this challenge fair.",
+        )
+    if path.exists() and not args.force:
+        raise WorkbenchError(
+            "DEVIL_SESSION_EXISTS",
+            f"{path} already holds an open session. Pass --force to start over (challenges "
+            "and verdict are wiped).",
+        )
+    ledger = {
+        "claim": claim,
+        "steelman": steelman,
+        "status": "OPEN",
+        "challenges": [],
+        "verdict": None,
+        "created_at": utc_now_iso(),
+        "updated_at": utc_now_iso(),
+    }
+    save_json(path, ledger)
+    return {
+        "status": "OK",
+        "claim": claim,
+        "steelman": steelman,
+        "next": "devil-challenge --assumption ... --attack ... --defeater ...",
+    }
+
+
+def cmd_devil_challenge(args: argparse.Namespace) -> Dict[str, Any]:
+    path, ledger = _load_devil_ledger(Path(args.state_dir))
+    assumption = args.assumption.strip()
+    attack = args.attack.strip()
+    defeater = args.defeater.strip()
+    if len(assumption) < 10:
+        raise WorkbenchError(
+            "ASSUMPTION_TOO_SHORT",
+            "Name the load-bearing assumption you are attacking in at least 10 characters.",
+        )
+    if len(attack) < 20:
+        raise WorkbenchError(
+            "ATTACK_TOO_SHORT",
+            "An attack shorter than 20 characters is a quibble, not a challenge — say what "
+            "specifically breaks and why.",
+        )
+    if len(defeater) < 10:
+        raise WorkbenchError(
+            "DEFEATER_TOO_SHORT",
+            "Every attack must name its defeater: the observation or argument that would "
+            "prove it wrong (min 10 characters). An attack with no possible defeater is "
+            "dogma, not criticism.",
+        )
+    cid = f"C{len(ledger['challenges']) + 1}"
+    challenge = {
+        "id": cid,
+        "assumption": assumption,
+        "attack": attack,
+        "category": args.category,
+        "severity": args.severity,
+        "defeater": defeater,
+        "status": "OPEN",
+        "rebuttal": None,
+        "rebuttal_basis": None,
+        "created_at": utc_now_iso(),
+    }
+    ledger["challenges"].append(challenge)
+    ledger["updated_at"] = utc_now_iso()
+    save_json(path, ledger)
+    return {
+        "status": "OK",
+        "challenge": challenge,
+        "open_counts": _devil_open_counts(ledger),
+        "answered_count": sum(1 for c in ledger["challenges"] if c["status"] == "ANSWERED"),
+    }
+
+
+def _devil_open_counts(ledger: Dict[str, Any]) -> Dict[str, int]:
+    counts = {s: 0 for s in DEVIL_SEVERITIES}
+    for c in ledger["challenges"]:
+        if c.get("status") == "OPEN":
+            counts[c.get("severity", "MINOR")] = counts.get(c.get("severity", "MINOR"), 0) + 1
+    return counts
+
+
+def cmd_devil_rebuttal(args: argparse.Namespace) -> Dict[str, Any]:
+    path, ledger = _load_devil_ledger(Path(args.state_dir))
+    rebuttal = args.rebuttal.strip()
+    if len(rebuttal) < 20:
+        raise WorkbenchError(
+            "REBUTTAL_TOO_SHORT",
+            "Answer the attack in at least 20 characters — a rebuttal must engage the "
+            "argument, not wave it away.",
+        )
+    target = None
+    for c in ledger["challenges"]:
+        if c["id"] == args.id:
+            target = c
+            break
+    if target is None:
+        raise WorkbenchError(
+            "UNKNOWN_CHALLENGE",
+            f"No challenge with id {args.id}.",
+            {"known": [c["id"] for c in ledger["challenges"]]},
+        )
+    if target["status"] == "ANSWERED":
+        raise WorkbenchError(
+            "CHALLENGE_ANSWERED",
+            f"{args.id} is already answered by: {target.get('rebuttal', '')[:80]}",
+        )
+    target["status"] = "ANSWERED"
+    target["rebuttal"] = rebuttal
+    target["rebuttal_basis"] = (args.basis or "reasoning").strip()
+    target["answered_at"] = utc_now_iso()
+    ledger["updated_at"] = utc_now_iso()
+    save_json(path, ledger)
+    return {
+        "status": "OK",
+        "challenge": target,
+        "open_counts": _devil_open_counts(ledger),
+        "answered_count": sum(1 for c in ledger["challenges"] if c["status"] == "ANSWERED"),
+    }
+
+
+def cmd_devil_verdict(args: argparse.Namespace) -> Dict[str, Any]:
+    path, ledger = _load_devil_ledger(Path(args.state_dir))
+    if not ledger["challenges"]:
+        raise WorkbenchError(
+            "CHALLENGE_FIRST",
+            "An unexamined plan gets no verdict — log at least one challenge first "
+            "(devil-challenge), or this is approval theater.",
+        )
+    kill_criteria = [k.strip() for k in (args.kill_criterion or []) if k.strip()]
+    if not kill_criteria:
+        raise WorkbenchError(
+            "KILL_CRITERIA_REQUIRED",
+            "Committing to a plan requires at least one kill criterion: the observable, "
+            "pre-committed signal that would falsify it later (--kill-criterion, repeatable).",
+        )
+    for k in kill_criteria:
+        if len(k) < 10:
+            raise WorkbenchError("KILL_CRITERION_TOO_SHORT",
+                                 f"Kill criteria must be observable signals, not vibes: '{k}' "
+                                 "is under 10 characters.")
+    counts = _devil_open_counts(ledger)
+    open_challenges = [c for c in ledger["challenges"] if c["status"] == "OPEN"]
+    if counts["FATAL"] > 0:
+        verdict = "BLOCK"
+    elif counts["SERIOUS"] > 0:
+        verdict = "PROCEED_WITH_GUARDS"
+    else:
+        verdict = "PROCEED"
+    guards = [
+        {"challenge": c["id"], "guard": c["assumption"], "watch": c["defeater"]}
+        for c in open_challenges if c["severity"] == "SERIOUS"
+    ]
+    ledger["verdict"] = {
+        "verdict": verdict,
+        "open_counts": counts,
+        "answered_count": sum(1 for c in ledger["challenges"] if c["status"] == "ANSWERED"),
+        "guards": guards,
+        "kill_criteria": kill_criteria,
+        "decided_at": utc_now_iso(),
+    }
+    ledger["status"] = "DECIDED"
+    ledger["updated_at"] = utc_now_iso()
+
+    out = Path(args.output) if args.output else path.parent / "CHALLENGE.md"
+    if out.exists() and not args.force:
+        raise WorkbenchError("FILE_EXISTS", f"{out} exists (use --force).")
+    lines: List[str] = [
+        "# Devil's Advocate Verdict",
+        "",
+        f"**Claim under attack**: {ledger['claim']}",
+        "",
+        "## The steelman (the plan's best case, stated honestly)",
+        "",
+        ledger["steelman"],
+        "",
+        f"## Verdict: {verdict}",
+        "",
+    ]
+    if verdict == "BLOCK":
+        lines.append(f"BLOCKED — {counts['FATAL']} FATAL challenge(s) stand unanswered. "
+                     "Answer them or change the plan; do not proceed and do not soften them.")
+    elif verdict == "PROCEED_WITH_GUARDS":
+        lines.append(f"Proceed, but under guard — {counts['SERIOUS']} SERIOUS challenge(s) "
+                     "remain open. Watch the guard signals below; the first one that fires "
+                     "stops the plan.")
+    else:
+        lines.append("Proceed — every challenge stands answered. The kill criteria below "
+                     "remain armed regardless.")
+    lines += ["", "## Challenges", "",
+              "| ID | Assumption attacked | Attack | Category | Severity | Status |",
+              "|---|---|---|---|---|---|"]
+    for c in ledger["challenges"]:
+        lines.append(
+            f"| {c['id']} | {_md_cell(c['assumption'])} | {_md_cell(c['attack'])} "
+            f"| {c['category']} | {c['severity']} | {c['status']} |"
+        )
+    answered = [c for c in ledger["challenges"] if c["status"] == "ANSWERED"]
+    if answered:
+        lines += ["", "## Answered challenges", ""]
+        for c in answered:
+            lines += [f"### {c['id']} — answered on the basis of {c.get('rebuttal_basis') or 'reasoning'}",
+                      "",
+                      f"> Attack: {c['attack']}", "",
+                      f"Rebuttal: {c['rebuttal']}", "",
+                      f"(Defeater on record: {c['defeater']})", ""]
+    if guards:
+        lines += ["## Guards (open SERIOUS challenges)", "",
+                  "| Challenge | Guard: assumption to watch | Signal: what defeats the attack |",
+                  "|---|---|---|"]
+        for g in guards:
+            lines.append(f"| {g['challenge']} | {_md_cell(g['guard'])} | {_md_cell(g['watch'])} |")
+    lines += ["", "## Kill criteria (pre-committed, observable)", ""]
+    for i, k in enumerate(kill_criteria, 1):
+        lines.append(f"{i}. {k}")
+    lines.append("")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text("\n".join(lines), encoding="utf-8")
+    save_json(path, ledger)
+    status = {"BLOCK": "FAIL", "PROCEED_WITH_GUARDS": "WARN", "PROCEED": "PASS"}[verdict]
+    return {
+        "status": status,
+        "verdict": verdict,
+        "report": str(out),
+        "open_counts": counts,
+        "answered_count": ledger["verdict"]["answered_count"],
+        "guards": guards,
+        "kill_criteria": kill_criteria,
+    }
+
+
 # ---------------------------------------------------------- load-skills
 # Deterministic prompt → skill routing. Given the user's request text this
 # decides which skills to load and emits the brief the agent should follow:
@@ -2698,7 +2972,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
         "template": "templates/advisory-brief.md",
         "first_command": "advise-intake --question ... --context ... --mode planning",
         "stop_rule": "ask one precise question when context is missing; do not scan files by default",
-        "also_consider": ["decision-review"],
+        "also_consider": ["decision-review", "devil-advocate"],
         "fallback": True,
     },
     "decision-review": {
@@ -2711,7 +2985,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
         "template": "templates/adr.md",
         "first_command": "decision-score --spec-file decision.json",
         "stop_rule": "the decision is not final until the ADR passes adr-check",
-        "also_consider": ["wide-search"],
+        "also_consider": ["wide-search", "devil-advocate"],
     },
     "local-debug": {
         "wants": "A bug, failing test or stack trace in a named file",
@@ -2817,7 +3091,7 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
         "template": "templates/spec.md",
         "first_command": "spec-new --goal ... --story ... --non-goal ...",
         "stop_rule": "spec-check must PASS before implementation starts",
-        "also_consider": ["delivery-verify"],
+        "also_consider": ["delivery-verify", "devil-advocate"],
     },
     "code-review": {
         "wants": "A structured, severity-graded review of named files or a diff",
@@ -2853,6 +3127,21 @@ SKILL_ROUTES: Dict[str, Dict[str, Any]] = {
         "first_command": "data-register --path FILE --question ...",
         "stop_rule": "never present a number that is not a logged finding — compute it or declare a gap",
         "also_consider": ["wide-search", "evidence-audit"],
+    },
+    "devil-advocate": {
+        "wants": "Stress-test a plan, decision or spec before committing — the adversarial second opinion",
+        "wants_tr": "Bir planı, kararı veya spesifikasyonu taahhüt öncesi stres testine sokma — advers ikinci görüş",
+        "triggers": ["devil's advocate", "devil advocate", "play devil", "what could go wrong",
+                     "what's wrong with", "poke holes", "stress test", "stress-test",
+                     "second opinion", "convince me this is wrong", "challenge this plan",
+                     "too good to be true", "şeytanın avukat", "avukatlığını", "avukatını oyna",
+                     "delik bul", "delik aç", "stres testi", "ikinci görüş", "neden yanlış",
+                     "nereden yanıl", "zayıf nokta", "karşı argüman", "itiraz et"],
+        "read": ["SKILL.md", "references/challenge-discipline.md", "references/attack-categories.md"],
+        "template": "templates/challenge-report.md",
+        "first_command": "devil-open --claim \"the plan in one sentence\" --steelman \"its best case, honestly\"",
+        "stop_rule": "the verdict is BLOCK while any FATAL challenge is unanswered — answer it or change the plan",
+        "also_consider": ["decision-review", "evidence-audit"],
     },
 }
 
@@ -2925,6 +3214,25 @@ def _render_brief_text(prompt: Optional[str], briefs: List[Dict[str, Any]],
     return "\n".join(lines)
 
 
+def _render_brief_compact(prompt: Optional[str], briefs: List[Dict[str, Any]],
+                          confidences: Dict[str, str]) -> str:
+    """One line per skill: read order compressed to SKILL.md + counts, first command, stop rule.
+    For routing passes where the full brief would cost more tokens than it saves."""
+    lines: List[str] = ["# Skill brief (compact)"]
+    if prompt:
+        lines.append(f'Routed from prompt: "{prompt}"')
+    for i, b in enumerate(briefs, 1):
+        conf = confidences.get(b["skill"], "")
+        refs = [r for r in b["read_in_order"] if r != "SKILL.md"]
+        read = f"SKILL.md + {len(refs)} refs" if refs else "SKILL.md"
+        first = b["first_command"]
+        lines.append(
+            f"{i}) {b['skill']} ({conf}): read {read} — first: {first} — stop: {b['stop_rule']}"
+        )
+    lines.append("Load the full brief (drop --compact) when the work itself begins.")
+    return "\n".join(lines)
+
+
 def cmd_load_skills(args: argparse.Namespace) -> Dict[str, Any]:
     if args.list:
         return {
@@ -2939,9 +3247,11 @@ def cmd_load_skills(args: argparse.Namespace) -> Dict[str, Any]:
     if args.skill:
         brief = _brief_for(args.skill)
         confidences = {args.skill: "DIRECT"}
-        brief_text = _render_brief_text(None, [brief], confidences)
+        brief_text = (_render_brief_compact(None, [brief], confidences)
+                      if args.compact else _render_brief_text(None, [brief], confidences))
         return {"status": "OK", "requested": args.skill, "routed": [brief],
-                "confidences": confidences, "brief_text": brief_text}
+                "confidences": confidences, "brief_text": brief_text,
+                "compact": bool(args.compact)}
 
     prompt = (args.prompt or "").strip()
     if not prompt:
@@ -2975,7 +3285,8 @@ def cmd_load_skills(args: argparse.Namespace) -> Dict[str, Any]:
         routed = [{"hits": [], "brief": briefs[0]}]
         confidences = {"local-advisor": "LOW"}
 
-    brief_text = _render_brief_text(prompt, briefs, confidences)
+    brief_text = (_render_brief_compact(prompt, briefs, confidences)
+                  if args.compact else _render_brief_text(prompt, briefs, confidences))
     return {
         "status": "OK",
         "prompt": prompt,
@@ -2983,6 +3294,7 @@ def cmd_load_skills(args: argparse.Namespace) -> Dict[str, Any]:
         "confidences": confidences,
         "fallback": fallback,
         "brief_text": brief_text,
+        "compact": bool(args.compact),
     }
 
 
@@ -3497,12 +3809,42 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--force", action="store_true", help="Overwrite an existing report file")
     p.set_defaults(func=cmd_data_report)
 
+    p = sub.add_parser("devil-open", help="Open a devil's advocate session: the claim under attack and its honest steelman")
+    p.add_argument("--claim", required=True, help="The plan/decision/spec under attack, in one sentence (min 20 chars)")
+    p.add_argument("--steelman", required=True, help="The plan's best case, stated honestly (min 30 chars)")
+    p.add_argument("--force", action="store_true", help="Replace an existing session (wipes challenges and verdict)")
+    p.set_defaults(func=cmd_devil_open)
+
+    p = sub.add_parser("devil-challenge", help="Attack a load-bearing assumption of the plan")
+    p.add_argument("--assumption", required=True, help="The assumption being attacked (min 10 chars)")
+    p.add_argument("--attack", required=True, help="What specifically breaks, and why (min 20 chars)")
+    p.add_argument("--category", choices=DEVIL_CATEGORIES, default="unfounded-assumption")
+    p.add_argument("--severity", choices=DEVIL_SEVERITIES, default="SERIOUS")
+    p.add_argument("--defeater", required=True,
+                   help="The observation or argument that would defeat this attack (min 10 chars)")
+    p.set_defaults(func=cmd_devil_challenge)
+
+    p = sub.add_parser("devil-rebuttal", help="Answer an open challenge; a sound rebuttal takes it out of the verdict")
+    p.add_argument("--id", required=True, help="Challenge id (e.g. C1)")
+    p.add_argument("--rebuttal", required=True, help="The answer to the attack (min 20 chars)")
+    p.add_argument("--basis", help="What the rebuttal rests on: evidence, experience, constraint, ...")
+    p.set_defaults(func=cmd_devil_rebuttal)
+
+    p = sub.add_parser("devil-verdict", help="Mechanical gate: BLOCK while a FATAL challenge stands; render CHALLENGE.md")
+    p.add_argument("--kill-criterion", action="append",
+                   help="Observable, pre-committed signal that would falsify the plan (repeatable, min 1)")
+    p.add_argument("--output", help="Default: <state-dir>/CHALLENGE.md")
+    p.add_argument("--force", action="store_true", help="Overwrite an existing report file")
+    p.set_defaults(func=cmd_devil_verdict)
+
     p = sub.add_parser("load-skills",
                        help="Route a prompt to the skills it needs and emit their loading brief")
     p.add_argument("--prompt", help="The user's request text (TR or EN) to route")
     p.add_argument("--skill", help="Skip routing: load this skill's brief directly")
     p.add_argument("--max", type=int, default=3, help="Max skills to return (default 3)")
     p.add_argument("--list", action="store_true", help="List all routes with their triggers")
+    p.add_argument("--compact", action="store_true",
+                   help="Emit a one-line-per-skill brief (token-efficient routing pass)")
     p.set_defaults(func=cmd_load_skills)
 
     return parser

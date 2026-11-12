@@ -25,7 +25,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS_DIR = ROOT / "skills"
-VERSION = "3.2.0"
+VERSION = "3.3.0"
 
 
 def write_file(path: Path, content: str) -> None:
@@ -50,7 +50,7 @@ def generate_shared_files() -> None:
             {
                 "name": "local-advisor-suite",
                 "version": VERSION,
-                "description": "Portable Local Advisor, Deep Research, Scoped Debugging, Spec Building, Code Review, Knowledge Capture, Data Analysis and Evidence Audit skills for Claude Code, Codex, ZCode, Cursor and OpenCode. Zero external vendor dependencies.",
+                "description": "Portable Local Advisor, Deep Research, Scoped Debugging, Spec Building, Code Review, Knowledge Capture, Data Analysis, Devil's Advocate and Evidence Audit skills for Claude Code, Codex, ZCode, Cursor and OpenCode. Zero external vendor dependencies.",
                 "author": {"name": "Local Advisor Workbench"},
                 "license": "MIT",
                 "skills": "./skills/",
@@ -87,7 +87,7 @@ def generate_shared_files() -> None:
                     {
                         "name": "local-advisor-suite",
                         "source": "./",
-                        "description": "14 provider-neutral skills backed by an offline workbench.py runtime.",
+                        "description": "15 provider-neutral skills backed by an offline workbench.py runtime.",
                     }
                 ],
             },
@@ -145,7 +145,7 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 This directory holds cross-skill reference specifications used across the Local Advisor & Deep Research Suite:
 
 1. `architecture-and-boundaries.md` — The zero-vendor architecture, conversation-first advisory rule, scoped filesystem guardrails, and cost/budget discipline.
-2. `evidence-ledger-schema.md` — Formal JSON schema and lifecycle rules for every ledger in `.local-workbench/` (research, debug, delivery, spec, review, knowledge base, data analysis).
+2. `evidence-ledger-schema.md` — Formal JSON schema and lifecycle rules for every ledger in `.local-workbench/` (research, debug, delivery, spec, review, knowledge base, data analysis, devil's advocate).
 3. `host-compatibility.md` — Exact discovery paths, frontmatter rules, and invocation syntax for OpenAI Codex CLI/IDE, Anthropic Claude Code, ZCode, Cursor, OpenCode, and generic AGENTS.md readers.
 4. `citation-and-reporting-standard.md` — Rules for GitHub-Flavored Markdown reports, inline `[Source Name](URL)` citations, wide-table `n.a.` handling, and contradiction resolution.
 """,
@@ -193,6 +193,13 @@ This directory holds cross-skill reference specifications used across the Local 
 - What the file cannot answer is declared as a gap (`data-gap` with a reason), never guessed or interpolated.
 - `data-report` lints the answer against the findings (`UNLEDGERED_NUMBERS`) and refuses to render numbers no finding supports; the `--allow-unverified-numbers` escape hatch publishes them visibly marked UNVERIFIED.
 - Findings computed on content that no longer matches the registered hash are refused (`DATASET_DRIFT`) until the dataset is re-registered and the affected findings redone.
+
+## 8. Adversarial Challenge Discipline (v3.3)
+- A plan under stress-test gets its best case stated honestly first (`devil-open` steelman, min 30 chars) — an attack on a strawman is refused by design.
+- Every challenge (`devil-challenge`) names the load-bearing assumption it attacks, what specifically breaks, its category, its severity (FATAL / SERIOUS / MINOR) and its defeater — the observation that would prove the attack wrong. An attack with no defeater is rejected: it is dogma, not criticism.
+- A sound rebuttal (`devil-rebuttal`) answers the argument and names its basis (evidence, experience, constraint); it removes the challenge from the verdict. Rebuttals that wave at the argument are worse than silence and are visibly recorded either way.
+- The verdict (`devil-verdict`) is mechanical: BLOCK while any FATAL challenge stands (exit 2), PROCEED_WITH_GUARDS while any SERIOUS one does, PROCEED only when every attack is answered. No verdict is computed without pre-committed, observable kill criteria.
+- Guards and kill criteria survive the session: they belong in the ADR rollback trigger or the spec's acceptance criteria, so the challenge remains checkable after enthusiasm returns.
 """,
     )
 
@@ -393,6 +400,55 @@ Every entry is sourced (`source_url` or `source_id` validated against the resear
 ```
 
 Lifecycle: `data-register` (pins the dataset by path + size + SHA-256; one dataset per ledger; switching requires `--force` and resets findings) -> `data-finding` (statement + re-runnable method + result; refuses when the file drifted from its hash) -> `data-gap` (what could not be computed, and why) -> `data-report` (renders ANALYSIS.md; numbers in the answer that no finding supports are rejected with `UNLEDGERED_NUMBERS` unless `--allow-unverified-numbers` publishes them visibly marked UNVERIFIED).
+
+## 8. Devil's Advocate Ledger (`devil_ledger.json`, v3.3)
+
+```json
+{
+  "claim": "Split the monolith into microservices this quarter to speed up deploys",
+  "steelman": "Independent deploys end the release train: each team ships daily, failures stay inside one service, and the org already runs containers in production",
+  "status": "DECIDED",
+  "challenges": [
+    {
+      "id": "C1",
+      "assumption": "each team ships daily once split",
+      "attack": "Deploy frequency is currently limited by review capacity, not by the release train; splitting adds coordination overhead that makes daily deploys less likely, not more",
+      "category": "second-order-effect",
+      "severity": "SERIOUS",
+      "defeater": "deploy frequency per team rises within 6 weeks of each split",
+      "status": "OPEN",
+      "rebuttal": null,
+      "rebuttal_basis": null,
+      "created_at": "..."
+    },
+    {
+      "id": "C4",
+      "assumption": "the quarter timeline holds",
+      "attack": "The estimate assumes zero migration of the reporting layer, which reads all 9 shared tables directly",
+      "category": "unfounded-assumption",
+      "severity": "MINOR",
+      "defeater": "reporting reads confirmed via a single view during migration",
+      "status": "ANSWERED",
+      "rebuttal": "The reporting layer already goes through a nightly export view; checked the code before answering",
+      "rebuttal_basis": "evidence: grep of the reporting repo, zero direct table references",
+      "answered_at": "...",
+      "created_at": "..."
+    }
+  ],
+  "verdict": {
+    "verdict": "PROCEED_WITH_GUARDS",
+    "open_counts": {"FATAL": 0, "SERIOUS": 1, "MINOR": 0},
+    "answered_count": 1,
+    "guards": [{"challenge": "C1", "guard": "each team ships daily once split", "watch": "deploy frequency per team rises within 6 weeks of each split"}],
+    "kill_criteria": ["per-team deploy frequency not above baseline 6 weeks after each split"],
+    "decided_at": "..."
+  },
+  "created_at": "...",
+  "updated_at": "..."
+}
+```
+
+Lifecycle: `devil-open` (claim + honest steelman, min 30 chars; one session per ledger, restarting requires `--force` and wipes challenges) -> `devil-challenge` (assumption + attack + category + severity + defeater; an attack with no defeater is rejected) -> `devil-rebuttal` (answers an OPEN challenge with a basis; ANSWERED challenges leave the verdict) -> `devil-verdict` (mechanical gate: BLOCK while an open FATAL stands — JSON status FAIL, exit 2; PROCEED_WITH_GUARDS while an open SERIOUS stands — WARN; PROCEED when all answered — PASS; requires >= 1 observable kill criterion; renders CHALLENGE.md). Categories: unfounded-assumption, missing-evidence, second-order-effect, alternative-explanation, cost-complexity, reversibility, timing, external-risk.
 """,
     )
 
@@ -663,6 +719,7 @@ SKILL_INTERFACES = {
     "code-review": ("Code Review", "Severity-graded findings with locations and a deterministic FAIL verdict"),
     "knowledge-capture": ("Knowledge Capture", "Sourced or explicitly-assumed Q&A entries with offline search and export"),
     "data-analysis": ("Data Analysis", "Grounded analysis of a user-provided data file with a computation ledger"),
+    "devil-advocate": ("Devil's Advocate", "Adversarial stress-test of a plan: steelman, severity-graded challenges with defeaters, rebuttals, mechanical verdict"),
 }
 
 FRONTMATTER_DESC_RE = re.compile(r"^description:\s*(.+)$", re.M)

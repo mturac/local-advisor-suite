@@ -1,7 +1,7 @@
 {
   "name": "local-advisor-suite",
-  "version": "3.2.0",
-  "description": "Portable Local Advisor, Deep Research, Scoped Debugging, Spec Building, Code Review, Knowledge Capture, Data Analysis and Evidence Audit skills for Claude Code, Codex, ZCode, Cursor and OpenCode. Zero external vendor dependencies.",
+  "version": "3.3.0",
+  "description": "Portable Local Advisor, Deep Research, Scoped Debugging, Spec Building, Code Review, Knowledge Capture, Data Analysis, Devil's Advocate and Evidence Audit skills for Claude Code, Codex, ZCode, Cursor and OpenCode. Zero external vendor dependencies.",
   "author": {
     "name": "Local Advisor Workbench"
   },

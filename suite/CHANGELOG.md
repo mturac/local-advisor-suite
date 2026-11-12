@@ -1,5 +1,67 @@
 # Changelog
 
+## 3.3.0 (2026-11-12)
+
+v3.2.0 command set and JSON contract preserved; everything below is additive.
+
+### Added: devil-advocate skill (15th skill)
+
+- New skill **`devil-advocate`** — the adversarial second opinion. "Play devil's
+  advocate", "what could go wrong" and "şeytanın avukatlığını yap" previously
+  fell through the routing table; now they open a structured challenge session
+  where the plan gets a fair hearing and its assumptions get attacked on the
+  record.
+- New commands **`devil-open` / `devil-challenge` / `devil-rebuttal` /
+  `devil-verdict`** and a new `devil_ledger.json` state file:
+  - `devil-open --claim ... --steelman ...` opens the session; the steelman
+    (the plan's best case, stated honestly) is mandatory and min 30 characters
+    — an attack on a strawman is refused by design.
+  - `devil-challenge --assumption ... --attack ... --category ...
+    --severity ... --defeater ...` attacks a load-bearing assumption. Eight
+    categories (unfounded-assumption, missing-evidence, second-order-effect,
+    alternative-explanation, cost-complexity, reversibility, timing,
+    external-risk), three severities. Every attack must name its defeater —
+    the observation that would prove it wrong; an attack with no defeater is
+    dogma, not criticism.
+  - `devil-rebuttal --id Cn --rebuttal ... --basis ...` answers an OPEN
+    challenge; a sound rebuttal removes it from the verdict, and the basis
+    (evidence / experience / constraint) is recorded for later readers.
+  - `devil-verdict --kill-criterion ...` is a mechanical gate: BLOCK while any
+    FATAL challenge stands (JSON status FAIL, exit 2), PROCEED_WITH_GUARDS
+    while any SERIOUS one does (WARN, guards rendered), PROCEED when every
+    attack is answered (PASS). Refuses to run without at least one observable,
+    pre-committed kill criterion, and renders `CHALLENGE.md` with the steelman,
+    the full challenge table, rebuttals with their defeaters, guards and kill
+    criteria.
+- Skill assets: `SKILL.md`, `references/challenge-discipline.md` (steelman
+  first, attack assumptions not adjectives, severity is a claim, rebuttals
+  must engage), `references/attack-categories.md` (the eight categories with
+  what evidence answers each), `templates/challenge-report.md`,
+  `examples/monolith-to-microservices.md` captured from a real run; shared
+  layer regenerated for 15 skills.
+- Routing: `load-skills` gains the devil-advocate route with EN/TR triggers
+  (devil's advocate, poke holes, stress test, second opinion, şeytanın avukat,
+  delik bul, ikinci görüş, neden yanlış, ...); `local-advisor`,
+  `decision-review` and `spec-builder` now list it in `also_consider`, so the
+  adversarial pass is offered exactly where overconfidence lives.
+  `architecture-and-boundaries.md` gains section 8 (Adversarial Challenge
+  Discipline) and `evidence-ledger-schema.md` documents `devil_ledger.json`.
+
+### Added: load-skills --compact
+
+- `--compact` emits a one-line-per-skill brief (skill, confidence, compressed
+  read order, first command, stop rule) instead of the full brief — a
+  token-efficient routing pass for hosts where context is expensive. The full
+  brief remains the default for when the work itself begins.
+
+### Counts
+
+- 15 skills, 47 commands, 125 tests (11 new: the challenge ledger lifecycle,
+  its error paths, TR/EN routing, and the compact brief).
+- Console: new "Devil's advocate" scenario group (4 scenarios) covering all
+  four commands; the seeded demo workspace now pre-opens a challenge session
+  with one answered FATAL so every scenario also works standalone.
+
 ## 3.2.0 (2026-11-04)
 
 v3.1.0 command set and JSON contract preserved; everything below is additive.

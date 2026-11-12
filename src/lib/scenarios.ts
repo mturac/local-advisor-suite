@@ -95,6 +95,16 @@ export const SCENARIO_GROUPS: ScenarioGroup[] = [
     ],
   },
   {
+    title: "Devil's advocate",
+    titleTr: "Şeytanın avukatı",
+    scenarios: [
+      { label: "devil-challenge", command: "devil-challenge", argv: ["--assumption", "the shared workspace can be restored if isolation disappoints", "--attack", "Once scenario definitions depend on per-run state, wiring them back to a shared ledger is a manual rework of every scenario", "--category", "reversibility", "--severity", "SERIOUS", "--defeater", "a documented flag that switches the runner between shared and isolated modes"], note: "Attack a load-bearing assumption; every attack names what would defeat it", noteTr: "Yük taşıyan bir varsayıma saldır; her saldırı kendi yenilgisini neyin sağlayacağını söyler" },
+      { label: "devil-rebuttal", command: "devil-rebuttal", argv: ["--id", "C1", "--rebuttal", "The seeded workspace deliberately pre-fills every ledger, so even a fresh isolated run starts from a realistic, inspectable state", "--basis", "evidence: seed_workspace.py pre-registers all ledgers before any run"], note: "Answer an open challenge with a basis; a sound rebuttal leaves the verdict", noteTr: "Açık bir itirazı temeliyle cevapla; sağlam cevap karardan çıkar" },
+      { label: "devil-verdict", command: "devil-verdict", argv: ["--kill-criterion", "any scenario still reads state from a previous run after isolation"], note: "Mechanical gate: BLOCK while a FATAL stands; renders CHALLENGE.md with guards and kill criteria", noteTr: "Mekanik kapı: ayakta bir FATAL varken BLOCK; CHALLENGE.md guard ve kill kriterleriyle üretilir" },
+      { label: "devil-open (TR)", command: "devil-open", argv: ["--force", "--claim", "Konsolun paylaşımlı çalışma alanını her çalıştırmada izole kum havuzuna çevirelim", "--steelman", "İzole çalıştırmalar birbirinin defter durumunu bozamaz; her senaryo temiz başlangıçtan tekrar üretilebilir"], note: "Open a session on a new claim — the honest steelman comes first (resets the ledger)", noteTr: "Yeni bir iddiayla oturum aç — önce dürüst çelik-adam gelir (defteri sıfırlar)", resets: true },
+    ],
+  },
+  {
     title: "Advice & decisions",
     titleTr: "Tavsiye ve kararlar",
     scenarios: [
@@ -139,4 +149,4 @@ export const SCENARIO_GROUPS: ScenarioGroup[] = [
   },
 ]
 
-export const SCENARIO_COUNT = 43
+export const SCENARIO_COUNT = 47

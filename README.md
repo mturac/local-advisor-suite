@@ -1,14 +1,14 @@
 # Local Advisor Suite — Console
 
-**v3.0.0** · cross-host agent skill suite + a web console to drive every command from your browser.
+**v3.3.0** · cross-host agent skill suite + a web console to drive every command from your browser.
 
-> **Türkçe:** Bu depo iki şey içerir: **Local Advisor Suite** (çevrimdışı çalışan, 43 komutluk, 6 araca kurulabilen bir beceri paketi) ve onu **tarayıcıdan denemeni sağlayan web konsolu**. Kurulum yok, hesap yok: bir hikâye seç, *Çalıştır*'a bas, gerçek komutların gerçek çıktılarını gör. Arayüz **Türkçe ve İngilizce** — sağ üstteki TR/EN düğmesiyle değiştir.
+> **Türkçe:** Bu depo iki şey içerir: **Local Advisor Suite** (çevrimdışı çalışan, 47 komutluk, 6 araca kurulabilen bir beceri paketi) ve onu **tarayıcıdan denemeni sağlayan web konsolu**. Kurulum yok, hesap yok: bir hikâye seç, *Çalıştır*'a bas, gerçek komutların gerçek çıktılarını gör. Arayüz **Türkçe ve İngilizce** — sağ üstteki TR/EN düğmesiyle değiştir.
 
 This repository contains two things:
 
 | Path | What it is |
 | --- | --- |
-| `suite/` | **Local Advisor Suite v3.2.0** — the offline, vendor-neutral workbench: 43 commands, 14 skills, 114 tests, installer for 6 hosts (Claude Code, Codex, ZCode, Cursor, OpenCode, generic AGENTS.md) |
+| `suite/` | **Local Advisor Suite v3.3.0** — the offline, vendor-neutral workbench: 47 commands, 15 skills, 125 tests, installer for 6 hosts (Claude Code, Codex, ZCode, Cursor, OpenCode, generic AGENTS.md) |
 | root | **Web Console** — a bilingual (🇹🇷 TR / 🇬🇧 EN) Next.js 16 app that runs every workbench command against a seeded demo workspace, no setup required |
 
 ![Console](public/console.png)
@@ -41,7 +41,7 @@ On first run the workspace is empty — open the **Files / Dosyalar** tab and hi
 
 ```bash
 cd suite
-./run_tests.sh                          # 114 tests, zero dependencies
+./run_tests.sh                          # 125 tests, zero dependencies
 python3 install.py --project ~/myapp    # installs skills for 6 hosts
 python3 workbench.py doctor             # installation health check
 ```
@@ -53,8 +53,8 @@ See `suite/README.md` for the full suite documentation, and `suite/CHANGELOG.md`
 | Tab | Ne yapar (TR) | What you can do (EN) |
 | --- | --- | --- |
 | **Hikâyeler / Stories** | Baştan sona anlatılan senaryolar: soldan hikâyeyi seç, *Tümünü çalıştır*'a bas; her adımın ne yaptığını, komutunu ve "şu görünecek" kutusunu gör, sonunda gerçek bir dosyayla bitir | Guided end-to-end stories — each step explained in plain language with its exact command, a "you'll see" preview, and its real result; ends with a real artifact (evidence pack, handoff, root-cause report, ADR) |
-| **Komut Dene / Try Commands** | 43 komutun tamamı hazır argümanlarla, tek tıkla; istersen kendi argümanlarınla çalıştır | Sandbox for single commands: one-click examples for all 43 commands, auto-generated argument forms, raw JSON output |
-| **Beceriler / Skills** | 14 beceriyi gez, SKILL.md'leri oku | Browse the 14 bundled skills, read each `SKILL.md` and its bundled examples |
+| **Komut Dene / Try Commands** | 47 komutun tamamı hazır argümanlarla, tek tıkla; istersen kendi argümanlarınla çalıştır | Sandbox for single commands: one-click examples for all 47 commands, auto-generated argument forms, raw JSON output |
+| **Beceriler / Skills** | 15 beceriyi gez, SKILL.md'leri oku | Browse the 15 bundled skills, read each `SKILL.md` and its bundled examples |
 | **Sağlık / Health** | Tek tıkla `doctor` ve `selfcheck` | One-click `doctor` (per-check health table) and `selfcheck` (vendor-neutrality scan) |
 | **Dosyalar / Files** | Canlı defterleri ve üretilen dosyaları incele, tek tıkla sıfırla | Inspect live ledgers and generated artifacts, reset everything |
 | **Geçmiş / History** | Her çalıştırma SQLite'ta saklanır | Every run persisted in SQLite, expandable |
@@ -68,18 +68,18 @@ Four walkthrough stories ship today (all bilingual, all validated end to end):
 | **Bir hatayı kök nedenine kadar kovala / Chase a bug to its root cause** | 7 | root-cause report for a real bug in the bundled demo project |
 | **Pişman olmayacağın bir karar ver / Make a call you won't regret** | 3 | numbered, table-filled ADR |
 
-Every step sequence is validated end to end by `scripts/test_walkthroughs.py` (fresh seeded workspace, expected exit codes and statuses, deliverable files checked on disk — 33/33 passing), and the UI data (including the Turkish/English text for every step) is generated from the same `scripts/walkthroughs.json` via `scripts/gen_walkthroughs_ts.py`.
+Every step sequence is validated end to end by `scripts/test_walkthroughs.py` (fresh seeded workspace, expected exit codes and statuses, deliverable files checked on disk — 36/36 passing), and the UI data (including the Turkish/English text for every step) is generated from the same `scripts/walkthroughs.json` via `scripts/gen_walkthroughs_ts.py`.
 
-For single commands, the **one-click examples** cover all 43 commands with pre-filled working arguments; amber chips (e.g. `research-init`, `spec-new`, `review-init`) wipe their ledger first, and the demo data can be restored anytime with *Reset workspace*.
+For single commands, the **one-click examples** cover all 47 commands with pre-filled working arguments; amber chips (e.g. `research-init`, `spec-new`, `review-init`, `devil-open`) wipe their ledger first, and the demo data can be restored anytime with *Reset workspace*.
 
 ## Repository layout
 
 ```
-├── suite/                    # Local Advisor Suite v3.0.0 (self-contained)
-│   ├── workbench.py          # 43-command CLI (JSON in, JSON out)
+├── suite/                    # Local Advisor Suite v3.3.0 (self-contained)
+│   ├── workbench.py          # 47-command CLI (JSON in, JSON out)
 │   ├── install.py            # 6-host installer / uninstaller
-│   ├── skills/               # 14 skills with references/templates/examples
-│   ├── tests/                # 114 tests (run_tests.sh)
+│   ├── skills/               # 15 skills with references/templates/examples
+│   ├── tests/                # 125 tests (run_tests.sh)
 │   └── references/ templates/ tools/
 ├── src/
 │   ├── app/                  # Next.js app router (single page + API routes)

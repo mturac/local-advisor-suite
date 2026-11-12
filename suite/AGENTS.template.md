@@ -30,6 +30,7 @@ you cannot run the command:
 | Choose between options, an ADR, a trade-off matrix, a pre-mortem | `decision-review` | `$WB decision-score --spec-file decision.json` |
 | A bug, failing test or stack trace in a named file | `local-debug` | `$WB debug-hypothesis --symptom ... --target-file ... --repro ...` |
 | Analyze a data file the user provides, with traceable numbers | `data-analysis` | `$WB data-register --path FILE --question ...` |
+| Stress-test a plan before committing — the adversarial second opinion | `devil-advocate` | `$WB devil-open --claim "..." --steelman "..."` |
 | One factual answer that needs 1-3 sources (version, price, limit, date) | `web-search` | host search tool |
 | Research with several sources and a synthesis | `deep-research` | `$WB research-init --topic ... --sub-question ...` |
 | Compare many entities across the same fields, as a table | `wide-search` | `$WB research-init --mode wide-matrix --entity ... --field ...` |
@@ -54,6 +55,7 @@ you cannot run the command:
 - Research: stop at the query budget; record remaining gaps instead of continuing silently.
 - Specs: no task enters the plan unless it verifies at least one acceptance criterion (`spec-check` must PASS before implementation starts).
 - Reviews: the verdict is FAIL while any BLOCKING finding is open; never merge over it.
+- Challenges: the verdict is BLOCK while any FATAL devil-challenge is unanswered — answer it or change the plan.
 - Any loop of the same failing action twice: stop, report what was tried and what is needed.
 
 ### Evidence discipline

@@ -39,6 +39,7 @@ you cannot run the command:
 | Turn a request into a testable spec with acceptance criteria | `spec-builder` | `$WB spec-new --goal ... --story ... --non-goal ...` |
 | A structured, severity-graded review of named files or a diff | `code-review` | `$WB review-init --title ... --target ...` |
 | Analyze a data file the user provides, with traceable numbers | `data-analysis` | `$WB data-register --path FILE --question ...` |
+| Stress-test a plan before committing — the adversarial second opinion | `devil-advocate` | `$WB devil-open --claim "..." --steelman "..."` |
 | Save, find and reuse reusable project knowledge as sourced Q&A | `knowledge-capture` | `$WB kb-add --question ... --answer ... --source-url ...` |
 
 ### Do not scan by default
@@ -54,6 +55,7 @@ you cannot run the command:
 - Research: stop at the query budget; record remaining gaps instead of continuing silently.
 - Specs: no task enters the plan unless it verifies at least one acceptance criterion (`spec-check` must PASS before implementation starts).
 - Reviews: the verdict is FAIL while any BLOCKING finding is open; never merge over it.
+- Challenges: the verdict is BLOCK while any FATAL devil-challenge is unanswered — answer it or change the plan.
 - Any loop of the same failing action twice: stop, report what was tried and what is needed.
 
 ### Evidence discipline

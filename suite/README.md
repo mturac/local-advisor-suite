@@ -1,6 +1,6 @@
-# local-advisor-suite 3.2.0
+# local-advisor-suite 3.3.0
 
-A provider-neutral advisory, research, debugging, specification, review, verification, knowledge and data-analysis suite — **14 skills** that run identically in **Claude Code, Codex, ZCode, Cursor, OpenCode, and any AGENTS.md-compatible agent**.
+A provider-neutral advisory, research, debugging, specification, review, verification, knowledge, data-analysis and adversarial-challenge suite — **15 skills** that run identically in **Claude Code, Codex, ZCode, Cursor, OpenCode, and any AGENTS.md-compatible agent**.
 
 The suite depends on no search vendor, no API key, and no MCP server. When web access is needed, it uses only the search and fetch tools your host already provides. All ledger, scoring, audit and verification work is done by a single standard-library Python file (`workbench.py`) that runs offline and deterministically.
 
@@ -14,6 +14,7 @@ Built on the user's own `workbench.py` and `tools/generate_shared.py`. The v2.1 
 - **Proves before saying "done".** `delivery-verify` runs the real commands and reports the achieved level on the L0-L4 ladder.
 - **Makes specs testable.** `spec-builder` turns requests into Given/When/Then acceptance criteria and tasks that must each verify a criterion.
 - **Makes reviews mechanical.** `code-review` grades findings by severity; the verdict is FAIL while any BLOCKING finding is open.
+- **Argues back before commitment.** `devil-advocate` steelmans the plan, attacks its load-bearing assumptions with severity-graded challenges, and BLOCKs while a FATAL one stands unanswered.
 - **Remembers honestly.** `knowledge-capture` stores sourced Q&A entries; assumptions are marked, never quoted as fact.
 - **No extra cost.** No paid services. The only command that can open a socket is `fetch-url`, and only with `--allow-network`.
 - **Works everywhere.** One installer, six hosts; `doctor` verifies any installation's health.
@@ -26,6 +27,7 @@ Built on the user's own `workbench.py` and `tools/generate_shared.py`. The v2.1 
 | `decision-review` | Option comparison, ADRs, reversibility (R0-R3), pre-mortem | `decision-score`, `adr-new`, `adr-check` |
 | `local-debug` | A bug in a file you name; at most 2 hypotheses | `debug-hypothesis`, `scope-read --debug-scope`, `debug-report` |
 | `data-analysis` | A data file you name; every number traceable to a logged command | `data-register`, `data-finding`, `data-gap`, `data-report` |
+| `devil-advocate` | Stress-test a plan before committing: steelman, challenges, rebuttals, verdict | `devil-open`, `devil-challenge`, `devil-rebuttal`, `devil-verdict` |
 | `web-search` | Quick verified answers with 1-3 sources | host search/fetch tools + optional ledger |
 | `deep-research` | Multi-step research: decomposition, ledger, scoring, contradictions, gaps, synthesis | `research-*`, `audit-report` |
 | `wide-search` | Entity x field tables; every cell bound to a verified URL | `research-init --mode wide-matrix`, `wide-table --strict` |
@@ -41,6 +43,8 @@ Every skill carries `SKILL.md`, `references/`, `templates/`, `examples/`, `agent
 
 The 14th skill arrived in v3.2.0: prompts like "analyze this CSV" or "bu veri dosyasını analiz et" previously fell through the routing table to the advisory fallback; `data-analysis` closes that gap with the same discipline the other ledgers enforce — a number is only speakable when the command that produced it is on the record.
 
+The 15th skill arrived in v3.3.0: `devil-advocate` is the adversarial second opinion the suite lacked. "Şeytanın avukatlığını yap" now routes somewhere real: the plan gets an honest steelman first, then its load-bearing assumptions are attacked with severities and defeaters, answered challenges leave the verdict, and the unanswered ones decide it mechanically — BLOCK while a FATAL stands, PROCEED_WITH_GUARDS over an open SERIOUS, with pre-committed kill criteria either way.
+
 ## Installation
 
 Requirement: Python 3.9+ (standard library only; tested with Python 3.12/3.14). No `pip install`.
@@ -48,7 +52,7 @@ Requirement: Python 3.9+ (standard library only; tested with Python 3.12/3.14). 
 ```bash
 unzip local-advisor-suite.zip
 cd local-advisor-suite
-./run_tests.sh                                     # 66 tests
+./run_tests.sh                                     # 125 tests
 
 # Install into a project (Claude Code + Codex + ZCode + Cursor + OpenCode)
 python3 install.py --project ~/code/my-app --gitignore
@@ -128,6 +132,12 @@ $WB data-finding --statement "The file has 5 data rows" --method 'tail -n +2 sal
 $WB data-gap --description "Per-region breakdown is not computable" --reason "NO_DATA: no region column"
 $WB data-report --answer "Sales rose from 120 to 170 across 5 months; the region split cannot be computed."
 
+# Devil's advocate: steelman, attack, answer, gate
+$WB devil-open --claim "Split the monolith into microservices this quarter" --steelman "Independent deploys end the release train"
+$WB devil-challenge --assumption "each team ships daily once split" --attack "Review capacity, not the release train, limits deploys today" --severity SERIOUS --defeater "per-team deploy frequency rises within 6 weeks"
+$WB devil-rebuttal --id C1 --rebuttal "Review data from last quarter shows reviews complete in hours" --basis "evidence: review metrics"
+$WB devil-verdict --kill-criterion "per-team deploys stay at baseline 6 weeks after a split"
+
 # Research and audit
 $WB research-init --topic "..." --sub-question "..." --max-queries 12 --time-sensitive
 $WB research-add-source --url URL --title "..." --tier PRIMARY --published-date 2026-10-01 --content-file page.txt
@@ -163,17 +173,17 @@ Every command returns JSON. Exit codes: `0` = OK/PASS (doctor's WARN is also `0`
 
 ```
 local-advisor-suite/
-├── workbench.py               # the single runtime (43 subcommands, v3.2)
+├── workbench.py               # the single runtime (47 subcommands, v3.3)
 ├── install.py                 # project/global install for 6 hosts, manifest, uninstall
 ├── AGENTS.template.md         # rules block for Codex/ZCode/OpenCode/generic ({{WORKBENCH}})
 ├── CLAUDE.template.md         # rules block for Claude Code
 ├── CURSOR_RULE.template.mdc   # always-on Cursor rule
 ├── CURSOR_COMMAND.template.md # per-skill Cursor command generator input
-├── skills/<14 skills>/        # SKILL.md, references/, templates/, examples/, agents/, scripts/
+├── skills/<15 skills>/        # SKILL.md, references/, templates/, examples/, agents/, scripts/
 ├── references/ templates/     # shared layer (generate_shared.py writes it)
 ├── .claude-plugin/ .codex-plugin/ .agents/plugins/   # plugin and marketplace manifests
 ├── tools/generate_shared.py   # generates shared files, skill copies; enforces frontmatter limits
-└── tests/                     # test_workbench, test_install, test_package (66 tests)
+└── tests/                     # test_workbench, test_install, test_package (125 tests)
 ```
 
 After editing `workbench.py` or shared files, run `python3 tools/generate_shared.py`. `tests/test_package.py` fails if the skill copies drift.

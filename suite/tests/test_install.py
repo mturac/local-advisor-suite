@@ -115,7 +115,7 @@ class InstallTestCase(unittest.TestCase):
             self.assertIn("local-advisor-suite:start", text)
         self.assertIn(".local-workbench/", (self.proj / ".gitignore").read_text(encoding="utf-8"))
         manifest = json.loads((self.proj / ".local-advisor-suite.json").read_text(encoding="utf-8"))
-        self.assertEqual(manifest["version"], "3.2.0")
+        self.assertEqual(manifest["version"], "3.3.0")
         self.assertGreater(len(manifest["skills"]), 0)
 
     def test_install_cursor_generates_rules_and_commands(self):
